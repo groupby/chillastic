@@ -1,0 +1,182 @@
+[
+  {
+    "index": {
+      "_index": "myindex1",
+      "_type": "mytype1"
+    }
+  },
+  {
+    "someField_1": "something 1"
+  },
+  {
+    "index": {
+      "_index": "myindex1",
+      "_type": "mytype1"
+    }
+  },
+  {
+    "someField_1": "something 2"
+  },
+  {
+    "index": {
+      "_index": "myindex1",
+      "_type": "mytype1"
+    }
+  },
+  {
+    "someField_1": "something 3"
+  },
+  {
+    "index": {
+      "_index": "myindex1",
+      "_type": "mytype1"
+    }
+  },
+  {
+    "someField_1": "something 4"
+  },
+  {
+    "index": {
+      "_index": "myindex1",
+      "_type": "mytype1"
+    }
+  },
+  {
+    "someField_1": "something 5"
+  },
+  {
+    "index": {
+      "_index": "myindex1",
+      "_type": "mytype1"
+    }
+  },
+  {
+    "someField_1": "something 6"
+  },
+  {
+    "index": {
+      "_index": "myindex1",
+      "_type": "mytype1"
+    }
+  },
+  {
+    "someField_1": "something 7"
+  },
+  {
+    "index": {
+      "_index": "myindex1",
+      "_type": "mytype1"
+    }
+  },
+  {
+    "someField_1": "something 8"
+  },
+  {
+    "index": {
+      "_index": "myindex1",
+      "_type": "mytype1"
+    }
+  },
+  {
+    "someField_1": "something 9"
+  },
+  {
+    "index": {
+      "_index": "myindex1",
+      "_type": "mytype1"
+    }
+  },
+  {
+    "someField_1": "something10"
+  },
+  {
+    "index": {
+      "_index": "myindex1",
+      "_type": "mytype1"
+    }
+  },
+  {
+    "someField_1": "something 11"
+  },
+  {
+    "index": {
+      "_index": "myindex1",
+      "_type": "mytype1"
+    }
+  },
+  {
+    "someField_1": "something 12"
+  },
+  {
+    "index": {
+      "_index": "myindex1",
+      "_type": "mytype1"
+    }
+  },
+  {
+    "someField_1": "something 13"
+  },
+  {
+    "index": {
+      "_index": "myindex1",
+      "_type": "mytype1"
+    }
+  },
+  {
+    "someField_1": "something 14"
+  },
+  {
+    "index": {
+      "_index": "myindex1",
+      "_type": "mytype1"
+    }
+  },
+  {
+    "someField_1": "something 15"
+  },
+  {
+    "index": {
+      "_index": "myindex1",
+      "_type": "mytype1"
+    }
+  },
+  {
+    "someField_1": "something 16"
+  },
+  {
+    "index": {
+      "_index": "myindex1",
+      "_type": "mytype1"
+    }
+  },
+  {
+    "someField_1": "something 17"
+  },
+  {
+    "index": {
+      "_index": "myindex1",
+      "_type": "mytype1"
+    }
+  },
+  {
+    "someField_1": "something 18"
+  },
+  {
+    "index": {
+      "_index": "myindex1",
+      "_type": "mytype1"
+    }
+  },
+  {
+    "someField_1": "something 19"
+  },
+  {
+    "index": {
+      "_index": "myindex1",
+      "_type": "mytype1"
+    }
+  },
+  {
+    "someField_1": "something 20"
+  }
+]
