@@ -29,7 +29,7 @@ var options = stdio.getopt({
     description: 'Names of indices from which to copy data'
   },
   templates:   {
-    // key:         't',
+    key:         't',
     args:        1,
     description: 'Names of templates to copy'
   },
