@@ -1,5 +1,5 @@
 {
-  "name": "multi-reindex",
+  "name": "gb-es-reindexer",
   "version": "0.0.1",
   "description": "Reindex multiple elasticsearch indices, save your progress, mutate your data in-flight.",
   "main": "index.js",
