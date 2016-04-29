@@ -4,12 +4,16 @@ machine:
   node:
     version: 5.10.1
 dependencies:
+  pre:
+    - sudo service redis-server stop
+    - sudo service elasticsearch stop
   override:
     - npm install
   post:
     - docker run -d --name source_es -p 9200:9200  elasticsearch:1.4
     - docker run -d --name dest_es -p 9201:9200 elasticsearch:2.2
     - docker run -d --name redis -p 6379:6379 redis:3
+    - sleep 3
 test:
   override:
     - npm test
