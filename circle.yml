@@ -1,0 +1,12 @@
+machine:
+  services:
+    - redis
+    - elasticsearch
+  node:
+    version: 5.10.1
+dependencies:
+  override:
+    - npm install
+test:
+  override:
+    - npm test
