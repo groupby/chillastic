@@ -1,12 +1,13 @@
 machine:
   services:
-    - redis
-    - elasticsearch
+    - docker
   node:
     version: 5.10.1
 dependencies:
   override:
     - npm install
+  post:
+    - ./scripts/docker_dependenices.sh
 test:
   override:
     - npm test
