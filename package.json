@@ -4,9 +4,21 @@
   "description": "Reindex multiple elasticsearch indices, save your progress, mutate your data in-flight.",
   "main": "index.js",
   "scripts": {
-    "test": "mocha --compilers js:babel-register",
-    "test-coverage": "nyc --require babel-register mocha",
+    "test": "nyc --require babel-register mocha",
     "build": "babel index.js -d build && babel config -d build/config && babel lib -d build/lib"
+  },
+  "nyc": {
+    "lines": 93,
+    "branches": 75,
+    "functions": 90,
+    "statements": 93,
+    "check-coverage": true,
+    "exclude": [
+      "lib/master.js",
+      "test/master.spec.js",
+      "test/testMutators/",
+      "test/invalidMutators"
+    ]
   },
   "author": "",
   "license": "ISC",
