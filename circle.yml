@@ -13,7 +13,7 @@ dependencies:
     - docker run -d --name source_es -p 9200:9200  elasticsearch:1.4
     - docker run -d --name dest_es -p 9201:9200 elasticsearch:2.2
     - docker run -d --name redis -p 6379:6379 redis:3
-    - sleep 3
+    - sleep 5
 test:
   override:
     - npm test

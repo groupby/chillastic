@@ -157,6 +157,8 @@ describe('job manager', function () {
 
   it('should get all indices and types', (done)=> {
     addData(manager.source).then(()=> {
+      return manager.source.indices.refresh();
+    }).then(()=> {
       return manager.getIndices(manager.source, '*');
     }).then((indices)=> {
       expect(_.size(indices)).to.eql(3);
