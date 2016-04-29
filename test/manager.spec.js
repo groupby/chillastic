@@ -233,48 +233,31 @@ describe('job manager', function () {
     expect(filtered[0].types).to.include('newtype_3');
   });
 
-  it('reject index filters that are not functions, functions with incorrect arguments, or regex\'s', ()=> {
+  it('reject filters that are not regex, function, or module with a function', ()=> {
     let throws = ()=> {
-      manager.setIndexFilter('no_strings');
+      manager.getFilterFunction({stuff: 'something'});
     };
-    expect(throws).to.throw(/filter must be a regex or function that takes 1 argument/);
+    expect(throws).to.throw(/could not be interpreted\. Must be a path to a module, regex or function/);
 
     throws = ()=> {
-      manager.setIndexFilter({stuff: 'something'});
+      manager.getFilterFunction(()=> {});
     };
-    expect(throws).to.throw(/filter must be a regex or function that takes 1 argument/);
+    expect(throws).to.throw(/filter function must take at least one argument/);
 
     throws = ()=> {
-      manager.setIndexFilter(()=> {});
+      manager.getFilterFunction(__dirname + '/testMutators/dataMutator.js');
     };
-    expect(throws).to.throw(/filter must be a regex or function that takes 1 argument/);
-
-    throws = (first, second)=> {
-      manager.setIndexFilter(()=> {});
-    };
-    expect(throws).to.throw(/filter must be a regex or function that takes 1 argument/);
-  });
-
-  it('reject type filters that are not functions, functions with incorrect arguments, or regex\'s', ()=> {
-    let throws = ()=> {
-      manager.setTypeFilter('no_strings');
-    };
-    expect(throws).to.throw(/filter must be a regex or function that takes 1 argument/);
+    expect(throws).to.throw(/was interpreted as a path and module does not return a function\. Must be a path to a module, regex or function/);
 
     throws = ()=> {
-      manager.setTypeFilter({stuff: 'something'});
+      manager.getFilterFunction(__dirname + '/testMutators/notJs.txt');
     };
-    expect(throws).to.throw(/filter must be a regex or function that takes 1 argument/);
+    expect(throws).to.throw(/was interpreted as a path to a non-js file\. Must be a path to a module, regex or function/);
 
     throws = ()=> {
-      manager.setTypeFilter(()=> {});
+      manager.getFilterFunction(__dirname + '/testMutators/nonexistent.js');
     };
-    expect(throws).to.throw(/filter must be a regex or function that takes 1 argument/);
-
-    throws = (first, second)=> {
-      manager.setTypeFilter(()=> {});
-    };
-    expect(throws).to.throw(/filter must be a regex or function that takes 1 argument/);
+    expect(throws).to.throw(/was interpreted as a path and cannot be found\. Must be a path to a module, regex or function/);
   });
 
   it('should sort indices depending on comparator', (done)=> {

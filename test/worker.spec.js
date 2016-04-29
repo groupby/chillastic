@@ -15,7 +15,7 @@ Promise.onPossiblyUnhandledRejection(function (error) {
 });
 
 describe('worker', function () {
-  this.timeout(5000);
+  this.timeout(6000);
 
   var worker  = null;
   var manager = null;
