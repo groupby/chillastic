@@ -627,6 +627,35 @@ describe('transfer', function () {
     });
   });
 
+  // it('should recover from some errors', (done)=>{
+  //   let results = {
+  //     errors: 5,
+  //     items: [
+  //       {
+  //         update: {
+  //           status: 'success'
+  //         }
+  //       },
+  //       {
+  //         update: {
+  //           error: {
+  //             type: 'es_rejected_execution_exception'
+  //           }
+  //         }
+  //       }
+  //     ]
+  //   };
+  //
+  //   let bulkBody = [
+  //     { update: { _index: 'something', _type: 'type'}},
+  //     { field: 'data1'},
+  //     { update: { _index: 'something2', _type: 'type2'}},
+  //     { field: 'data2'}
+  //   ];
+  //
+  //   transfer.handleBulkErrors(results, bulkBody).then();
+  // });
+
   afterEach((done)=> {
     transfer.clearMutators();
     transfer.setUpdateCallback(null);
