@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "nyc --require babel-register mocha; nyc report --require babel-register --reporter=html",
-    "build": "babel index.js -d build && babel config -d build/config && babel lib -d build/lib",
+    "build": "babel index.js -d build && babel config -d build/config && babel lib -d build/lib && babel mutators -d build/mutators && babel filters -d build/filters && babel comparators -d build/comparators",
     "coverage": "nyc report --require babel-register --reporter=text-lcov | coveralls",
     "report": "nyc report --require babel-register --reporter=html"
   },
@@ -18,6 +18,10 @@
       "lib/master.js",
       "test/*"
     ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/groupby/gb-es-reindexer.git"
   },
   "author": "",
   "license": "MIT",
