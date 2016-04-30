@@ -120,11 +120,34 @@ describe('transfer', function () {
     });
   };
 
-  it('should not fail if there are no templates', (done) => {
+  it('should throw if getTemplates arg is not a non-zero string', () => {
+    let throws = ()=>{
+      transfer.getTemplates({});
+    };
+    expect(throws).to.throw(/targetTemplates must be string with length/);
+
+    throws = ()=>{
+      transfer.getTemplates(()=>{});
+    };
+    expect(throws).to.throw(/targetTemplates must be string with length/);
+
+    throws = ()=>{
+      transfer.getTemplates(1);
+    };
+    expect(throws).to.throw(/targetTemplates must be string with length/);
+
+    throws = ()=>{
+      transfer.getTemplates('');
+    };
+    expect(throws).to.throw(/targetTemplates must be string with length/);
+  });
+
+  it('should reject if there are no templates', (done) => {
     transfer.getTemplates('*').then(()=> {
+      done('fail');
+    }).catch((error)=> {
+      expect(error).to.match(/Templates asked to be copied, but none found/);
       done();
-    }).catch((res)=> {
-      done('fail' + res);
     });
   });
 
@@ -250,6 +273,14 @@ describe('transfer', function () {
     });
   });
 
+  it('should reject if there is an error during get indices', (done)=> {
+    transfer.getIndices('missingIndexName').then(()=>{
+      done('fail');
+    }).catch(()=>{
+      done();
+    });
+  });
+
   it('should put indices', (done)=> {
     var index = {
       settings: {
@@ -298,6 +329,31 @@ describe('transfer', function () {
     }).catch((error)=> {done(error);});
   });
 
+  it('should reject if there is an error during put indices', (done)=> {
+    var indices = [{
+      name: 'something',
+      settings: {
+        number_of_shards:   -100
+      },
+      mappings: {
+        type1: {
+          properties: {
+            field1: {type: "string"}
+          }
+        }
+      },
+      aliases:  {
+        alias_1: {}
+      }
+    }];
+
+    transfer.putIndices(indices).then(()=> {
+      done('fail');
+    }).catch(()=> {
+      done();
+    });
+  });
+
   it('should get all data in given index and type', (done)=> {
     addLotsOfData().then(()=> {
       return transfer.transferData('myindex1', 'mytype1', {});
@@ -338,6 +394,14 @@ describe('transfer', function () {
 
     expect(throws).to.throw(/if provided, body must be an object/);
     done();
+  });
+
+  it('should reject if index does not exist', (done)=> {
+    transfer.transferData('notthere', 'mytype1').then(()=>{
+      done('fail');
+    }).catch(()=>{
+      done();
+    });
   });
 
   it('should call callback with status updates', (done)=> {
@@ -464,6 +528,40 @@ describe('transfer', function () {
     };
 
     expect(throws).to.throw(/No \.js file\(s\) at/);
+  });
+
+  it('should return the original when no mutator is present', (done)=>{
+    source.indices.create({
+      index: 'index_to_mutate',
+      body:  {settings: {number_of_shards: 4}}
+    }).then(()=> {
+      return transfer.transferIndices('index_to_mutate');
+    }).then(()=> {
+      return dest.indices.refresh();
+    }).then(()=> {
+      return dest.indices.get({index: 'index_to_mutate'});
+    }).then((index)=> {
+      expect(index.index_to_mutate.settings.index.number_of_shards).to.eql('4');
+      done();
+    });
+  });
+
+  it('should return the original when the mutator does not apply', (done)=> {
+    transfer.loadMutators(__dirname + '/testMutators/indexMutator.js');
+
+    source.indices.create({
+      index: 'index_not_to_mutate',
+      body:  {settings: {number_of_shards: 4}}
+    }).then(()=> {
+      return transfer.transferIndices('index_not_to_mutate');
+    }).then(()=> {
+      return dest.indices.refresh();
+    }).then(()=> {
+      return dest.indices.get({index: 'index_not_to_mutate'});
+    }).then((index)=> {
+      expect(index.index_not_to_mutate.settings.index.number_of_shards).to.eql('4');
+      done();
+    });
   });
 
   it('should use index mutator to change index during transfer', (done)=> {

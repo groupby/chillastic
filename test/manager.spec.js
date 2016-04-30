@@ -222,6 +222,22 @@ describe('job manager', function () {
     expect(target.types).to.include('newtype');
   });
 
+  it('filter out types by regex string', ()=> {
+    manager.setTypeFilter('^newtype$');
+
+    let filtered = manager.filterIndicesAndTypes(allIndices);
+
+    expect(_.size(filtered)).to.eql(2);
+
+    let target = _.find(filtered, {index: 'index_number_1'});
+    expect(_.size(target.types)).to.eql(1);
+    expect(target.types).to.include('newtype');
+
+    target = _.find(filtered, {index: 'index_number_2'});
+    expect(_.size(target.types)).to.eql(1);
+    expect(target.types).to.include('newtype');
+  });
+
   it('filter out types by function', ()=> {
     manager.setTypeFilter((type)=> {
       return type.name === 'newtype_3';
@@ -262,6 +278,34 @@ describe('job manager', function () {
     expect(throws).to.throw(/was interpreted as a path and cannot be found\. Must be a path to a module, regex or function/);
   });
 
+  it('should not accept index comparator that is not a function', ()=>{
+    let throws = ()=>{
+      manager.setIndexComparator({});
+    };
+
+    expect(throws).to.throw(/comparator must be a function that takes 2 arguments/);
+  });
+
+  it('should not accept index comparator does not take two arguments', ()=>{
+    let throws = ()=>{
+      manager.setIndexComparator(()=>{});
+    };
+
+    expect(throws).to.throw(/comparator must be a function that takes 2 arguments/);
+
+    throws = ()=>{
+      manager.setIndexComparator((arg)=>{});
+    };
+
+    expect(throws).to.throw(/comparator must be a function that takes 2 arguments/);
+
+    throws = ()=>{
+      manager.setIndexComparator((arg, arg2, arg3)=>{});
+    };
+
+    expect(throws).to.throw(/comparator must be a function that takes 2 arguments/);
+  });
+
   it('should sort indices depending on comparator', (done)=> {
     manager.setIndexComparator((a, b)=> {
       return a.localeCompare(b);
@@ -296,7 +340,7 @@ describe('job manager', function () {
     });
   });
 
-  it('should prep job backlog', (done)=> {
+  it('should prep job backlog considering completed jobs', (done)=> {
     manager.setIndexComparator((a, b)=> {
       return a.localeCompare(b);
     });
@@ -318,6 +362,74 @@ describe('job manager', function () {
       return manager.fetchJob();
     }).then((job)=> {
       expect(job.index).to.eql('myindex1');
+      return manager.fetchJob();
+    }).then((job)=> {
+      expect(job.index).to.eql('myindex3');
+      return manager.fetchJob();
+    }).then((job)=> {
+      expect(job.index).to.eql('myindex3');
+      return manager.fetchJob();
+    }).then((job)=> {
+      expect(job).to.be.null;
+      done();
+    });
+  });
+
+  it('should prep job backlog and ignore completed', (done)=> {
+    manager.setIndexComparator((a, b)=> {
+      return a.localeCompare(b);
+    });
+
+    var completedJob = {
+      index: 'myindex2',
+      type:  'mytype1',
+      count: 10
+    };
+
+    manager.completeJob(completedJob).then(()=> {
+      return addData(source);
+    }).then(()=> {
+      return manager.initialize('*', true);
+    }).then(()=> {
+      return manager.fetchJob();
+    }).then((job)=> {
+      expect(job.index).to.eql('myindex1');
+      return manager.fetchJob();
+    }).then((job)=> {
+      expect(job.index).to.eql('myindex1');
+      return manager.fetchJob();
+    }).then((job)=> {
+      expect(job.index).to.eql('myindex2');
+      return manager.fetchJob();
+    }).then((job)=> {
+      expect(job.index).to.eql('myindex3');
+      return manager.fetchJob();
+    }).then((job)=> {
+      expect(job.index).to.eql('myindex3');
+      return manager.fetchJob();
+    }).then((job)=> {
+      expect(job).to.be.null;
+      done();
+    });
+  });
+
+  it('should prep job backlog with no completed jobs', (done)=> {
+    manager.setIndexComparator((a, b)=> {
+      return a.localeCompare(b);
+    });
+
+    addData(source).then(()=> {
+      return manager.initialize('*');
+    }).then(()=> {
+      return manager.fetchJob();
+    }).then((job)=> {
+      expect(job.index).to.eql('myindex1');
+      return manager.fetchJob();
+    }).then((job)=> {
+      expect(job.index).to.eql('myindex1');
+      return manager.fetchJob();
+    }).then((job)=> {
+      expect(job.index).to.eql('myindex2');
       return manager.fetchJob();
     }).then((job)=> {
       expect(job.index).to.eql('myindex3');
@@ -379,6 +491,33 @@ describe('job manager', function () {
       expect(job.count).to.eql(jobs[3].count);
       return manager.fetchJob();
     }).then((job)=> {
+      expect(job).to.be.null;
+      done();
+    });
+  });
+
+  it('should not add the same job twice', (done)=>{
+    var jobs = [
+      {
+        index: 'index1',
+        type:  'type1',
+        count: 22
+      },
+      {
+        index: 'index1',
+        type:  'type1',
+        count: 22
+      }
+    ];
+
+    Promise.each(jobs, manager.queueJob).then(()=> {
+      return manager.fetchJob();
+    }).then((job)=> {
+      expect(job.index).to.eql(jobs[0].index);
+      expect(job.type).to.eql(jobs[0].type);
+      expect(job.count).to.eql(jobs[0].count);
+      return manager.fetchJob();
+    }).then((job)=>{
       expect(job).to.be.null;
       done();
     });
@@ -506,8 +645,81 @@ describe('job manager', function () {
     });
   });
 
+  it('should get completed job count', (done)=> {
+    var jobs = [
+      {
+        index: 'index1',
+        type:  'type1',
+        count: 22
+      },
+      {
+        index: 'index2',
+        type:  'type1',
+        count: 15
+      },
+      {
+        index: 'index1',
+        type:  'type2',
+        count: 9
+      },
+      {
+        index: 'index4',
+        type:  'type1',
+        count: 120
+      }
+    ];
+
+    Promise.each(jobs, manager.completeJob).then(()=> {
+      return manager.getCompletedCount();
+    }).then((completedCount)=> {
+      expect(completedCount).to.eql(166);
+      done();
+    });
+  });
+
+  it('should clear completed jobs', (done)=> {
+    var jobs = [
+      {
+        index: 'index1',
+        type:  'type1',
+        count: 22
+      },
+      {
+        index: 'index2',
+        type:  'type1',
+        count: 15
+      },
+      {
+        index: 'index1',
+        type:  'type2',
+        count: 9
+      },
+      {
+        index: 'index4',
+        type:  'type1',
+        count: 120
+      }
+    ];
+
+    Promise.each(jobs, manager.completeJob).then(()=> {
+      return manager.clearCompletedJobs();
+    }).then(()=> {
+      return manager.getCompletedCount();
+    }).then((completedCount)=> {
+      expect(completedCount).to.eql(0);
+      done();
+    });
+  });
+
   it('should return an empty array when there are no completed jobs', (done)=> {
     manager.getCompletedJobs().then((jobs)=> {
+      expect(jobs).to.eql([]);
+      done();
+    });
+  });
+
+  it('should return an empty array when there are no backlog jobs', (done)=> {
+    manager.getBacklogJobs().then((jobs)=> {
       expect(jobs).to.eql([]);
       done();
     });
@@ -560,6 +772,54 @@ describe('job manager', function () {
       expect(target.index).to.eql(jobs[3].index);
       expect(target.type).to.eql(jobs[3].type);
       expect(target.count).to.eql(jobs[3].count);
+      done();
+    });
+  });
+
+  it('should clear all backlog jobs', (done)=> {
+    var jobs = [
+      {
+        index: 'index1',
+        type:  'type1',
+        count: 22
+      },
+      {
+        index: 'index2',
+        type:  'type1',
+        count: 15
+      },
+      {
+        index: 'index1',
+        type:  'type2',
+        count: 9
+      },
+      {
+        index: 'index4',
+        type:  'type1',
+        count: 120
+      }
+    ];
+
+    Promise.each(jobs, manager.queueJob).then(()=> {
+      return manager.clearBacklogJobs();
+    }).then(()=> {
+      return manager.getBacklogJobs();
+    }).then((backlogJobs)=> {
+      expect(backlogJobs).to.eql([]);
+      done();
+    });
+  });
+
+  it('should return count of zero for empty completed', (done)=>{
+    manager.getCompletedCount().then((count)=>{
+      expect(count).to.eql(0);
+      done();
+    });
+  });
+
+  it('should return count of zero for empty backlog', (done)=>{
+    manager.getBacklogCount().then((count)=>{
+      expect(count).to.eql(0);
       done();
     });
   });

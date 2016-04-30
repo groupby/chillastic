@@ -4,22 +4,20 @@
   "description": "Reindex multiple elasticsearch indices, save your progress, mutate your data in-flight.",
   "main": "index.js",
   "scripts": {
-    "test": "nyc --require babel-register mocha",
+    "test": "nyc --require babel-register mocha; nyc report --require babel-register --reporter=html",
     "build": "babel index.js -d build && babel config -d build/config && babel lib -d build/lib",
     "coverage": "nyc report --require babel-register --reporter=text-lcov | coveralls",
     "report": "nyc report --require babel-register --reporter=html"
   },
   "nyc": {
     "lines": 93,
-    "branches": 70,
-    "functions": 90,
+    "branches": 80,
+    "functions": 95,
     "statements": 93,
     "check-coverage": true,
     "exclude": [
       "lib/master.js",
-      "test/master.spec.js",
-      "test/testMutators/",
-      "test/invalidMutators"
+      "test/*"
     ]
   },
   "author": "",
@@ -33,6 +31,7 @@
     "ioredis": "^1.15.1",
     "lodash": "^4.11.1",
     "moment": "^2.13.0",
+    "moment-duration-format": "^1.3.0",
     "multi-progress": "^1.0.0",
     "node-progress-3": "https://github.com/crash83k/node-progress-3/archive/0.3.2.tar.gz",
     "nyc": "^6.4.0",
