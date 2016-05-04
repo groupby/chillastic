@@ -1,5 +1,5 @@
 {
-  "name": "gb-es-reindexer",
+  "name": "relastic",
   "version": "0.0.1",
   "description": "Reindex multiple elasticsearch indices, save your progress, mutate your data in-flight.",
   "main": "index.js",
@@ -20,7 +20,7 @@
     ]
   },
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "bluebird": "^3.3.5",
     "bunyan": "^1.8.0",
