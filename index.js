@@ -92,7 +92,7 @@ if (cluster.isMaster) {
   var master = new Master(options.source, options.dest);
   master.start(params);
 } else {
-  var worker = new Worker(options.source, options.dest);
+  var worker = new Worker(options.source, options.dest, params.mutators);
 
   worker.start(true);
 }
