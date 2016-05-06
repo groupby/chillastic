@@ -53,6 +53,8 @@ var options = stdio.getopt({
   }
 });
 
+// TODO: Pass in ignoreCompleted
+
 if (options.h) {
   console.log('options.args.length: ' + options.args.length);
   console.log(JSON.stringify(options, null, 2));
