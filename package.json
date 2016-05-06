@@ -1,13 +1,14 @@
 {
-  "name": "relastic",
+  "name": "chillastic",
   "version": "0.0.1",
   "description": "Reindex multiple elasticsearch indices, save your progress, mutate your data in-flight.",
   "main": "index.js",
   "scripts": {
     "test": "nyc --require babel-register mocha; nyc report --require babel-register --reporter=html",
-    "build": "babel index.js -d build && babel config -d build/config && babel lib -d build/lib",
+    "build": "babel index.js -d build && babel config -d build/config && babel lib -d build/lib && babel examples -d build/examples",
     "coverage": "nyc report --require babel-register --reporter=text-lcov | coveralls",
-    "report": "nyc report --require babel-register --reporter=html"
+    "report": "nyc report --require babel-register --reporter=html",
+    "postinstall": "npm run build"
   },
   "nyc": {
     "lines": 93,
@@ -19,7 +20,11 @@
       "test/*"
     ]
   },
-  "author": "",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/groupby/chillastic.git"
+  },
+  "author": "Eric Hacke",
   "license": "MIT",
   "dependencies": {
     "bluebird": "^3.3.5",
