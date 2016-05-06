@@ -81,6 +81,7 @@ node index.js --source localhost:9200 --dest localhost:9201 -d '*' --mutators '.
 So what does all this do?
 
 Operations are performed in the following order. None of these steps are mandatory and are only executed if the arguments are provided.
+
 1. Index configurations are run through any relevant mutators and transferred
 1. Templates are run through any relevant mutators and transferred
 1. Find indices for data transfer based on names provided, then filter and sort those indices.
@@ -97,6 +98,7 @@ Any errors while transferring the index configurations or templates will halt th
 If an `es_rejected_execution_exception` is detected during data transfer, those records are retried after a random sleep as this only indicates the target is overwhelmed by input. Any other type of error during data transfer results in the entire job failing and being re-added to the end of the job queue to be tried again later.
 
 ### Future features
+
 - Dry run mode
 - Allow data transfers to be sub-divided based on range queries to a specific field (eg split by a data field)
 - Automatic scaling based on search response time from the source, and errors during writes to destination to maximize throughput
