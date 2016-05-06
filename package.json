@@ -5,9 +5,10 @@
   "main": "index.js",
   "scripts": {
     "test": "nyc --require babel-register mocha; nyc report --require babel-register --reporter=html",
-    "build": "babel index.js -d build && babel config -d build/config && babel lib -d build/lib && babel mutators -d build/mutators && babel filters -d build/filters && babel comparators -d build/comparators",
+    "build": "babel index.js -d build && babel config -d build/config && babel lib -d build/lib && babel examples -d build/examples",
     "coverage": "nyc report --require babel-register --reporter=text-lcov | coveralls",
-    "report": "nyc report --require babel-register --reporter=html"
+    "report": "nyc report --require babel-register --reporter=html",
+    "postinstall": "npm run build"
   },
   "nyc": {
     "lines": 93,

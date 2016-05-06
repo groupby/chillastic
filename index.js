@@ -1,4 +1,5 @@
 import cluster from 'cluster';
+import path from 'path';
 import Master from './lib/master';
 import Worker from './lib/worker';
 import stdio from 'stdio';
