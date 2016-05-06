@@ -1,5 +1,5 @@
 import moment from 'moment';
-import config from '../config';
+import config from '../../config';
 var log = config.log;
 
 var OLD_DATE_FORMAT = 'YYYY-MM-DD';

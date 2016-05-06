@@ -1,5 +1,3 @@
-import _ from 'lodash';
-
 module.exports = {
   type:      'template',
   predicate: function () {
