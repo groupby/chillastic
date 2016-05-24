@@ -1,23 +1,23 @@
-import { expect } from 'chai';
-import Transfer from '../lib/transfer';
-import createEsClient from '../config/elasticsearch.js'
-import config from '../config';
-import _ from 'lodash';
+const expect         = require('chai').expect;
+const Transfer       = require('../app/transfer');
+const createEsClient = require('../config/elasticsearch.js');
+const config         = require('../config');
+const _              = require('lodash');
 
-var log = config.log;
+const log = config.log;
 
-import Promise from 'bluebird';
+const Promise = require('bluebird');
 Promise.longStackTraces();
-Promise.onPossiblyUnhandledRejection(function (error) {
+Promise.onPossiblyUnhandledRejection((error) => {
   log.error('Likely error: ', error.stack);
 });
 
 describe('transfer', function () {
   this.timeout(5000);
 
-  var transfer = null;
-  var source   = null;
-  var dest     = null;
+  let transfer = null;
+  let source   = null;
+  let dest     = null;
 
   before((done)=> {
     source = createEsClient('localhost:9200', '1.4');
@@ -31,10 +31,12 @@ describe('transfer', function () {
       return transfer.source.indices.delete({index: '*'});
     }).finally(()=> {
       return transfer.dest.indices.delete({index: '*'});
-    }).finally(()=> { done(); });
+    }).finally(()=> {
+      done();
+    });
   });
 
-  var addTemplate = ()=> {
+  const addTemplate = ()=> {
     return transfer.source.indices.putTemplate({
       name: 'test_template',
       body: {
@@ -63,57 +65,7 @@ describe('transfer', function () {
     });
   };
 
-  var addData = ()=> {
-    return transfer.source.bulk({
-      refresh: true,
-      body:    [
-        {
-          index: {
-            _index: 'myindex1',
-            _type:  'mytype1'
-          }
-        },
-        {someField1: 'somedata1'},
-        {
-          index: {
-            _index: 'myindex1',
-            _type:  'mytype2'
-          }
-        },
-        {someField2: 'somedata2'},
-        {
-          index: {
-            _index: 'myindex2',
-            _type:  'mytype1'
-          }
-        },
-        {someField1: 'somedata1'},
-        {
-          index: {
-            _index: 'myindex3',
-            _type:  'mytype2'
-          }
-        },
-        {someField2: 'somedata2'},
-        {
-          index: {
-            _index: 'myindex3',
-            _type:  'mytype3'
-          }
-        },
-        {someField2: 'somedata3'},
-        {
-          index: {
-            _index: 'myindex3',
-            _type:  'mytype3'
-          }
-        },
-        {someField2: 'somedata3'},
-      ]
-    });
-  };
-
-  var addLotsOfData = ()=> {
+  const addLotsOfData = ()=> {
     return transfer.source.bulk({
       refresh: true,
       body:    require('./lotsOfData.json')
@@ -121,22 +73,22 @@ describe('transfer', function () {
   };
 
   it('should throw if getTemplates arg is not a non-zero string', () => {
-    let throws = ()=>{
+    let throws = ()=> {
       transfer.getTemplates({});
     };
     expect(throws).to.throw(/targetTemplates must be string with length/);
 
-    throws = ()=>{
-      transfer.getTemplates(()=>{});
+    throws = ()=> {
+      transfer.getTemplates(()=> {});
     };
     expect(throws).to.throw(/targetTemplates must be string with length/);
 
-    throws = ()=>{
+    throws = ()=> {
       transfer.getTemplates(1);
     };
     expect(throws).to.throw(/targetTemplates must be string with length/);
 
-    throws = ()=>{
+    throws = ()=> {
       transfer.getTemplates('');
     };
     expect(throws).to.throw(/targetTemplates must be string with length/);
@@ -153,19 +105,21 @@ describe('transfer', function () {
 
   it('should get templates', (done) => {
     addTemplate().then(()=> {
-        return transfer.getTemplates('*').then((templates)=> {
-          expect(templates).to.be.instanceOf(Array);
-          expect(_.size(templates)).to.eql(1);
-          expect(templates[0].name).to.eql('test_template');
-          expect(templates[0].template).to.eql('te*');
-          done();
-        });
-      })
-      .catch((error)=> { done('fail' + error); });
+      return transfer.getTemplates('*').then((templates)=> {
+        expect(templates).to.be.instanceOf(Array);
+        expect(_.size(templates)).to.eql(1);
+        expect(templates[0].name).to.eql('test_template');
+        expect(templates[0].template).to.eql('te*');
+        done();
+      });
+    })
+      .catch((error)=> {
+        done(`fail ${error}`);
+      });
   });
 
   it('should put templates', (done)=> {
-    var sourceTemplates = [
+    const sourceTemplates = [
       {
         name:     'test_template',
         template: "te*",
@@ -229,7 +183,7 @@ describe('transfer', function () {
   });
 
   it('should get indices', (done)=> {
-    var index = {
+    const index = {
       settings: {
         number_of_shards:   1,
         number_of_replicas: 2
@@ -274,15 +228,15 @@ describe('transfer', function () {
   });
 
   it('should reject if there is an error during get indices', (done)=> {
-    transfer.getIndices('missingIndexName').then(()=>{
+    transfer.getIndices('missingIndexName').then(()=> {
       done('fail');
-    }).catch(()=>{
+    }).catch(()=> {
       done();
     });
   });
 
   it('should put indices', (done)=> {
-    var index = {
+    const index = {
       settings: {
         number_of_shards:   1,
         number_of_replicas: 2
@@ -326,26 +280,30 @@ describe('transfer', function () {
       expect(response.twitter2.settings.index.number_of_replicas).to.eql('2');
       expect(response.twitter2.mappings.type1.properties.field1.type).to.eql('string');
       done();
-    }).catch((error)=> {done(error);});
+    }).catch((error)=> {
+      done(error);
+    });
   });
 
   it('should reject if there is an error during put indices', (done)=> {
-    var indices = [{
-      name: 'something',
-      settings: {
-        number_of_shards:   -100
-      },
-      mappings: {
-        type1: {
-          properties: {
-            field1: {type: "string"}
+    const indices = [
+      {
+        name:     'something',
+        settings: {
+          number_of_shards: -100
+        },
+        mappings: {
+          type1: {
+            properties: {
+              field1: {type: "string"}
+            }
           }
+        },
+        aliases:  {
+          alias_1: {}
         }
-      },
-      aliases:  {
-        alias_1: {}
       }
-    }];
+    ];
 
     transfer.putIndices(indices).then(()=> {
       done('fail');
@@ -370,7 +328,7 @@ describe('transfer', function () {
   });
 
   it('should throw if no indexName is provided', (done)=> {
-    let throws = ()=> {
+    const throws = ()=> {
       transfer.transferData(null, 'mytype1');
     };
 
@@ -379,7 +337,7 @@ describe('transfer', function () {
   });
 
   it('should throw if no typeName is provided', (done)=> {
-    let throws = ()=> {
+    const throws = ()=> {
       transfer.transferData('myindex', null);
     };
 
@@ -388,7 +346,7 @@ describe('transfer', function () {
   });
 
   it('should throw if body is not an object', (done)=> {
-    let throws = ()=> {
+    const throws = ()=> {
       transfer.transferData('myindex', 'mytype', 'body');
     };
 
@@ -397,15 +355,15 @@ describe('transfer', function () {
   });
 
   it('should reject if index does not exist', (done)=> {
-    transfer.transferData('notthere', 'mytype1').then(()=>{
+    transfer.transferData('notthere', 'mytype1').then(()=> {
       done('fail');
-    }).catch(()=>{
+    }).catch(()=> {
       done();
     });
   });
 
   it('should call callback with status updates', (done)=> {
-    var data = [];
+    const data = [];
 
     _.times(100, (n)=> {
       data.push({
@@ -414,7 +372,7 @@ describe('transfer', function () {
           _type:  'myindex1'
         }
       });
-      data.push({something: 'data' + n});
+      data.push({something: `data${n}`});
     });
 
     transfer.setUpdateCallback((status)=> {
@@ -427,7 +385,7 @@ describe('transfer', function () {
     source.bulk({body: data}).then((results)=> {
       if (results.errors) {
         log.error('errors', results);
-        return Promise.reject('errors: ' + results.errors);
+        return Promise.reject(`errors: ${results.errors}`);
       }
 
       return source.indices.refresh();
@@ -439,9 +397,9 @@ describe('transfer', function () {
   it('load all mutators from directory', ()=> {
     expect(_.size(transfer.getMutators())).to.eql(0);
 
-    transfer.loadMutators(__dirname + '/testMutators');
+    transfer.loadMutators(`${__dirname}/testMutators`);
 
-    let mutators = transfer.getMutators();
+    const mutators = transfer.getMutators();
     expect(_.size(mutators)).to.eql(3);
     expect(mutators['data']).to.have.length(1);
     expect(mutators['data'][0].type).to.eql('data');
@@ -460,9 +418,9 @@ describe('transfer', function () {
   it('should load a specific mutator', ()=> {
     expect(_.size(transfer.getMutators())).to.eql(0);
 
-    transfer.loadMutators(__dirname + '/testMutators/dataMutator.js');
+    transfer.loadMutators(`${__dirname}/testMutators/dataMutator.js`);
 
-    let mutators = transfer.getMutators();
+    const mutators = transfer.getMutators();
     expect(_.size(mutators)).to.eql(1);
     expect(mutators['data']).to.have.length(1);
     expect(mutators['data'][0].type).to.eql('data');
@@ -473,8 +431,8 @@ describe('transfer', function () {
   it('should not load a directory with malformed mutators', ()=> {
     expect(_.size(transfer.getMutators())).to.eql(0);
 
-    let throws = ()=> {
-      transfer.loadMutators(__dirname + '/invalidMutators');
+    const throws = ()=> {
+      transfer.loadMutators(`${__dirname}/invalidMutators`);
     };
 
     expect(throws).to.throw();
@@ -483,8 +441,8 @@ describe('transfer', function () {
   it('should not load a mutator with no mutate function', ()=> {
     expect(_.size(transfer.getMutators())).to.eql(0);
 
-    let throws = ()=> {
-      transfer.loadMutators(__dirname + '/invalidMutators/noMutateMutator.js');
+    const throws = ()=> {
+      transfer.loadMutators(`${__dirname}/invalidMutators/noMutateMutator.js`);
     };
 
     expect(throws).to.throw(/Mutator mutate\(\) not provided/);
@@ -493,8 +451,8 @@ describe('transfer', function () {
   it('should not load a mutator with no predicate function', ()=> {
     expect(_.size(transfer.getMutators())).to.eql(0);
 
-    let throws = ()=> {
-      transfer.loadMutators(__dirname + '/invalidMutators/noPredicateMutator.js');
+    const throws = ()=> {
+      transfer.loadMutators(`${__dirname}/invalidMutators/noPredicateMutator.js`);
     };
 
     expect(throws).to.throw(/Mutator predicate\(\) not provided/);
@@ -503,8 +461,8 @@ describe('transfer', function () {
   it('should not load a mutator with no type', ()=> {
     expect(_.size(transfer.getMutators())).to.eql(0);
 
-    let throws = ()=> {
-      transfer.loadMutators(__dirname + '/invalidMutators/noTypeMutator.js');
+    const throws = ()=> {
+      transfer.loadMutators(`${__dirname}/invalidMutators/noTypeMutator.js`);
     };
 
     expect(throws).to.throw(/Mutator type string not provided/);
@@ -513,8 +471,8 @@ describe('transfer', function () {
   it('should not load a mutator with invalid type', ()=> {
     expect(_.size(transfer.getMutators())).to.eql(0);
 
-    let throws = ()=> {
-      transfer.loadMutators(__dirname + '/invalidMutators/invalidType.js');
+    const throws = ()=> {
+      transfer.loadMutators(`${__dirname}/invalidMutators/invalidType.js`);
     };
 
     expect(throws).to.throw(/Mutator type 'wrong' not one of/);
@@ -523,14 +481,14 @@ describe('transfer', function () {
   it('should not load a mutator that isn\'t js', ()=> {
     expect(_.size(transfer.getMutators())).to.eql(0);
 
-    let throws = ()=> {
-      transfer.loadMutators(__dirname + '/invalidMutators/notAJsFile');
+    const throws = ()=> {
+      transfer.loadMutators(`${__dirname}/invalidMutators/notAJsFile`);
     };
 
     expect(throws).to.throw(/No \.js file\(s\) at/);
   });
 
-  it('should return the original when no mutator is present', (done)=>{
+  it('should return the original when no mutator is present', (done)=> {
     source.indices.create({
       index: 'index_to_mutate',
       body:  {settings: {number_of_shards: 4}}
@@ -547,7 +505,7 @@ describe('transfer', function () {
   });
 
   it('should return the original when the mutator does not apply', (done)=> {
-    transfer.loadMutators(__dirname + '/testMutators/indexMutator.js');
+    transfer.loadMutators(`${__dirname}/testMutators/indexMutator.js`);
 
     source.indices.create({
       index: 'index_not_to_mutate',
@@ -565,7 +523,7 @@ describe('transfer', function () {
   });
 
   it('should use index mutator to change index during transfer', (done)=> {
-    transfer.loadMutators(__dirname + '/testMutators/indexMutator.js');
+    transfer.loadMutators(`${__dirname}/testMutators/indexMutator.js`);
 
     source.indices.create({
       index: 'index_to_mutate',
@@ -589,7 +547,7 @@ describe('transfer', function () {
   });
 
   it('should use a template mutator to change template during transfer', (done)=> {
-    transfer.loadMutators(__dirname + '/testMutators/templateMutator.js');
+    transfer.loadMutators(`${__dirname}/testMutators/templateMutator.js`);
 
     source.indices.putTemplate({
       name: 'test_template',
@@ -605,7 +563,7 @@ describe('transfer', function () {
   });
 
   it('should use a data mutator to change documents during transfer', (done)=> {
-    transfer.loadMutators(__dirname + '/testMutators/dataMutator.js');
+    transfer.loadMutators(`${__dirname}/testMutators/dataMutator.js`);
 
     source.create({
       index: 'something_1990-05-21',
@@ -666,6 +624,8 @@ describe('transfer', function () {
       return transfer.source.indices.delete({index: '*'});
     }).finally(()=> {
       return transfer.dest.indices.delete({index: '*'});
-    }).finally(()=> { done(); });
+    }).finally(()=> {
+      done();
+    });
   });
 });

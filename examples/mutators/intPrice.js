@@ -1,7 +1,7 @@
-import _ from 'lodash';
+const _ = require('lodash');
 
 module.exports = {
-  type: 'data',
+  type:      'data',
   predicate: (doc)=> {
     if (_.has(doc._source, 'products') || _.has(doc._source, 'product')) {
       return true;
@@ -11,7 +11,7 @@ module.exports = {
   },
   mutate:    (doc)=> {
     if (_.has(doc._source, 'products')) {
-      doc._source.products = _.map((product)=>{
+      doc._source.products = _.map((product)=> {
         if (_.isInteger(product.price)) {
           product.price = product.price.toFixed(2);
         }

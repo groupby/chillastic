@@ -1,32 +1,32 @@
-import { expect } from 'chai';
-import Worker from '../lib/worker';
-import createEsClient from '../config/elasticsearch.js'
-import config from '../config';
-import redis from '../config/redis';
-import Manager from '../lib/manager';
-import _ from 'lodash';
+const expect         = require('chai').expect;
+const Worker         = require('../app/worker');
+const createEsClient = require('../config/elasticsearch.js');
+const config         = require('../config');
+const redis          = require('../config/redis');
+const Manager        = require('../app/manager');
+const _              = require('lodash');
 
-var log = config.log;
+const log = config.log;
 
-import Promise from 'bluebird';
+const Promise = require('bluebird');
 Promise.longStackTraces();
-Promise.onPossiblyUnhandledRejection(function (error) {
+Promise.onPossiblyUnhandledRejection((error) => {
   log.error('Likely error: ', error.stack);
 });
 
 describe('worker', function () {
   this.timeout(6000);
 
-  var worker  = null;
-  var manager = null;
-  var source  = null;
-  var dest    = null;
+  let worker  = null;
+  let manager = null;
+  let source  = null;
+  let dest    = null;
 
   before((done)=> {
     source = createEsClient('localhost:9200', '1.4');
     dest   = createEsClient('localhost:9201', '2.2');
 
-    worker = new Worker('localhost:9200', 'localhost:9201');
+    worker  = new Worker('localhost:9200', 'localhost:9201');
     manager = new Manager(source);
 
     source.indices.deleteTemplate({name: '*'}).finally(()=> {
@@ -37,11 +37,13 @@ describe('worker', function () {
       return dest.indices.delete({index: '*'});
     }).finally(()=> {
       return redis.flushdb();
-    }).finally(()=> { done(); });
+    }).finally(()=> {
+      done();
+    });
   });
 
   it('should transfer all data ', (done)=> {
-    var jobs = [
+    const jobs = [
       {
         index: 'first',
         type:  'type1'
@@ -56,7 +58,7 @@ describe('worker', function () {
       }
     ];
 
-    var data = [];
+    const data = [];
 
     _.times(100, (n)=> {
       data.push({
@@ -65,7 +67,7 @@ describe('worker', function () {
           _type:  jobs[0].type
         }
       });
-      data.push({something: 'data' + n});
+      data.push({something: `data${n}`});
     });
 
     _.times(80, (n)=> {
@@ -75,7 +77,7 @@ describe('worker', function () {
           _type:  jobs[1].type
         }
       });
-      data.push({something: 'data' + n});
+      data.push({something: `data${n}`});
     });
 
     _.times(20, (n)=> {
@@ -85,11 +87,11 @@ describe('worker', function () {
           _type:  jobs[2].type
         }
       });
-      data.push({something: 'data' + n});
+      data.push({something: `data${n}`});
     });
 
-    var totalTransferred = 0;
-    var progressUpdates = (update)=>{
+    let totalTransferred = 0;
+    const progressUpdates  = (update)=> {
       // log.info('update', update);
       totalTransferred += update.tick;
     };
@@ -99,7 +101,7 @@ describe('worker', function () {
     source.bulk({body: data}).then((results)=> {
       if (results.errors) {
         log.error('errors', results);
-        return Promise.reject('errors: ' + results.errors);
+        return Promise.reject(`errors: ${results.errors}`);
       }
 
       return source.indices.refresh();
@@ -118,23 +120,32 @@ describe('worker', function () {
     }).then((backlogJobs)=> {
       expect(backlogJobs.length).to.eql(3);
 
-      let target = _.find(backlogJobs, {index: 'first', type: 'type1'});
+      let target = _.find(backlogJobs, {
+        index: 'first',
+        type:  'type1'
+      });
       expect(target.count).to.eql(100);
 
-      target = _.find(backlogJobs, {index: 'first', type: 'type2'});
+      target = _.find(backlogJobs, {
+        index: 'first',
+        type:  'type2'
+      });
       expect(target.count).to.eql(80);
 
-      target = _.find(backlogJobs, {index: 'second', type: 'mytype1'});
+      target = _.find(backlogJobs, {
+        index: 'second',
+        type:  'mytype1'
+      });
       expect(target.count).to.eql(20);
 
       return worker.start();
-    }).then(()=>{
+    }).then(()=> {
       expect(totalTransferred).to.eql(200);
       done();
     });
   });
 
-  afterEach(()=>{
+  afterEach(()=> {
     worker._overrideProgresUpdate(null);
   });
 
@@ -147,6 +158,8 @@ describe('worker', function () {
       return dest.indices.delete({index: '*'});
     }).finally(()=> {
       return redis.flushdb();
-    }).finally(()=> { done(); });
+    }).finally(()=> {
+      done();
+    });
   });
 });

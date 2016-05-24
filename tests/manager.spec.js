@@ -1,23 +1,24 @@
-import { expect } from 'chai';
-import Manager from '../lib/manager';
-import config from '../config';
-import createEsClient from '../config/elasticsearch.js'
-import redis from '../config/redis';
-import _ from 'lodash';
+/*eslint no-magic-numbers: "off"*/
+const expect         = require('chai').expect;
+const Manager        = require('../app/manager');
+const config         = require('../config');
+const createEsClient = require('../config/elasticsearch.js');
+const redis          = require('../config/redis');
+const _              = require('lodash');
 
-var log = config.log;
+const log = config.log;
 
-import Promise from 'bluebird';
+const Promise = require('bluebird');
 Promise.longStackTraces();
-Promise.onPossiblyUnhandledRejection(function (error) {
+Promise.onPossiblyUnhandledRejection((error) => {
   log.error('Likely error: ', error.stack);
 });
 
-describe('job manager', function () {
+describe('job manager', () => {
   // this.timeout(8000);
 
-  var manager = null;
-  var source  = null;
+  let manager = null;
+  let source  = null;
 
   before((done)=> {
     source = createEsClient('localhost:9200', '1.4');
@@ -28,10 +29,12 @@ describe('job manager', function () {
       return source.indices.delete({index: '*'});
     }).finally(()=> {
       return redis.flushdb();
-    }).finally(()=> { done(); });
+    }).finally(()=> {
+      done();
+    });
   });
 
-  var allIndices = [
+  const allIndices = [
     {
       name:     'index_number_1',
       aliases:  {},
@@ -105,7 +108,7 @@ describe('job manager', function () {
     }
   ];
 
-  var addData = (client)=> {
+  const addData = (client)=> {
     return client.bulk({
       refresh: true,
       body:    [
@@ -163,18 +166,18 @@ describe('job manager', function () {
     }).then((indices)=> {
       expect(_.size(indices)).to.eql(3);
 
-      let myindex1 = _.find(indices, {name: 'myindex1'});
+      const myindex1 = _.find(indices, {name: 'myindex1'});
       expect(myindex1).to.be.defined;
       expect(_.size(myindex1.mappings)).to.eql(2);
       expect(myindex1.mappings.mytype1).to.be.defined;
       expect(myindex1.mappings.mytype2).to.be.defined;
 
-      let myindex2 = _.find(indices, {name: 'myindex2'});
+      const myindex2 = _.find(indices, {name: 'myindex2'});
       expect(myindex2).to.be.defined;
       expect(_.size(myindex2.mappings)).to.eql(1);
       expect(myindex2.mappings.mytype1).to.be.defined;
 
-      let myindex3 = _.find(indices, {name: 'myindex3'});
+      const myindex3 = _.find(indices, {name: 'myindex3'});
       expect(myindex3).to.be.defined;
       expect(_.size(myindex1.mappings)).to.eql(2);
       expect(myindex3.mappings.mytype2).to.be.defined;
@@ -199,7 +202,7 @@ describe('job manager', function () {
       return index.name === 'index_number_2';
     });
 
-    let filtered = manager.filterIndicesAndTypes(allIndices);
+    const filtered = manager.filterIndicesAndTypes(allIndices);
 
     expect(_.size(filtered)).to.eql(1);
     expect(filtered[0].index).to.eql('index_number_2');
@@ -209,7 +212,7 @@ describe('job manager', function () {
   it('filter out types by regex', ()=> {
     manager.setTypeFilter(/^newtype$/);
 
-    let filtered = manager.filterIndicesAndTypes(allIndices);
+    const filtered = manager.filterIndicesAndTypes(allIndices);
 
     expect(_.size(filtered)).to.eql(2);
 
@@ -225,7 +228,7 @@ describe('job manager', function () {
   it('filter out types by regex string', ()=> {
     manager.setTypeFilter('^newtype$');
 
-    let filtered = manager.filterIndicesAndTypes(allIndices);
+    const filtered = manager.filterIndicesAndTypes(allIndices);
 
     expect(_.size(filtered)).to.eql(2);
 
@@ -243,7 +246,7 @@ describe('job manager', function () {
       return type.name === 'newtype_3';
     });
 
-    let filtered = manager.filterIndicesAndTypes(allIndices);
+    const filtered = manager.filterIndicesAndTypes(allIndices);
 
     expect(_.size(filtered)).to.eql(1);
 
@@ -263,44 +266,44 @@ describe('job manager', function () {
     expect(throws).to.throw(/filter function must take at least one argument/);
 
     throws = ()=> {
-      manager.getFilterFunction(__dirname + '/testMutators/dataMutator.js');
+      manager.getFilterFunction(`${__dirname}/testMutators/dataMutator.js`);
     };
     expect(throws).to.throw(/was interpreted as a path and module does not return a function\. Must be a path to a module, regex or function/);
 
     throws = ()=> {
-      manager.getFilterFunction(__dirname + '/testMutators/notJs.txt');
+      manager.getFilterFunction(`${__dirname}/testMutators/notJs.txt`);
     };
     expect(throws).to.throw(/was interpreted as a path to a non-js file\. Must be a path to a module, regex or function/);
 
     throws = ()=> {
-      manager.getFilterFunction(__dirname + '/testMutators/nonexistent.js');
+      manager.getFilterFunction(`${__dirname}/testMutators/nonexistent.js`);
     };
     expect(throws).to.throw(/was interpreted as a path and cannot be found\. Must be a path to a module, regex or function/);
   });
 
-  it('should not accept index comparator that is not a function', ()=>{
-    let throws = ()=>{
+  it('should not accept index comparator that is not a function', ()=> {
+    const throws = ()=> {
       manager.setIndexComparator({});
     };
 
     expect(throws).to.throw(/comparator must be a function that takes 2 arguments/);
   });
 
-  it('should not accept index comparator does not take two arguments', ()=>{
-    let throws = ()=>{
-      manager.setIndexComparator(()=>{});
+  it('should not accept index comparator does not take two arguments', ()=> {
+    let throws = ()=> {
+      manager.setIndexComparator(()=> {});
     };
 
     expect(throws).to.throw(/comparator must be a function that takes 2 arguments/);
 
-    throws = ()=>{
-      manager.setIndexComparator((arg)=>{});
+    throws = ()=> {
+      manager.setIndexComparator((arg)=> {});
     };
 
     expect(throws).to.throw(/comparator must be a function that takes 2 arguments/);
 
-    throws = ()=>{
-      manager.setIndexComparator((arg, arg2, arg3)=>{});
+    throws = ()=> {
+      manager.setIndexComparator((arg, arg2, arg3)=> {});
     };
 
     expect(throws).to.throw(/comparator must be a function that takes 2 arguments/);
@@ -345,7 +348,7 @@ describe('job manager', function () {
       return a.localeCompare(b);
     });
 
-    var completedJob = {
+    const completedJob = {
       index: 'myindex2',
       type:  'mytype1',
       count: 10
@@ -380,7 +383,7 @@ describe('job manager', function () {
       return a.localeCompare(b);
     });
 
-    var completedJob = {
+    const completedJob = {
       index: 'myindex2',
       type:  'mytype1',
       count: 10
@@ -445,7 +448,7 @@ describe('job manager', function () {
 
 
   it('get jobs in the same order they were added', (done)=> {
-    var jobs = [
+    const jobs = [
       {
         index: 'index1',
         type:  'type1',
@@ -496,8 +499,8 @@ describe('job manager', function () {
     });
   });
 
-  it('should not add the same job twice', (done)=>{
-    var jobs = [
+  it('should not add the same job twice', (done)=> {
+    const jobs = [
       {
         index: 'index1',
         type:  'type1',
@@ -517,7 +520,7 @@ describe('job manager', function () {
       expect(job.type).to.eql(jobs[0].type);
       expect(job.count).to.eql(jobs[0].count);
       return manager.fetchJob();
-    }).then((job)=>{
+    }).then((job)=> {
       expect(job).to.be.null;
       done();
     });
@@ -595,7 +598,7 @@ describe('job manager', function () {
   });
 
   it('should get all completed jobs', (done)=> {
-    var jobs = [
+    const jobs = [
       {
         index: 'index1',
         type:  'type1',
@@ -646,7 +649,7 @@ describe('job manager', function () {
   });
 
   it('should get completed job count', (done)=> {
-    var jobs = [
+    const jobs = [
       {
         index: 'index1',
         type:  'type1',
@@ -678,7 +681,7 @@ describe('job manager', function () {
   });
 
   it('should clear completed jobs', (done)=> {
-    var jobs = [
+    const jobs = [
       {
         index: 'index1',
         type:  'type1',
@@ -726,7 +729,7 @@ describe('job manager', function () {
   });
 
   it('should return all backlog jobs', (done)=> {
-    var jobs = [
+    const jobs = [
       {
         index: 'index1',
         type:  'type1',
@@ -777,7 +780,7 @@ describe('job manager', function () {
   });
 
   it('should clear all backlog jobs', (done)=> {
-    var jobs = [
+    const jobs = [
       {
         index: 'index1',
         type:  'type1',
@@ -810,22 +813,22 @@ describe('job manager', function () {
     });
   });
 
-  it('should return count of zero for empty completed', (done)=>{
-    manager.getCompletedCount().then((count)=>{
+  it('should return count of zero for empty completed', (done)=> {
+    manager.getCompletedCount().then((count)=> {
       expect(count).to.eql(0);
       done();
     });
   });
 
-  it('should return count of zero for empty backlog', (done)=>{
-    manager.getBacklogCount().then((count)=>{
+  it('should return count of zero for empty backlog', (done)=> {
+    manager.getBacklogCount().then((count)=> {
       expect(count).to.eql(0);
       done();
     });
   });
 
   it('should return total count of jobs in backlog', (done)=> {
-    var jobs = [
+    const jobs = [
       {
         index: 'index1',
         type:  'type1',
@@ -851,7 +854,7 @@ describe('job manager', function () {
     Promise.each(jobs, manager.queueJob).then(()=> {
       return manager.getBacklogCount();
     }).then((backlogTotal)=> {
-      let jobTotal = _.reduce(jobs, (total, job)=> {
+      const jobTotal = _.reduce(jobs, (total, job)=> {
         total += job.count;
         return total;
       }, 0);
@@ -862,7 +865,7 @@ describe('job manager', function () {
   });
 
   it('should get counts for provided jobs', (done)=> {
-    var jobs = [
+    const jobs = [
       {
         index: 'myindex1',
         type:  'mytype1'
@@ -895,6 +898,8 @@ describe('job manager', function () {
       return source.indices.delete({index: '*'});
     }).finally(()=> {
       return redis.flushdb();
-    }).finally(()=> { done(); });
+    }).finally(()=> {
+      done();
+    });
   });
 });

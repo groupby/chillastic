@@ -1,16 +1,16 @@
-import Promise from 'bluebird';
-import cluster from 'cluster';
+const Promise = require('bluebird');
+const cluster = require('cluster');
 
-import utils from '../config/utils';
-import Transfer from './transfer';
-import Manager from './manager';
-import config from '../config';
-import createEsClient from '../config/elasticsearch.js'
-var log = config.log;
+const utils          = require('../config/utils');
+const Transfer       = require('./transfer');
+const Manager        = require('./manager');
+const config         = require('../config');
+const createEsClient = require('../config/elasticsearch.js');
+const log            = config.log;
 
-var transfer               = null;
-var manager                = null;
-var overrideProgressUpdate = null;
+let transfer               = null;
+let manager                = null;
+let overrideProgressUpdate = null;
 
 /**
  * Worker constructor
@@ -19,9 +19,9 @@ var overrideProgressUpdate = null;
  * @param destUrl
  * @constructor
  */
-var Worker = function (sourceUrl, destUrl, mutators) {
-  log.info('worker created: ' + process.pid);
-  var self = this;
+const Worker = function (sourceUrl, destUrl, mutators) {
+  log.info(`worker created: ${process.pid}`);
+  const self    = this;
   self.source = createEsClient(sourceUrl, '1.4');
   self.dest   = createEsClient(destUrl, '2.2');
 
@@ -37,7 +37,7 @@ var Worker = function (sourceUrl, destUrl, mutators) {
   };
 
   self.start = (exitOnComplete) => {
-    log.info('worker: ' + process.pid + ' started...');
+    log.info(`worker: ${process.pid} started...`);
     return doJob().then(()=> {
       if (exitOnComplete) {
         process.exit();
@@ -55,7 +55,7 @@ var Worker = function (sourceUrl, destUrl, mutators) {
  *
  * @returns {Promise.<TResult>}
  */
-var doJob = ()=> {
+const doJob = ()=> {
   return manager.fetchJob().then((job)=> {
     if (job === null) {
       // log.warn('No more jobs. Complete');
@@ -83,7 +83,7 @@ var doJob = ()=> {
     return transfer.transferData(job.index, job.type).then(()=> {
       return manager.completeJob(job);
     }).catch((error)=> {
-      var message = 'Error: ' + JSON.stringify(error) + ' while processing job: ' + JSON.stringify(job);
+      const message = `Error: ${JSON.stringify(error)} while processing job: ${JSON.stringify(job)}`;
       progressUpdate({
         message: message,
         level:   'error'
@@ -102,7 +102,7 @@ var doJob = ()=> {
  *
  * @param message
  */
-var progressUpdate = (message)=> {
+const progressUpdate = (message)=> {
   if (overrideProgressUpdate) {
     overrideProgressUpdate(message);
   } else if (!cluster.isMaster) {
@@ -110,8 +110,8 @@ var progressUpdate = (message)=> {
     // log.info('message:', message);
     process.send(message);
   } else {
-    log.info('Msg not sent. Not running as worker: ', JSON.stringify(message, null, 2));
+    log.info(`Msg not sent. Not running as worker: ${JSON.stringify(message, null, 2)}`);
   }
 };
 
-export default Worker;
+module.exports = Worker;
