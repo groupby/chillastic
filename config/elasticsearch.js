@@ -1,45 +1,56 @@
-import elasticsearch from 'elasticsearch';
-import Promise from 'bluebird';
-import bunyan from 'bunyan';
-import PrettyStream from 'bunyan-prettystream';
-var prettyStdOut = new PrettyStream({mode: 'dev'});
+const config        = require('../config');
+const Promise       = require('bluebird');
+const elasticsearch = require('elasticsearch');
+const bunyan        = require('bunyan');
+const PrettyStream  = require('bunyan-prettystream');
+const prettyStdOut  = new PrettyStream({mode: 'dev'});
 prettyStdOut.pipe(process.stdout);
 
-function LogToBunyan(host) {
-  return function () {
-    var bun = bunyan.createLogger({
-      name:   'es-' + host,
-      type:   'raw',
-      level:  'warn',
-      stream: prettyStdOut
+const LogToBunyan = function () {
+  const self = this;
+  const bun  = bunyan.createLogger({
+    name:   `${config.FRAMEWORK_NAME}-es`,
+    type:   'raw',
+    level:  config.elasticsearch.logLevel,
+    stream: prettyStdOut
+  });
+
+  self.error   = bun.error.bind(bun);
+  self.warning = bun.warn.bind(bun);
+  self.info    = bun.info.bind(bun);
+  self.debug   = bun.debug.bind(bun);
+  self.trace   = (method, requestUrl, body, responseBody, responseStatus) => {
+    bun.trace({
+      method:         method,
+      requestUrl:     requestUrl,
+      body:           body,
+      responseBody:   responseBody,
+      responseStatus: responseStatus
     });
+  };
+  self.close   = () => {};
+};
 
-    this.error   = bun.error.bind(bun);
-    this.warning = bun.warn.bind(bun);
-    this.info    = bun.info.bind(bun);
-    this.debug   = bun.debug.bind(bun);
-    this.trace   = function (method, requestUrl, body, responseBody, responseStatus) {
-      bun.trace({
-        method:         method,
-        requestUrl:     requestUrl,
-        body:           body,
-        responseBody:   responseBody,
-        responseStatus: responseStatus
-      });
-    };
-    this.close   = function () { /* bunyan's loggers do not need to be closed */ };
-  }
-}
-
-var create = (host, version) => {
+const createEsClient = (host, apiVersion) => {
   return new elasticsearch.Client({
     host:       host,
-    apiVersion: version,
-    log:        LogToBunyan(host),
+    apiVersion: apiVersion,
+    log:        LogToBunyan,
     defer:      function () {
-      return Promise.defer();
+      let resolve = null;
+      let reject  = null;
+
+      const promise = new Promise((res, rej) => {
+        resolve = res;
+        reject  = rej;
+      });
+      return {
+        resolve: resolve,
+        reject:  reject,
+        promise: promise
+      };
     }
   });
 };
 
-export default create;
+module.exports = createEsClient;

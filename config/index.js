@@ -1,28 +1,39 @@
-import bunyan from 'bunyan';
-import fs from 'fs';
-import PrettyStream from 'bunyan-prettystream';
-var prettyStdOut = new PrettyStream({mode: 'dev'});
+const _            = require('lodash');
+const bunyan       = require('bunyan');
+const PrettyStream = require('bunyan-prettystream');
+const prettyStdOut = new PrettyStream({mode: 'dev'});
 prettyStdOut.pipe(process.stdout);
 
-var prettyFileOut = new PrettyStream({mode: 'dev', useColor: false});
-prettyFileOut.pipe(fs.createWriteStream('reindex.log'));
-
-var defaultConfig = {
-  log: bunyan.createLogger({
-    name:    'es-transfer',
+const createLogger = () => {
+  return bunyan.createLogger({
+    name:    currentConfig.FRAMEWORK_NAME,
     streams: [
       {
         type:   'raw',
-        level:  'info',
+        level:  currentConfig.logLevel,
         stream: prettyStdOut
-      },
-      {
-        type:   'raw',
-        level:  'info',
-        stream: prettyFileOut
       }
     ]
   })
 };
 
-export default defaultConfig;
+const setLogLevel = (level) => {
+  currentConfig.logLevel = level;
+  currentConfig.log = createLogger();
+};
+
+const DEFAULT_CONFIG = {
+  setLogLevel:     setLogLevel,
+  FRAMEWORK_NAME: 'chillastic',
+  logLevel:       'info',
+  elasticsearch:  {
+    logLevel: 'warn'
+  }
+};
+
+const currentConfig = {};
+_.defaultsDeep(currentConfig, DEFAULT_CONFIG);
+
+currentConfig.log = createLogger();
+
+module.exports = currentConfig;

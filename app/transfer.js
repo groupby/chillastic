@@ -1,32 +1,32 @@
-import Promise from 'bluebird';
-import _ from 'lodash';
-import fs from 'fs';
-import path from 'path';
-import config from '../config';
-var log = config.log;
+const Promise = require('bluebird');
+const _       = require('lodash');
+const fs      = require('fs');
+const path    = require('path');
+const config  = require('../config');
+const log     = config.log;
 
-var FLUSH_SIZE = 450;
+const FLUSH_SIZE = 450;
 
-var source = null;
-var dest   = null;
+let source = null;
+let dest   = null;
 
-var bulkQueue     = [];
-var mutators      = {};
-var MUTATOR_TYPES = [
+const bulkQueue     = [];
+let mutators        = {};
+const MUTATOR_TYPES = [
   'data',
   'template',
   'index'
 ];
 
-var queueSummary = {
+let queueSummary = {
   tick:        0,
   transferred: 0,
   scrolled:    0,
   errors:      0
 };
 
-var updateCallback    = null;
-var flushRetryCount   = 0;
+let updateCallback    = null;
+let flushRetryCount   = 0;
 const MAX_FLUSH_RETRY = 5;
 const MIN_RETRY_WAIT  = 2 * 1000;
 const MAX_RETRY_WAIT  = 7 * 1000;
@@ -39,8 +39,8 @@ const MAX_RETRY_WAIT  = 7 * 1000;
  * @returns {Transfer}
  * @constructor
  */
-var Transfer = function (sourceEs, destEs) {
-  var self = this;
+const Transfer = function (sourceEs, destEs) {
+  const self = this;
 
   self.source = sourceEs;
   source      = sourceEs;
@@ -92,11 +92,11 @@ var Transfer = function (sourceEs, destEs) {
  *
  * @param mutator
  */
-var addMutator = (mutator)=> {
+const addMutator = (mutator)=> {
   if (!_.isString(mutator.type)) {
     throw new Error('Mutator type string not provided');
   } else if (!_.includes(MUTATOR_TYPES, mutator.type)) {
-    throw new Error('Mutator type \'' + mutator.type + '\' not one of: [' + _.join(MUTATOR_TYPES, ',') + ']');
+    throw new Error(`Mutator type '${mutator.type}' not one of: [${_.join(MUTATOR_TYPES, ',')}]`);
   }
 
   if (!_.isFunction(mutator.predicate)) {
@@ -111,7 +111,7 @@ var addMutator = (mutator)=> {
     mutators[mutator.type] = [];
   }
 
-  log.info('adding mutator type ' + mutator.type);
+  log.info(`adding mutator type ${mutator.type}`);
 
   mutators[mutator.type].push(mutator);
 };
@@ -121,14 +121,14 @@ var addMutator = (mutator)=> {
  *
  * @param mutatorPath
  */
-var loadMutators = (mutatorPath)=> {
-  let files = [];
-  let isDir = fs.lstatSync(mutatorPath).isDirectory();
+const loadMutators = (mutatorPath)=> {
+  let files   = [];
+  const isDir = fs.lstatSync(mutatorPath).isDirectory();
 
   if (isDir) {
     files = fs.readdirSync(mutatorPath);
     files = _.map(files, (file)=> {
-      return mutatorPath + '/' + file;
+      return `${mutatorPath}/${file}`;
     });
   } else {
     files = [mutatorPath];
@@ -139,11 +139,11 @@ var loadMutators = (mutatorPath)=> {
   });
 
   if (files.length === 0) {
-    throw new Error('No .js file(s) at: ' + mutatorPath);
+    throw new Error(`No .js file(s) at: ${mutatorPath}`);
   }
 
   _.map(files, (file)=> {
-    log.info('loading mutator from file: ' + file);
+    log.info(`loading mutator from file: ${file}`);
     addMutator(require(file));
   });
 };
@@ -155,12 +155,12 @@ var loadMutators = (mutatorPath)=> {
  * @param type
  * @returns {*}
  */
-var mutate = (originals, type) => {
+const mutate = (originals, type) => {
   if (_.isArray(mutators[type]) && mutators[type].length > 0) {
     return _.reduce(originals, (result, original)=> {
-      for (var i = 0; i < mutators[type].length; i++) {
+      for (let i = 0; i < mutators[type].length; i++) {
         if (mutators[type][i].predicate(original)) {
-          let mutated = mutators[type][i].mutate(original);
+          const mutated = mutators[type][i].mutate(original);
 
           if (!_.isUndefined(mutated) && !_.isNull(mutated) && !_.isEmpty(mutated)) {
             original = mutated;
@@ -182,7 +182,7 @@ var mutate = (originals, type) => {
  * @param targetTemplates
  * @returns {Promise.<TResult>}
  */
-var getTemplates = (targetTemplates) => {
+const getTemplates = (targetTemplates) => {
   if (!_.isString(targetTemplates) || targetTemplates.length === 0) {
     throw new Error('targetTemplates must be string with length');
   }
@@ -211,13 +211,13 @@ var getTemplates = (targetTemplates) => {
  * @param templates
  * @returns {*|Array}
  */
-var putTemplates = (templates)=> {
+const putTemplates = (templates)=> {
   if (!_.isArray(templates)) {
     throw new Error('templates must be an array');
   }
 
   return Promise.map(templates, (template)=> {
-    let name = template.name;
+    const name = template.name;
     delete template.name;
 
     log.info('putting template: ', name);
@@ -243,7 +243,7 @@ var putTemplates = (templates)=> {
  * @param targetType
  * @param body
  */
-var mutateAndTransferData = (targetIndex, targetType, body) => {
+const mutateAndTransferData = (targetIndex, targetType, body) => {
   queueSummary = {
     tick:        0,
     transferred: 0,
@@ -276,7 +276,7 @@ var mutateAndTransferData = (targetIndex, targetType, body) => {
     // log.info('response', JSON.stringify(response, null, 2));
     // log.info('size', response.hits.hits.length);
 
-    var documents = [];
+    const documents = [];
     response.hits.hits.forEach((hit)=> {
       documents.push(hit);
       queueSummary.scrolled++;
@@ -287,9 +287,9 @@ var mutateAndTransferData = (targetIndex, targetType, body) => {
         return source.scroll({
           scroll_id: response._scroll_id,
           scroll:    '1m'
-        }).then((response)=> {
+        }).then((inner_response)=> {
           log.debug('scrolling: ', queueSummary);
-          return scrollAndGetData(response);
+          return scrollAndGetData(inner_response);
         });
       } else {
         return flushQueue().then(()=> {
@@ -311,7 +311,7 @@ var mutateAndTransferData = (targetIndex, targetType, body) => {
  * @param documents
  * @returns {*}
  */
-var putData = (documents) => {
+const putData = (documents) => {
   _.reduce(documents, docToBulk, bulkQueue);
 
   if (bulkQueue.length > FLUSH_SIZE) {
@@ -327,7 +327,7 @@ var putData = (documents) => {
  * @param indexNames
  * @returns {Promise.<TResult>}
  */
-var getIndices = (indexNames)=> {
+const getIndices = (indexNames)=> {
   if (!_.isString(indexNames) || indexNames.length === 0) {
     throw new Error('index names must be a string with length');
   }
@@ -354,13 +354,13 @@ var getIndices = (indexNames)=> {
  * @param indices
  * @returns {Array|*}
  */
-var putIndices = (indices)=> {
+const putIndices = (indices)=> {
   if (!_.isArray(indices)) {
     throw new Error('indices must be an array');
   }
 
   return Promise.map(indices, (index)=> {
-    let name = index.name;
+    const name = index.name;
     delete index.name;
 
     log.info('creating index: ', name);
@@ -374,7 +374,7 @@ var putIndices = (indices)=> {
       index: name,
       body:  index
     }).catch((error)=> {
-      log.error('Error during index (' + name + ') put: ', error);
+      log.error(`Error during index (${name}) put: `, error);
       return Promise.reject(error);
     });
   });
@@ -387,7 +387,7 @@ var putIndices = (indices)=> {
  * @param document
  * @returns {*}
  */
-var docToBulk = (queue, document)=> {
+const docToBulk = (queue, document)=> {
   queue.push({
     update: {
       _index: document._index,
@@ -408,9 +408,9 @@ var docToBulk = (queue, document)=> {
  *
  * @returns {Promise.<TResult>}
  */
-var flushQueue = ()=> {
+const flushQueue = ()=> {
   if (bulkQueue.length > 0) {
-    var bulkBody = [];
+    const bulkBody = [];
     while (bulkQueue.length > 0) {
       bulkBody.push(bulkQueue.shift());
     }
@@ -447,13 +447,13 @@ var flushQueue = ()=> {
  * @param bulkBody
  * @returns {*}
  */
-var handleBulkErrors = (results, bulkBody)=> {
-  let unrecoverableErrors = [];
+const handleBulkErrors = (results, bulkBody)=> {
+  const unrecoverableErrors = [];
 
   _.forEach(results.items, (item, id)=> {
 
     // There is only ever one key per item in the response
-    let actionType = Object.keys(item)[0];
+    const actionType = Object.keys(item)[0];
 
     // If there is a rejection error, we're just overloading the ingress of the destination
     // Re-add the relevant record to the queue and try again later
@@ -488,12 +488,12 @@ var handleBulkErrors = (results, bulkBody)=> {
     flushRetryCount++;
 
     return new Promise((resolve)=> {
-      let timeout = _.random(MIN_RETRY_WAIT, MAX_RETRY_WAIT);
+      const timeout = _.random(MIN_RETRY_WAIT, MAX_RETRY_WAIT);
 
-      log.warn('Recoverable errors detected, sleeping ' + timeout + 'msec and retrying...');
+      log.warn(`Recoverable errors detected, sleeping ${timeout}msec and retrying...`);
 
       setTimeout(()=> {
-        log.warn('Flush retry ' + flushRetryCount);
+        log.warn(`Flush retry ${flushRetryCount}`);
         resolve(flushQueue());
       }, timeout);
     });
@@ -501,5 +501,5 @@ var handleBulkErrors = (results, bulkBody)=> {
 };
 
 
-export default Transfer;
+module.exports = Transfer;
 

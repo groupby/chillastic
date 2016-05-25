@@ -1,15 +1,15 @@
-import moment from 'moment';
+const moment = require('moment');
 
-var OLD_DATE_FORMAT = 'YYYY-MM-DD';
-var OLD_DATE_REGEX  = /[0-9]{4}-[0-9]{2}-[0-9]{2}$/;
+const OLD_DATE_FORMAT = 'YYYY-MM-DD';
+const OLD_DATE_REGEX  = /[0-9]{4}-[0-9]{2}-[0-9]{2}$/;
 
 module.exports = (a, b)=> {
   if (OLD_DATE_REGEX.test(a) && OLD_DATE_REGEX.test(b)) {
-    var aDate = moment(a.match(OLD_DATE_REGEX), OLD_DATE_FORMAT);
-    var bDate = moment(b.match(OLD_DATE_REGEX), OLD_DATE_FORMAT);
+    const aDate = moment(a.match(OLD_DATE_REGEX), OLD_DATE_FORMAT);
+    const bDate = moment(b.match(OLD_DATE_REGEX), OLD_DATE_FORMAT);
 
     // Sort descending date
-    var diff = bDate.valueOf() - aDate.valueOf();
+    const diff = bDate.valueOf() - aDate.valueOf();
 
     // Sort alphabetically if date is identical
     return (diff === 0) ? a.localeCompare(b) : diff;

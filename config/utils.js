@@ -1,7 +1,7 @@
-import path from 'path';
-import _ from 'lodash';
+const path = require('path');
+const _ = require('lodash');
 
-var parsePath = (input)=> {
+const parsePath = (input)=> {
   if (path.isAbsolute(input)) {
     return input;
   } else {
@@ -9,11 +9,11 @@ var parsePath = (input)=> {
   }
 };
 
-var isNonZeroString = (input) => {
+const isNonZeroString = (input) => {
   return _.isString(input) && input.length > 0;
 };
 
-export default {
+module.exports = {
   parsePath:       parsePath,
   isNonZeroString: isNonZeroString
 };

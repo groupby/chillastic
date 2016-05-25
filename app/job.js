@@ -1,11 +1,6 @@
-import _ from 'lodash';
+const _ = require('lodash');
 
-import config from '../config';
-var log = config.log;
-
-var isNonZeroString = (input) => {
-  return _.isString(input) && input.length > 0;
-};
+const utils = require('../config/utils');
 
 /**
  * Job constructor
@@ -15,14 +10,14 @@ var isNonZeroString = (input) => {
  * @param params
  * @constructor
  */
-var Job = function (params) {
-  var self = this;
+const Job = function (params) {
+  const self = this;
 
-  if (!isNonZeroString(params.index)) {
+  if (!utils.isNonZeroString(params.index)) {
     throw new Error('index must be string with length');
   }
 
-  if (!isNonZeroString(params.type)) {
+  if (!utils.isNonZeroString(params.type)) {
     throw new Error('type must be string with length');
   }
 
@@ -61,7 +56,7 @@ var Job = function (params) {
  */
 Job.createFromID = (id, count)=> {
 
-  if (!isNonZeroString(id)) {
+  if (!utils.isNonZeroString(id)) {
     throw new Error('id must be stringified json');
   }
 
@@ -71,4 +66,4 @@ Job.createFromID = (id, count)=> {
   return new Job(params);
 };
 
-export default Job;
+module.exports = Job;

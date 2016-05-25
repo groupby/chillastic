@@ -1,22 +1,22 @@
-import _ from 'lodash';
-import path from 'path';
-import Promise from 'bluebird';
+const _       = require('lodash');
+const path    = require('path');
+const Promise = require('bluebird');
 
-import Job from './job';
-import redis from '../config/redis';
-import config from '../config';
-var log = config.log;
+const Job    = require('./job');
+const redis  = require('../config/redis');
+const config = require('../config');
+const log    = config.log;
 
 
-var BACKLOG_QUEUE_KEY = 'backlog_queue';
-var BACKLOG_HSET_KEY  = 'backlog_hset';
-var COMPLETED_KEY     = 'completed';
+const BACKLOG_QUEUE_KEY = 'backlog_queue';
+const BACKLOG_HSET_KEY  = 'backlog_hset';
+const COMPLETED_KEY     = 'completed';
 
-var indexFilter     = null;
-var indexComparator = null;
-var typeFilter      = null;
+let indexFilter     = null;
+let indexComparator = null;
+let typeFilter      = null;
 
-var source     = null;
+let source = null;
 
 /**
  * Manager constructor
@@ -26,8 +26,8 @@ var source     = null;
  * @param sourceEs
  * @constructor
  */
-var Manager = function (sourceEs) {
-  var self = this;
+const Manager = function (sourceEs) {
+  const self = this;
 
   self.source = sourceEs;
   source      = sourceEs;
@@ -68,7 +68,7 @@ var Manager = function (sourceEs) {
  *
  * @returns {Promise.<TResult>}
  */
-var fetchJob = ()=> {
+const fetchJob = ()=> {
   return redis.lpop(BACKLOG_QUEUE_KEY).then((jobID)=> {
     if (_.isNull(jobID)) {
       return null;
@@ -88,14 +88,14 @@ var fetchJob = ()=> {
  * @param job
  * @returns {Promise.<TResult>}
  */
-var queueJob = (job)=> {
+const queueJob = (job)=> {
   if (!(job instanceof Job)) {
     job = new Job(job);
   }
 
   return redis.hset(BACKLOG_HSET_KEY, job.getID(), job.count).then((numberAdded)=> {
     if (numberAdded === 0) {
-      log.warn('job: ' + job.toString() + ' already in queue');
+      log.warn(`job: ${job} already in queue`);
       return Promise.resolve();
     } else {
       return redis.rpush(BACKLOG_QUEUE_KEY, job.getID());
@@ -109,7 +109,7 @@ var queueJob = (job)=> {
  * @param job
  * @returns {Promise.<TResult>}
  */
-var completeJob = (job)=> {
+const completeJob = (job)=> {
   if (!(job instanceof Job)) {
     job = new Job(job);
   }
@@ -122,7 +122,7 @@ var completeJob = (job)=> {
  *
  * @returns {Promise.<TResult>}
  */
-var clearBacklogJobs = ()=> {
+const clearBacklogJobs = ()=> {
   log.info('clearing existing backlog');
 
   return redis.del(BACKLOG_QUEUE_KEY).then(()=> {
@@ -135,14 +135,12 @@ var clearBacklogJobs = ()=> {
  *
  * @returns {Promise.<TResult>}
  */
-var getBacklogJobs = ()=> {
+const getBacklogJobs = ()=> {
   return redis.hgetall(BACKLOG_HSET_KEY).then((jobsAndCounts)=> {
     // ioredis returns an object where the keys are the hash fields and the values are the hash values
-    var jobs = _.map(jobsAndCounts, (count, jobID)=> {
+    return _.map(jobsAndCounts, (count, jobID)=> {
       return Job.createFromID(jobID, count);
     });
-
-    return jobs;
   });
 };
 
@@ -151,7 +149,7 @@ var getBacklogJobs = ()=> {
  *
  * @returns {Promise.<TResult>}
  */
-var getBacklogCount = ()=> {
+const getBacklogCount = ()=> {
   return redis.hvals(BACKLOG_HSET_KEY).then((counts)=> {
     return _.reduce(counts, (total, count)=> {
       total += parseInt(count);
@@ -165,14 +163,12 @@ var getBacklogCount = ()=> {
  *
  * @returns {Promise.<TResult>}
  */
-var getCompletedJobs = ()=> {
+const getCompletedJobs = ()=> {
   return redis.hgetall(COMPLETED_KEY).then((jobsAndCounts)=> {
     // ioredis returns an object where the keys are the hash fields and the values are the hash values
-    var jobs = _.map(jobsAndCounts, (count, jobID)=> {
+    return _.map(jobsAndCounts, (count, jobID)=> {
       return Job.createFromID(jobID, count);
     });
-
-    return jobs;
   });
 };
 
@@ -181,7 +177,7 @@ var getCompletedJobs = ()=> {
  *
  * @returns {Promise.<TResult>}
  */
-var getCompletedCount = ()=> {
+const getCompletedCount = ()=> {
   return redis.hvals(COMPLETED_KEY).then((counts)=> {
     return _.reduce(counts, (total, count)=> {
       total += parseInt(count);
@@ -195,7 +191,7 @@ var getCompletedCount = ()=> {
  *
  * @returns {Promise.<TResult>}
  */
-var clearCompletedJobs = ()=> {
+const clearCompletedJobs = ()=> {
   return redis.del(COMPLETED_KEY);
 };
 
@@ -205,7 +201,7 @@ var clearCompletedJobs = ()=> {
  * @param jobs
  * @returns {*}
  */
-var addCountToJobs = (jobs)=> {
+const addCountToJobs = (jobs)=> {
   log.info('counting docs in existing indices');
 
   return Promise.mapSeries(jobs, (job)=> {
@@ -227,15 +223,18 @@ var addCountToJobs = (jobs)=> {
  * @param ignoreCompleted
  * @returns {Promise.<TResult>}
  */
-var initialize = (indexNames, ignoreCompleted)=> {
+const initialize = (indexNames, ignoreCompleted)=> {
+  log.info('initializing job backlog..');
   return clearBacklogJobs().then(()=> {
     return prepareNewJobs(indexNames);
   }).then((potentialJobs)=> {
     if (ignoreCompleted) {
-      return clearCompletedJobs().then(()=> { return potentialJobs; });
+      return clearCompletedJobs().then(()=> {
+        return potentialJobs;
+      });
     } else {
       return getCompletedJobs().then((completed)=> {
-        let completedJobs = _.map(completed, JSON.parse);
+        const completedJobs = _.map(completed, JSON.parse);
 
         return _.filter(potentialJobs, (potentialJob)=> {
           return !_.find(completedJobs, {index: potentialJob.index});
@@ -254,7 +253,7 @@ var initialize = (indexNames, ignoreCompleted)=> {
  * @param indexNames
  * @returns {Promise.<TResult>}
  */
-var prepareNewJobs = (indexNames)=> {
+const prepareNewJobs = (indexNames)=> {
   log.info('preparing new jobs');
   return getIndices(source, indexNames).then(filterIndicesAndTypes).then((filteredTargets)=> {
     if (_.isFunction(indexComparator)) {
@@ -304,7 +303,7 @@ var prepareNewJobs = (indexNames)=> {
  * @param allIndices
  * @returns {Array}
  */
-var filterIndicesAndTypes = (allIndices)=> {
+const filterIndicesAndTypes = (allIndices)=> {
   let selectedIndices = null;
 
   if (_.isFunction(indexFilter)) {
@@ -315,11 +314,11 @@ var filterIndicesAndTypes = (allIndices)=> {
 
   return _.reduce(selectedIndices, (result, index)=> {
     let selectedTypes = null;
-    let allTypes      = _.reduce(index.mappings, (result, type, name)=> {
+    const allTypes    = _.reduce(index.mappings, (inner_result, type, name)=> {
       type.name = name;
-      result.push(type);
+      inner_result.push(type);
 
-      return result;
+      return inner_result;
     }, []);
 
     if (_.isFunction(typeFilter)) {
@@ -328,7 +327,7 @@ var filterIndicesAndTypes = (allIndices)=> {
       selectedTypes = allTypes;
     }
 
-    let typeNames = _.map(selectedTypes, 'name');
+    const typeNames = _.map(selectedTypes, 'name');
 
     if (typeNames.length > 0) {
       result.push({
@@ -346,7 +345,7 @@ var filterIndicesAndTypes = (allIndices)=> {
  *
  * @param filter
  */
-var setIndexFilter = (filter)=> {
+const setIndexFilter = (filter)=> {
   indexFilter = getFilterFunction(filter);
   log.info('set index filter: ', filter);
 };
@@ -356,7 +355,7 @@ var setIndexFilter = (filter)=> {
  *
  * @param comparator
  */
-var setIndexComparator = (comparator)=> {
+const setIndexComparator = (comparator)=> {
   if (_.isString(comparator)) {
     comparator = require(comparator);
   }
@@ -374,7 +373,7 @@ var setIndexComparator = (comparator)=> {
  *
  * @param filter
  */
-var setTypeFilter = (filter)=> {
+const setTypeFilter = (filter)=> {
   typeFilter = getFilterFunction(filter);
   log.info('set type filter: ', filter);
 };
@@ -388,7 +387,7 @@ var setTypeFilter = (filter)=> {
  * @param targetIndices
  * @returns {Promise.<TResult>}
  */
-var getIndices = (client, targetIndices) => {
+const getIndices = (client, targetIndices) => {
   return client.indices.get({
     index:          targetIndices,
     allowNoIndices: true
@@ -407,47 +406,47 @@ var getIndices = (client, targetIndices) => {
  *
  * @param filter
  */
-var getFilterFunction = (filter)=> {
+const getFilterFunction = (filter)=> {
   let filterFunction = null;
 
   if (_.isString(filter)) {
-    let extension = path.extname(filter);
+    const extension = path.extname(filter);
 
     if (extension.length > 1) {
       if (extension !== '.js') {
-        throw new Error('filter: \'' + filter + '\' was interpreted as a path to a non-js file. Must be a path to a module, regex or function');
+        throw new Error(`filter: '${filter}' was interpreted as a path to a non-js file. Must be a path to a module, regex or function`);
       }
 
       try {
         filterFunction = require(filter);
-        log.info('Loaded filter: \'' + filter + '\' as module');
+        log.info(`Loaded filter: '${filter}' as module`);
       } catch (ex) {
-        throw new Error('filter: \'' + filter + '\' was interpreted as a path and cannot be found. Must be a path to a module, regex or function');
+        throw new Error(`filter: '${filter}' was interpreted as a path and cannot be found. Must be a path to a module, regex or function`);
       }
 
       if (!_.isFunction(filterFunction)) {
-        throw new Error('filter: \'' + filter + '\' was interpreted as a path and module does not return a function. Must be a path to a module, regex or function');
+        throw new Error(`filter: '${filter}' was interpreted as a path and module does not return a function. Must be a path to a module, regex or function`);
       }
 
     } else {
-      let regex = new RegExp(filter);
+      const regex = new RegExp(filter);
 
       filterFunction = (target)=> {
         log.info('target', target);
         return regex.test(target.name);
       };
-      log.info('Loaded filter: \'' + filter + '\' as regex');
+      log.info(`Loaded filter: '${filter}' as regex`);
     }
   } else if (_.isRegExp(filter)) {
     filterFunction = (target)=> {
       return filter.test(target.name);
     };
-    log.info('Loaded filter: \'' + filter + '\' as regex');
+    log.info(`Loaded filter: '${filter}' as regex`);
   } else if (_.isFunction(filter)) {
     filterFunction = filter;
-    log.info('Loaded filter: \'' + filter + '\' as function');
+    log.info(`Loaded filter: '${filter}' as function`);
   } else {
-    throw new Error('filter: \'' + filter + '\' could not be interpreted. Must be a path to a module, regex or function');
+    throw new Error(`filter: '${filter}' could not be interpreted. Must be a path to a module, regex or function`);
   }
 
   if (filterFunction.length < 1) {
@@ -457,4 +456,4 @@ var getFilterFunction = (filter)=> {
   return filterFunction;
 };
 
-export default Manager;
+module.exports = Manager;

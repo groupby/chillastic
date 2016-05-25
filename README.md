@@ -18,8 +18,6 @@ Right now it's a bit manual, but it will improve shortly.
 
 ```
 clone repo
-npm run build
-cd build
 node index.js <args>
 ```
 

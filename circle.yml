@@ -2,7 +2,7 @@ machine:
   services:
     - docker
   node:
-    version: 5.10.1
+    version: 6.2.0
 dependencies:
   pre:
     - sudo service redis-server stop
@@ -15,6 +15,7 @@ dependencies:
     - docker run -d --name redis -p 6379:6379 redis:3
     - echo 'waiting for databases to start ....'
     - sleep 30
+    - npm install --global gulp-cli
 test:
   override:
-    - npm test
+    - gulp test

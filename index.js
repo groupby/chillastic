@@ -1,11 +1,12 @@
-import cluster from 'cluster';
-import path from 'path';
-import Master from './lib/master';
-import Worker from './lib/worker';
-import stdio from 'stdio';
-import utils from './config/utils';
+const cluster = require('cluster');
+const path    = require('path');
+const Master  = require('./app/master');
+const Worker  = require('./app/worker');
+const stdio   = require('stdio');
+const utils   = require('./config/utils');
+const log     = require('./config').log;
 
-var options = stdio.getopt({
+const options = stdio.getopt({
   concurrency:     {
     key:         'c',
     args:        1,
@@ -56,8 +57,6 @@ var options = stdio.getopt({
 // TODO: Pass in ignoreCompleted
 
 if (options.h) {
-  console.log('options.args.length: ' + options.args.length);
-  console.log(JSON.stringify(options, null, 2));
   options.printHelp();
   process.exit(1);
 }
@@ -78,7 +77,7 @@ if (utils.isNonZeroString(options.mutators)) {
   options.mutators = utils.parsePath(options.mutators);
 }
 
-var params = {
+const params = {
   concurrency:     options.concurrency,
   indices:         options.indices,
   data:            options.data,
@@ -90,12 +89,10 @@ var params = {
 };
 
 if (cluster.isMaster) {
-  console.log(JSON.stringify(options, null, 2));
-
-  var master = new Master(options.source, options.dest);
+  log.info('Started with options: ', params);
+  const master = new Master(options.source, options.dest);
   master.start(params);
 } else {
-  var worker = new Worker(options.source, options.dest, params.mutators);
-
+  const worker = new Worker(options.source, options.dest, params.mutators);
   worker.start(true);
 }
