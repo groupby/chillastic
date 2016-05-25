@@ -3,6 +3,9 @@
 
 Reindex multiple elasticsearch indices, save your progress, mutate your data in-flight.
 
+### WARNING:
+This is 99% done, but is still rough on the edges. However, it will be 1.0.0 within a week or so.
+
 ### Requirements
 Currently chillastic relies on redis to store the current state of the transfer and any pending jobs.
 
