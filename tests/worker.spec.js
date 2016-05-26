@@ -3,7 +3,6 @@ const Worker            = require('../app/worker');
 const createEsClient    = require('../config/elasticsearch.js');
 const createRedisClient = require('../config/redis');
 const config            = require('../config');
-const redis             = require('../config/redis');
 const Manager           = require('../app/manager');
 const _                 = require('lodash');
 

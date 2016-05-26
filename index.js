@@ -1,3 +1,4 @@
+/*eslint no-process-env: "off" */
 const cluster   = require('cluster');
 const path      = require('path');
 const Master    = require('./app/master');

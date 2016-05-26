@@ -17,7 +17,6 @@ let dest   = null;
 
 let transfer          = null;
 let manager           = null;
-let progressInterval  = null;
 const workers         = [];
 const workerProgress  = {};
 let completedCallback = null;
@@ -173,7 +172,7 @@ const startWorkers = (params)=> {
   }
 
   startTime        = moment();
-  progressInterval = setInterval(printProgress, 10 * 1000);
+  setInterval(printProgress, 10 * 1000);
 };
 
 /**

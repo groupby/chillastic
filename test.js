@@ -1,6 +1,6 @@
-var Chillastic = require('./index');
+const Chillastic = require('./index');
 
-let configuration = {
+const configuration = {
   source:      {
     host:       'localhost:9200',
     apiVersion: '1.4'
