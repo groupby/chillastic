@@ -1,10 +1,10 @@
 /*eslint no-magic-numbers: "off"*/
-const expect         = require('chai').expect;
-const Manager        = require('../app/manager');
-const config         = require('../config');
-const createEsClient = require('../config/elasticsearch.js');
-const redis          = require('../config/redis');
-const _              = require('lodash');
+const expect            = require('chai').expect;
+const Manager           = require('../app/manager');
+const config            = require('../config');
+const createEsClient    = require('../config/elasticsearch.js');
+const createRedisClient = require('../config/redis');
+const _                 = require('lodash');
 
 const log = config.log;
 
@@ -19,11 +19,12 @@ describe('job manager', () => {
 
   let manager = null;
   let source  = null;
+  let redis   = null;
 
   before((done)=> {
-    source = createEsClient('localhost:9200', '1.4');
-
-    manager = new Manager(source);
+    source  = createEsClient('localhost:9200', '1.4');
+    redis   = createRedisClient('localhost', 6379);
+    manager = new Manager(source, redis);
 
     source.indices.deleteTemplate({name: '*'}).finally(()=> {
       return source.indices.delete({index: '*'});

@@ -3,7 +3,6 @@ const path    = require('path');
 const Promise = require('bluebird');
 
 const Job    = require('./job');
-const redis  = require('../config/redis');
 const config = require('../config');
 const log    = config.log;
 
@@ -17,20 +16,22 @@ let indexComparator = null;
 let typeFilter      = null;
 
 let source = null;
+let redis  = null;
 
 /**
  * Manager constructor
  *
  * The manager prepares and 'manages' the jobs
- *
  * @param sourceEs
+ * @param redisClient
  * @constructor
  */
-const Manager = function (sourceEs) {
+const Manager = function (sourceEs, redisClient) {
   const self = this;
 
   self.source = sourceEs;
   source      = sourceEs;
+  redis       = redisClient;
 
   self.setIndexFilter     = setIndexFilter;
   self.setIndexComparator = setIndexComparator;

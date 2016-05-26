@@ -1,12 +1,13 @@
 const Promise = require('bluebird');
 const cluster = require('cluster');
 
-const utils          = require('../config/utils');
-const Transfer       = require('./transfer');
-const Manager        = require('./manager');
-const config         = require('../config');
-const createEsClient = require('../config/elasticsearch.js');
-const log            = config.log;
+const utils             = require('../config/utils');
+const Transfer          = require('./transfer');
+const Manager           = require('./manager');
+const config            = require('../config');
+const createEsClient    = require('../config/elasticsearch.js');
+const createRedisClient = require('../config/redis');
+const log               = config.log;
 
 let transfer               = null;
 let manager                = null;
@@ -15,18 +16,20 @@ let overrideProgressUpdate = null;
 /**
  * Worker constructor
  *
- * @param sourceUrl
- * @param destUrl
+ * @param sourceConfig
+ * @param destConfig
+ * @param mutators
+ * @param redisConfig
  * @constructor
  */
-const Worker = function (sourceUrl, destUrl, mutators) {
+const Worker = function (sourceConfig, destConfig, redisConfig, mutators) {
   log.info(`worker created: ${process.pid}`);
-  const self    = this;
-  self.source = createEsClient(sourceUrl, '1.4');
-  self.dest   = createEsClient(destUrl, '2.2');
+  const self  = this;
+  self.source = createEsClient(sourceConfig.host, sourceConfig.apiVersion);
+  self.dest   = createEsClient(destConfig.host, destConfig.apiVersion);
 
   transfer = new Transfer(self.source, self.dest);
-  manager  = new Manager(self.source);
+  manager  = new Manager(self.source, createRedisClient(redisConfig.hostname, redisConfig.port));
 
   if (utils.isNonZeroString(mutators)) {
     transfer.loadMutators(mutators);
