@@ -61,7 +61,7 @@ const Worker = function (sourceConfig, destConfig, redisConfig, mutators) {
 const doJob = ()=> {
   return manager.fetchJob().then((job)=> {
     if (job === null) {
-      // log.warn('No more jobs. Complete');
+      log.info(`Worker: ${process.pid}: No more jobs. Complete`);
       return Promise.resolve();
     }
 

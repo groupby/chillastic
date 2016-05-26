@@ -17,6 +17,7 @@ let dest   = null;
 
 let transfer          = null;
 let manager           = null;
+let progressInterval  = null;
 const workers         = [];
 const workerProgress  = {};
 let completedCallback = null;
@@ -38,7 +39,7 @@ const Master = function (sourceConfig, destConfig, redisConfig) {
 
   self.source = createEsClient(sourceConfig.host, sourceConfig.apiVersion);
   source      = self.source;
-  self.dest   = createEsClient(destConfig, sourceConfig.apiVersion);
+  self.dest   = createEsClient(destConfig.host, sourceConfig.apiVersion);
   dest        = self.dest;
   transfer    = new Transfer(source, dest);
   manager     = new Manager(source, createRedisClient(redisConfig.hostname, redisConfig.port));
@@ -171,7 +172,8 @@ const startWorkers = (params)=> {
     workers.push(worker);
   }
 
-  startTime = moment();
+  startTime        = moment();
+  progressInterval = setInterval(printProgress, 10 * 1000);
 };
 
 /**

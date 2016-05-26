@@ -17,33 +17,34 @@ docker run -it -d -p 6379:6379 --name redis redis:3
 Otherwise, point the application at another redis install using the `REDIS_HOST` environment variable.
 
 ### Steps
-Right now it's a bit manual, but it will improve shortly.
-
 ```
-clone repo
-node index.js <args>
+npm install --save chillastic
 ```
 
-### CLI Options
-There are a bunch of options, I may move this to a config file eventually.
-
+Pass in the configuration:
 ```
-USAGE: node index.js [OPTION1] [OPTION2]... arg1 arg2...
-The following options are supported:
-  -c, --concurrency <ARG1> 	Max number of threads (default 1, max = # of CPUs) ("1" by default)
-  --source <ARG1>          	 (mandatory) Source elasticsearch
-  --dest <ARG1>            	 (mandatory) Destination elasticsearch
-  -i, --indices <ARG1>     	Names of indices to copy configuration (settings, mappings, alias, warmers)
-  -d, --data <ARG1>        	Names of indices from which to copy data
-  -t, --templates <ARG1>   	Names of templates to copy
-  --indexComparator <ARG1> 	Module for sorting/prioritizing indices during data transfer
-  --indexFilter <ARG1>     	Module or regex for including only specific indices in data transfer
-  --typeFilter <ARG1>      	Module or regex for including only specific types in data transfer
-  --mutators <ARG1>        	Path to mutator modules
+var Chillastic = require('./index');
 
+let configuration = {
+  source:      {
+    host:       'localhost:9200',
+    apiVersion: '1.4'
+  },
+  destination: {
+    host:       'localhost:9201',
+    apiVersion: '2.2'
+  },
+  redis:       {
+    hostname: 'localhost',
+    port:     6379
+  },
+  concurrency: 3,
+  indices:     '*',
+  data:        '*'
+};
+
+Chillastic(configuration);
 ```
-
-For options `-i -d -t` the names are taken in the typical elasticsearch multi-index format with wildcarding. Found here: https://www.elastic.co/guide/en/elasticsearch/guide/current/multi-index-multi-type.html
 
 ### Examples
 

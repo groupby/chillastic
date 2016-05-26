@@ -49,30 +49,38 @@ const SCHEMA = {
       }
     },
     concurrency:     {
+      optional: true,
       type: 'integer',
       gte:  1,
       def:  1
     },
     indices:         {
-      type: 'string'
+      type: 'string',
+      optional: true
     },
     data:            {
-      type: 'string'
+      type: 'string',
+      optional: true
     },
     templates:       {
-      type: 'string'
+      type: 'string',
+      optional: true
     },
     indexComparator: {
-      type: 'string'
+      type: 'string',
+      optional: true
     },
     indexFilter:     {
-      type: 'string'
+      type: 'string',
+      optional: true
     },
     typeFilter:      {
-      type: 'string'
+      type: 'string',
+      optional: true
     },
     mutators:        {
-      type: 'string'
+      type: 'string',
+      optional: true
     }
   }
 };
@@ -85,19 +93,19 @@ const create = (configuration)=> {
     throw new Error(result.format());
   }
 
-  if (path.extname(configuration.indexComparator) === '.js') {
+  if (configuration.indexComparator && path.extname(configuration.indexComparator) === '.js') {
     configuration.indexComparator = utils.parsePath(configuration.indexComparator);
   }
 
-  if (path.extname(configuration.indexFilter) === '.js') {
+  if (configuration.indexFilter && path.extname(configuration.indexFilter) === '.js') {
     configuration.indexFilter = utils.parsePath(configuration.indexFilter);
   }
 
-  if (path.extname(configuration.typeFilter) === '.js') {
+  if (configuration.typeFilter && path.extname(configuration.typeFilter) === '.js') {
     configuration.typeFilter = utils.parsePath(configuration.typeFilter);
   }
 
-  if (utils.isNonZeroString(configuration.mutators)) {
+  if (configuration.mutators && utils.isNonZeroString(configuration.mutators)) {
     configuration.mutators = utils.parsePath(configuration.mutators);
   }
 
