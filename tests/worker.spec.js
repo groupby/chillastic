@@ -1,10 +1,10 @@
-const expect         = require('chai').expect;
-const Worker         = require('../app/worker');
-const createEsClient = require('../config/elasticsearch.js');
-const config         = require('../config');
-const redis          = require('../config/redis');
-const Manager        = require('../app/manager');
-const _              = require('lodash');
+const expect            = require('chai').expect;
+const Worker            = require('../app/worker');
+const createEsClient    = require('../config/elasticsearch.js');
+const createRedisClient = require('../config/redis');
+const config            = require('../config');
+const Manager           = require('../app/manager');
+const _                 = require('lodash');
 
 const log = config.log;
 
@@ -21,13 +21,29 @@ describe('worker', function () {
   let manager = null;
   let source  = null;
   let dest    = null;
+  let redis   = null;
 
   before((done)=> {
-    source = createEsClient('localhost:9200', '1.4');
-    dest   = createEsClient('localhost:9201', '2.2');
+    const sourceConfig = {
+      host:       'localhost:9200',
+      apiVersion: '1.4'
+    };
 
-    worker  = new Worker('localhost:9200', 'localhost:9201');
-    manager = new Manager(source);
+    const destConfig = {
+      host:       'localhost:9201',
+      apiVersion: '1.4'
+    };
+
+    source = createEsClient(sourceConfig.host, sourceConfig.apiVersion);
+    dest   = createEsClient(destConfig.host, destConfig.apiVersion);
+
+    worker = new Worker(sourceConfig, destConfig, {
+      hostname: 'localhost',
+      port:     6379
+    });
+
+    redis   = createRedisClient('localhost', 6379);
+    manager = new Manager(source, redis);
 
     source.indices.deleteTemplate({name: '*'}).finally(()=> {
       return dest.indices.deleteTemplate({name: '*'});
@@ -90,8 +106,8 @@ describe('worker', function () {
       data.push({something: `data${n}`});
     });
 
-    let totalTransferred = 0;
-    const progressUpdates  = (update)=> {
+    let totalTransferred  = 0;
+    const progressUpdates = (update)=> {
       // log.info('update', update);
       totalTransferred += update.tick;
     };

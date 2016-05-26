@@ -1,98 +1,125 @@
-const cluster = require('cluster');
-const path    = require('path');
-const Master  = require('./app/master');
-const Worker  = require('./app/worker');
-const stdio   = require('stdio');
-const utils   = require('./config/utils');
-const log     = require('./config').log;
+/*eslint no-process-env: "off" */
+const cluster   = require('cluster');
+const path      = require('path');
+const Master    = require('./app/master');
+const Worker    = require('./app/worker');
+const utils     = require('./config/utils');
+const log       = require('./config').log;
+const inspector = require('schema-inspector');
 
-const options = stdio.getopt({
-  concurrency:     {
-    key:         'c',
-    args:        1,
-    default:     1,
-    description: 'Max number of threads (default 1, max = # of CPUs)'
-  },
-  source:          {
-    args:      1,
-    mandatory: true
-  },
-  dest:            {
-    args:      1,
-    mandatory: true
-  },
-  indices:         {
-    key:         'i',
-    args:        1,
-    description: 'Names of indices to copy configuration (settings, mappings, alias, warmers)'
-  },
-  data:            {
-    key:         'd',
-    args:        1,
-    description: 'Names of indices from which to copy data'
-  },
-  templates:       {
-    key:         't',
-    args:        1,
-    description: 'Names of templates to copy'
-  },
-  indexComparator: {
-    args:        1,
-    description: 'Module for sorting/prioritizing indices during data transfer'
-  },
-  indexFilter:     {
-    args:        1,
-    description: 'Module or regex for including only specific indices in data transfer'
-  },
-  typeFilter:      {
-    args:        1,
-    description: 'Module or regex for including only specific types in data transfer'
-  },
-  mutators:        {
-    args:        1,
-    description: 'Path to mutator modules'
+const SCHEMA = {
+  type:       'object',
+  properties: {
+    source:          {
+      type:       'object',
+      properties: {
+        host:       {
+          type:      'string',
+          minLength: 3
+        },
+        apiVersion: {
+          type:      'string',
+          minLength: 3
+        }
+      }
+    },
+    destination:     {
+      type:       'object',
+      properties: {
+        host:       {
+          type:      'string',
+          minLength: 3
+        },
+        apiVersion: {
+          type:      'string',
+          minLength: 3
+        }
+      }
+    },
+    redis:           {
+      type:     'object',
+      hostname: {
+        type:      'string',
+        minLength: 7,
+        maxLength: 15
+      },
+      port:     {
+        type: 'integer',
+        gt:   0,
+        lte:  65535
+      }
+    },
+    concurrency:     {
+      optional: true,
+      type: 'integer',
+      gte:  1,
+      def:  1
+    },
+    indices:         {
+      type: 'string',
+      optional: true
+    },
+    data:            {
+      type: 'string',
+      optional: true
+    },
+    templates:       {
+      type: 'string',
+      optional: true
+    },
+    indexComparator: {
+      type: 'string',
+      optional: true
+    },
+    indexFilter:     {
+      type: 'string',
+      optional: true
+    },
+    typeFilter:      {
+      type: 'string',
+      optional: true
+    },
+    mutators:        {
+      type: 'string',
+      optional: true
+    }
   }
-});
-
-// TODO: Pass in ignoreCompleted
-
-if (options.h) {
-  options.printHelp();
-  process.exit(1);
-}
-
-if (path.extname(options.indexComparator) === '.js') {
-  options.indexComparator = utils.parsePath(options.indexComparator);
-}
-
-if (path.extname(options.indexFilter) === '.js') {
-  options.indexFilter = utils.parsePath(options.indexFilter);
-}
-
-if (path.extname(options.typeFilter) === '.js') {
-  options.typeFilter = utils.parsePath(options.typeFilter);
-}
-
-if (utils.isNonZeroString(options.mutators)) {
-  options.mutators = utils.parsePath(options.mutators);
-}
-
-const params = {
-  concurrency:     options.concurrency,
-  indices:         options.indices,
-  data:            options.data,
-  templates:       options.templates,
-  indexComparator: options.indexComparator,
-  indexFilter:     options.indexFilter,
-  typeFilter:      options.typeFilter,
-  mutators:        options.mutators
 };
 
-if (cluster.isMaster) {
-  log.info('Started with options: ', params);
-  const master = new Master(options.source, options.dest);
-  master.start(params);
-} else {
-  const worker = new Worker(options.source, options.dest, params.mutators);
-  worker.start(true);
-}
+const create = (configuration)=> {
+  inspector.sanitize(SCHEMA, configuration);
+  const result = inspector.validate(SCHEMA, configuration);
+
+  if (!result.valid) {
+    throw new Error(result.format());
+  }
+
+  if (configuration.indexComparator && path.extname(configuration.indexComparator) === '.js') {
+    configuration.indexComparator = utils.parsePath(configuration.indexComparator);
+  }
+
+  if (configuration.indexFilter && path.extname(configuration.indexFilter) === '.js') {
+    configuration.indexFilter = utils.parsePath(configuration.indexFilter);
+  }
+
+  if (configuration.typeFilter && path.extname(configuration.typeFilter) === '.js') {
+    configuration.typeFilter = utils.parsePath(configuration.typeFilter);
+  }
+
+  if (configuration.mutators && utils.isNonZeroString(configuration.mutators)) {
+    configuration.mutators = utils.parsePath(configuration.mutators);
+  }
+
+  if (cluster.isMaster) {
+    log.info('Started with configuration. ', configuration);
+    const master = new Master(configuration.source, configuration.destination, configuration.redis);
+    master.start(configuration);
+  } else {
+    const workerConfig = JSON.parse(process.env.WORKER_CONFIG);
+    const worker = new Worker(workerConfig.source, workerConfig.destination, workerConfig.redis, workerConfig.mutators);
+    worker.start(true);
+  }
+};
+
+module.exports = create;
+

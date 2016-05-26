@@ -4,12 +4,13 @@ const moment  = require('moment');
 require("moment-duration-format");
 const Promise = require('bluebird');
 
-const utils          = require('../config/utils');
-const Transfer       = require('./transfer');
-const Manager        = require('./manager');
-const createEsClient = require('../config/elasticsearch.js');
-const config         = require('../config');
-const log            = config.log;
+const utils             = require('../config/utils');
+const Transfer          = require('./transfer');
+const Manager           = require('./manager');
+const createEsClient    = require('../config/elasticsearch.js');
+const createRedisClient = require('../config/redis');
+const config            = require('../config');
+const log               = config.log;
 
 let source = null;
 let dest   = null;
@@ -27,27 +28,20 @@ let masterPid = null;
 /**
  * Master constructor
  *
- * @param sourceUrl
- * @param destUrl
+ * @param sourceConfig
+ * @param destConfig
+ * @param redisConfig
  * @constructor
  */
-const Master = function (sourceUrl, destUrl) {
+const Master = function (sourceConfig, destConfig, redisConfig) {
   const self = this;
 
-  if (!utils.isNonZeroString(sourceUrl)) {
-    throw new Error('source must be non-zero string');
-  }
-
-  if (!utils.isNonZeroString(destUrl)) {
-    throw new Error('dest must be non-zero string');
-  }
-
-  self.source = createEsClient(sourceUrl, '1.4');
+  self.source = createEsClient(sourceConfig.host, sourceConfig.apiVersion);
   source      = self.source;
-  self.dest   = createEsClient(destUrl, '2.2');
+  self.dest   = createEsClient(destConfig.host, sourceConfig.apiVersion);
   dest        = self.dest;
   transfer    = new Transfer(source, dest);
-  manager     = new Manager(source);
+  manager     = new Manager(source, createRedisClient(redisConfig.hostname, redisConfig.port));
 
   self.setCompletedCallback = (callback)=> {
     completedCallback = callback;
@@ -164,7 +158,7 @@ const startWorkers = (params)=> {
   });
 
   for (let i = 0; i < numWorkers; i++) {
-    const worker = cluster.fork();
+    const worker = cluster.fork({WORKER_CONFIG: JSON.stringify(params)});
 
     worker.on('message', (message)=> {
       if (message.message) {
@@ -177,7 +171,8 @@ const startWorkers = (params)=> {
     workers.push(worker);
   }
 
-  startTime = moment();
+  startTime        = moment();
+  setInterval(printProgress, 10 * 1000);
 };
 
 /**
