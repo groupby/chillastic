@@ -1,6 +1,6 @@
 const _ = require('lodash');
 
-const utils = require('../config/utils');
+const utils = require('../../config/utils');
 
 /**
  * Job constructor

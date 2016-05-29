@@ -1,7 +1,7 @@
 const expect         = require('chai').expect;
-const Transfer       = require('../app/transfer');
-const createEsClient = require('../config/elasticsearch.js');
-const config         = require('../config');
+const Transfer       = require('../../app/services/transfer');
+const createEsClient = require('../../config/elasticsearch.js');
+const config         = require('../../config/index');
 const _              = require('lodash');
 
 const log = config.log;
