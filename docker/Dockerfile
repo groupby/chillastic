@@ -3,9 +3,15 @@ FROM node:6.2
 ENV REDIS_HOST localhost
 ENV REDIS_PORT 6379
 
-COPY package.json .
-COPY index.js .
+RUN mkdir /app
+WORKDIR /app
 
+COPY package.json /app/
+COPY index.js /app/
+
+RUN cd /app
 RUN npm install
 
 EXPOSE 7000
+
+CMD ["node", "index.js"]

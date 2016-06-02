@@ -1,0 +1,30 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: chillastic-redis
+  labels:
+    component: chillastic-redis
+    domain: devops
+    type: single
+spec:
+  minReadySeconds: 5
+  replicas: 1
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        component: chillastic-redis
+        domain: devops
+        type: single
+    spec:
+      containers:
+        - image: redis:3
+          name: redis
+          imagePullPolicy: Always
+          ports:
+          - containerPort: 6379
+            name: http

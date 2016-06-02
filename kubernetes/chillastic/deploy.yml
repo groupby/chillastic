@@ -1,0 +1,33 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: chillastic
+  labels:
+    domain: devops
+spec:
+  replicas: 1
+  strategy:
+    rollingUpdate:
+      maxSurge: 5
+      maxUnavailable: 0
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        domain: devops
+        name: chillastic
+    spec:
+      containers:
+      - name: chillastic
+        image: groupbyinc/chillastic
+        ports:
+          - containerPort: 7000
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 7000
+        env:
+          - name: REDIS_HOST
+            value: chillastic-redis.default.svc.cluster.local
+          - name: REDIS_PORT
+            value: '6379'
