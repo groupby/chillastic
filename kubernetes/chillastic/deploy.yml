@@ -21,11 +21,11 @@ spec:
       - name: chillastic
         image: groupbyinc/chillastic
         ports:
-          - containerPort: 7000
+          - containerPort: 8080
         readinessProbe:
           httpGet:
             path: /health
-            port: 7000
+            port: 8080
         env:
           - name: REDIS_HOST
             value: chillastic-redis.default.svc.cluster.local

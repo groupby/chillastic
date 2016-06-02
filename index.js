@@ -22,7 +22,7 @@ const create = (redisHost, redisPort, port)=> {
   app.run = () => {
     app.services.manager.setRunning(true);
     server.listen(config.port, () => {
-      log.info(`watchdog server listening on port ${config.port}`);
+      log.info(`chillastic server listening on port ${config.port}`);
     });
   };
 

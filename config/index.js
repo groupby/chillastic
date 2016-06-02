@@ -56,7 +56,7 @@ const DEFAULT_CONFIG = {
     host: null,
     port: null
   },
-  port:           7000
+  port:           8080
 };
 
 const currentConfig = {};

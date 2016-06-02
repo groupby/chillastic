@@ -12,6 +12,6 @@ COPY index.js /app/
 RUN cd /app
 RUN npm install
 
-EXPOSE 7000
+EXPOSE 8080
 
 CMD ["node", "index.js"]
