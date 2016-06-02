@@ -25,7 +25,14 @@ gulp.task('test:coverage', ['pre-test'], ()=> {
         'html'
       ]
     }))
-    .pipe(istanbul.enforceThresholds({thresholds: {global: 78}}));
+    .pipe(istanbul.enforceThresholds({
+      thresholds: {
+        lines:      80,
+        branches:   65,
+        functions:  80,
+        statements: 80
+      }
+    }));
 });
 
 const lint = ()=> {
@@ -49,6 +56,6 @@ gulp.task('lint', ()=> {
   return lint();
 });
 
-gulp.task('test', ['test:lint'], ()=>{
+gulp.task('test', ['test:lint'], ()=> {
   return gulp.src(['*.js']).pipe(gulpExit());
 });

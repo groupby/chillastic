@@ -1,0 +1,15 @@
+{
+  "source": {
+    "host": "localhost:9200",
+    "apiVerson": "1.4"
+  },
+  "destination": {
+    "host": "localhost:9201",
+    "apiVersion": "2.2"
+  },
+  "spec": {
+    "documents": {
+      "fromIndices": "*"
+    }
+  }
+}

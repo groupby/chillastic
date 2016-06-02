@@ -1,21 +1,8 @@
 const Chillastic = require('./index');
+const _          = require('lodash');
 
-const configuration = {
-  source:      {
-    host:       'localhost:9200',
-    apiVersion: '1.4'
-  },
-  destination: {
-    host:       'localhost:9201',
-    apiVersion: '2.2'
-  },
-  redis:       {
-    hostname: 'localhost',
-    port:     6379
-  },
-  concurrency: 3,
-  indices:     '*',
-  data:        '*'
-};
+const chillastic = Chillastic('localhost', 6379, _.random(7000, 60000));
+chillastic.run();
 
-Chillastic(configuration);
+// chillastic.services.manager.addTask('default', {})
+
