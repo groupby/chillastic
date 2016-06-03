@@ -3,13 +3,13 @@ kind: Service
 metadata:
   name: chillastic
   labels:
-    component: devops
+    domain: devops
     name: chillastic
 spec:
   ports:
-  - port: 8080
+  - port: 33080
     targetPort: 8080
   selector:
-    component: devops
+    domain: devops
     name: chillastic
   type: LoadBalancer
