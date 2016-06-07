@@ -98,6 +98,10 @@ const SCHEMA = {
     mutators:    {
       type:     'string',
       optional: true
+    },
+    arguments:   {
+      type:     'object',
+      optional: true
     }
   }
 };

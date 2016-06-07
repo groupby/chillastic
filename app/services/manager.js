@@ -668,7 +668,7 @@ const generateDocumentSubtasks = (client, task) => {
   }
 
   return getIndices(client, task.spec.documents.fromIndices).then((allIndices)=> {
-    const filters = createFilterFunctions(task.spec.filters);
+    const filters = createFilterFunctions(task.spec.filters, task.arguments);
     return filterDocumentSubtasks(task, allIndices, filters);
   });
 };
@@ -737,7 +737,7 @@ const filterDocumentSubtasks = (task, allIndices, filters) => {
  * @param filterSpec
  * @returns {*}
  */
-const createFilterFunctions = (filterSpec) => {
+const createFilterFunctions = (filterSpec, args) => {
   return _.reduce(filterSpec, (result, filter, name)=> {
 
     let filterFunction = null;
@@ -773,7 +773,7 @@ const createFilterFunctions = (filterSpec) => {
       throw new Error(`Unexpected filter type '${filter.type}'`);
     }
 
-    result[name] = filterFunction;
+    result[name] = (value) => filterFunction(value, args);
     return result;
   }, {});
 };

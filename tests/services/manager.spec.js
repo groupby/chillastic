@@ -242,6 +242,22 @@ describe('job manager', () => {
     expect(throws).to.throw(/Unexpected filter type/);
   });
 
+  it('should pass along arguments to filter', () => {
+    const filterSpec = {
+      types:   {
+        type:  'path',
+        value: '/home/ehacke/workspace/chillastic/tests/services/testFilters/argFilter.js'
+      }
+    };
+
+    const filters = manager.createFilterFunctions(filterSpec, {
+      fieldValue: 'match value'
+    });
+
+    expect(filters.indices({field: 'match value'})).to.eql(true);
+    expect(filters.indices({field: 'not match'})).to.eql(false);
+  });
+
   it('should create filter functions from paths', ()=> {
     const filterSpec = {
       indices: {
