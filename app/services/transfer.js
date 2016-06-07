@@ -163,8 +163,9 @@ const Transfer = function (sourceEs, destEs) {
    * Add mutator
    *
    * @param mutator
+   * @param args
    */
-  const addMutator = (mutator)=> {
+  const addMutator = (mutator, args)=> {
     if (!_.isString(mutator.type)) {
       throw new Error('Mutator type string not provided');
     } else if (!_.includes(MUTATOR_TYPES, mutator.type)) {
@@ -185,6 +186,7 @@ const Transfer = function (sourceEs, destEs) {
 
     log.info(`adding mutator type ${mutator.type}`);
 
+    mutator.arguments = args;
     mutators[mutator.type].push(mutator);
   };
 
@@ -192,8 +194,9 @@ const Transfer = function (sourceEs, destEs) {
    * Load all mutator modules in a specified path
    *
    * @param mutatorPath
+   * @param mutatorArgs
    */
-  const loadMutators = (mutatorPath)=> {
+  const loadMutators = (mutatorPath, mutatorArgs)=> {
     let files   = [];
     const isDir = fs.lstatSync(mutatorPath).isDirectory();
 
@@ -216,7 +219,7 @@ const Transfer = function (sourceEs, destEs) {
 
     _.map(files, (file)=> {
       log.info(`loading mutator from file: ${file}`);
-      addMutator(require(file));
+      addMutator(require(file), mutatorArgs);
     });
   };
 
@@ -231,8 +234,8 @@ const Transfer = function (sourceEs, destEs) {
     if (_.isArray(mutators[type]) && mutators[type].length > 0) {
       return _.reduce(originals, (result, original)=> {
         for (let i = 0; i < mutators[type].length; i++) {
-          if (mutators[type][i].predicate(original)) {
-            const mutated = mutators[type][i].mutate(original);
+          if (mutators[type][i].predicate(original, mutators[type][i].arguments)) {
+            const mutated = mutators[type][i].mutate(original, mutators[type][i].arguments);
 
             if (!_.isUndefined(mutated) && !_.isNull(mutated) && !_.isEmpty(mutated)) {
               original = mutated;

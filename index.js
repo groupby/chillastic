@@ -19,10 +19,14 @@ const create = (redisHost, redisPort, port)=> {
   app.config   = config;
   app.services = require('./app/services');
 
+  const cleanConfig = _.cloneDeep(config);
+  delete cleanConfig.log;
+  log.warn(`Starting with config: ${JSON.stringify(cleanConfig, null, 2)}`);
+
   app.run = () => {
     app.services.manager.setRunning(true);
     server.listen(config.port, () => {
-      log.info(`chillastic server listening on port ${config.port}`);
+      log.warn(`chillastic server listening on port ${config.port}`);
     });
   };
 

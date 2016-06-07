@@ -4,7 +4,7 @@ const controller = require('./root.controller');
 const tasks = require('./tasks');
 
 module.exports = () => {
-  router.get('/health', controller.getHealth);
+  router.get('/status', controller.getStatus);
 
   router.use('/tasks', tasks());
   return router;

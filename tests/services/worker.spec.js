@@ -52,7 +52,7 @@ describe('worker', function () {
     const taskParams = {
       source:      sourceConfig,
       destination: destConfig,
-      spec:        {
+      transfer:        {
         documents: {
           fromIndices: '*'
         }

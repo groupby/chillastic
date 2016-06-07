@@ -63,7 +63,6 @@ const currentConfig = {};
 _.defaultsDeep(currentConfig, DEFAULT_CONFIG);
 
 const log = createLogger();
-log.info(`Starting with config: ${JSON.stringify(currentConfig, null, 2)}`);
 
 currentConfig.setLogLevel    = setLogLevel;
 currentConfig.configureRedis = configureRedis;
