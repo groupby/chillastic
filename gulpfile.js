@@ -39,7 +39,8 @@ const lint = ()=> {
   return gulp.src([
     '**/*.js',
     '!node_modules/**',
-    '!coverage/**'
+    '!coverage/**',
+    '!docker/**'
   ])
     .pipe(eslint({
       fix: true

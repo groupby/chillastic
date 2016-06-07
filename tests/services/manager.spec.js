@@ -7,6 +7,7 @@ const config            = require('../../config/index');
 const createEsClient    = require('../../config/elasticsearch.js');
 const createRedisClient = require('../../config/redis');
 const _                 = require('lodash');
+const path              = require('path');
 
 const log = config.log;
 
@@ -245,11 +246,11 @@ describe('job manager', () => {
     const filterSpec = {
       indices: {
         type:  'path',
-        value: '/home/ehacke/workspace/chillastic/tests/services/testFilters/indexFilter.js'
+        value:  path.join(__dirname, 'testFilters/indexFilter.js')
       },
       types:   {
         type:  'path',
-        value: '/home/ehacke/workspace/chillastic/tests/services/testFilters/typeFilter.js'
+        value: path.join(__dirname, 'testFilters/typeFilter.js')
       }
     };
 
@@ -1153,7 +1154,7 @@ describe('job manager', () => {
       }
     };
 
-    manager.addTask(TASK_NAME, task).then(()=>{
+    manager.addTask(TASK_NAME, task).then(()=> {
       return manager.getTasks();
     }).then(taskNames => {
       expect(taskNames).to.eql([TASK_NAME]);
@@ -1470,7 +1471,7 @@ describe('job manager', () => {
       expect(status.same).to.eql('running');
       expect(status.different).to.eql('broken');
       return manager.workerHeartbeat('same', 'running');
-    }).delay(600).then(()=>{
+    }).delay(600).then(()=> {
       return manager.getWorkersStatus();
     }).then(status => {
       expect(_.size(status)).to.eql(1);
