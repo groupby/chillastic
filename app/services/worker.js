@@ -91,7 +91,7 @@ const Worker = function (redisClient) {
               return Promise.resolve();
             });
         })
-      })
+      });
     }).then(doSubtask).catch(error => {
       if (error.message === 'Worker killed') {
         log.warn('Worker killed');
@@ -106,6 +106,10 @@ const Worker = function (redisClient) {
     const dest   = createEsClient(subtask.destination.host, subtask.destination.apiVersion);
 
     const transfer = new Transfer(source, dest);
+
+    if (subtask.mutators) {
+      transfer.loadMutators(subtask.mutators);
+    }
 
     transfer.setUpdateCallback(update => updateProgress(taskName, subtask, update));
 
