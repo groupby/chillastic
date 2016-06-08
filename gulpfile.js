@@ -1,3 +1,4 @@
+/*eslint no-process-env: "off" */
 const gulp     = require('gulp');
 const mocha    = require('gulp-mocha');
 const eslint   = require('gulp-eslint');
@@ -8,6 +9,24 @@ gulp.task('test:dirty', ()=> {
   return gulp.src('tests/**/*.spec.js')
     .pipe(mocha({reporter: 'spec'}))
     .pipe(gulpExit());
+});
+
+const lint = ()=> {
+  return gulp.src([
+    '**/*.js',
+    '!node_modules/**',
+    '!coverage/**',
+    '!docker/**'
+  ])
+    .pipe(eslint({
+      fix: true
+    }))
+    .pipe(eslint.format())
+    .pipe(eslint.failAfterError());
+};
+
+gulp.task('lint', ()=> {
+  return lint();
 });
 
 gulp.task('pre-test', ()=> {
@@ -35,25 +54,7 @@ gulp.task('test:coverage', ['pre-test'], ()=> {
     }));
 });
 
-const lint = ()=> {
-  return gulp.src([
-    '**/*.js',
-    '!node_modules/**',
-    '!coverage/**',
-    '!docker/**'
-  ])
-    .pipe(eslint({
-      fix: true
-    }))
-    .pipe(eslint.format())
-    .pipe(eslint.failAfterError());
-};
-
 gulp.task('test:lint', ['test:coverage'], ()=> {
-  return lint();
-});
-
-gulp.task('lint', ()=> {
   return lint();
 });
 

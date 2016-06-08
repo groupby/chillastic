@@ -353,6 +353,11 @@ const buildSubtaskBacklog = (taskName, task) => {
     })
 };
 
+/**
+ * Recursively call the provided function to generate a worker name, until a name that has not been taken is generated.
+ * @param getName
+ * @returns {Promise.<TResult>}
+ */
 const setWorkerName = (getName) => {
   const name = getName();
 
@@ -424,19 +429,38 @@ const reserveWorkerName = () => {
   return setWorkerName(sillyname);
 };
 
+/**
+ * Return TRUE if workers are supposed to be running
+ * @returns {Promise.<boolean>|*}
+ */
 const isRunning = () => {
   return redis.get(RUN_KEY).then(running => running === 'running');
 };
 
+/**
+ * Start/stop the workers from running
+ * @param running
+ * @returns {*}
+ */
 const setRunning = (running) => {
   const state = running ? 'running' : 'stopped';
   return redis.set(RUN_KEY, state);
 };
 
+/**
+ * Return the names of all known tasks
+ * @returns {Promise.<*|Array>|*}
+ */
 const getTasks = () => {
   return redis.smembers(TASK_NAME_KEY).then(tasks => tasks || []);
 };
 
+/**
+ * Clear the progress of a given subtask within a task
+ * @param taskName
+ * @param subtask
+ * @returns {*|{arity, flags, keyStart, keyStop, step}}
+ */
 const removeProgress = (taskName, subtask) => {
   if (!_.isString(taskName) || !Task.NAME_REGEX.test(taskName)) {
     throw new Error('taskName must be string of 1-40 alphanumeric characters');
@@ -445,6 +469,13 @@ const removeProgress = (taskName, subtask) => {
   return redis.hdel(`${taskName}_${PROGRESS_KEY}`, JSON.stringify(subtask));
 };
 
+/**
+ * Update the progress of a given subtask within a task
+ * @param taskName
+ * @param subtask
+ * @param progress
+ * @returns {*|{arity, flags, keyStart, keyStop, step}}
+ */
 const updateProgress = (taskName, subtask, progress) => {
   if (!_.isString(taskName) || !Task.NAME_REGEX.test(taskName)) {
     throw new Error('taskName must be string of 1-40 alphanumeric characters');
@@ -463,6 +494,12 @@ const updateProgress = (taskName, subtask, progress) => {
   return redis.hset(`${taskName}_${PROGRESS_KEY}`, JSON.stringify(subtask), JSON.stringify(progress));
 };
 
+/**
+ * Get the progress of a given subtask within a task
+ * @param taskName
+ * @param subtask
+ * @returns {Promise.<TResult>|*}
+ */
 const getProgress = (taskName, subtask) => {
   if (!_.isString(taskName) || !Task.NAME_REGEX.test(taskName)) {
     throw new Error('taskName must be string of 1-40 alphanumeric characters');
@@ -553,6 +590,11 @@ const getErrors = (taskName)=> {
   });
 };
 
+/**
+ * Remove a task by name
+ * @param taskName
+ * @returns {Promise.<TResult>}
+ */
 const removeTask = (taskName) => {
   if (!_.isString(taskName) || !Task.NAME_REGEX.test(taskName)) {
     throw new Error('taskName must be string of 1-40 alphanumeric characters');
@@ -565,6 +607,11 @@ const removeTask = (taskName) => {
   });
 };
 
+/**
+ * Return TRUE if a task exists in the system based on it's name
+ * @param taskName
+ * @returns {*|{arity, flags, keyStart, keyStop, step}}
+ */
 const taskExists = (taskName) => {
   if (!_.isString(taskName) || !Task.NAME_REGEX.test(taskName)) {
     throw new Error('taskName must be string of 1-40 alphanumeric characters');
@@ -573,23 +620,37 @@ const taskExists = (taskName) => {
   return redis.sismember(TASK_NAME_KEY, taskName);
 };
 
+/**
+ * Given a task, create a list of index configuration transfer subtasks
+ *
+ * @param client
+ * @param task
+ * @returns {Promise.<Array>}
+ */
 const generateIndexSubtasks = (client, task) => {
-  if (!task.spec.indices || !task.spec.indices.names) {
-    log.info('No indices specified in task');
+  if (!task.transfer.indices || !task.transfer.indices.names) {
+    log.info('No indices transferified in task');
     return Promise.resolve([]);
   }
 
-  return getIndices(client, task.spec.indices.names)
+  return getIndices(client, task.transfer.indices.names)
     .then(allIndices => _.map(allIndices, index => index.name));
 };
 
+/**
+ * Given a task, create a list of template transfer subtasks
+ *
+ * @param client
+ * @param task
+ * @returns {Promise.<Array>}
+ */
 const generateTemplateSubtasks = (client, task) => {
-  if (!task.spec.indices || !task.spec.indices.templates) {
-    log.info('No templates specified in task');
+  if (!task.transfer.indices || !task.transfer.indices.templates) {
+    log.info('No templates transferified in task');
     return Promise.resolve([]);
   }
 
-  return getTemplates(client, task.spec.indices.templates)
+  return getTemplates(client, task.transfer.indices.templates)
     .then(allTemplates => _.map(allTemplates, template => template.name));
 };
 
@@ -601,17 +662,24 @@ const generateTemplateSubtasks = (client, task) => {
  * @returns {*}
  */
 const generateDocumentSubtasks = (client, task) => {
-  if (!task.spec.documents) {
+  if (!task.transfer.documents) {
     log.info('No documents specified in task');
     return Promise.resolve([]);
   }
 
-  return getIndices(client, task.spec.documents.fromIndices).then((allIndices)=> {
-    const filters = createFilterFunctions(task.spec.filters);
+  return getIndices(client, task.transfer.documents.fromIndices).then((allIndices)=> {
+    const filters = createFilterFunctions(task.transfer.filters);
     return filterDocumentSubtasks(task, allIndices, filters);
   });
 };
 
+/**
+ * Given a task, all relevant indices, and filters, return the list of subtasks.
+ * @param task
+ * @param allIndices
+ * @param filters
+ * @returns {*}
+ */
 const filterDocumentSubtasks = (task, allIndices, filters) => {
   let selectedIndices = null;
 
@@ -663,6 +731,12 @@ const filterDocumentSubtasks = (task, allIndices, filters) => {
   }, []);
 };
 
+/**
+ * Convert type and index filter specifications into functions
+ *
+ * @param filterSpec
+ * @returns {*}
+ */
 const createFilterFunctions = (filterSpec) => {
   return _.reduce(filterSpec, (result, filter, name)=> {
 
@@ -699,7 +773,7 @@ const createFilterFunctions = (filterSpec) => {
       throw new Error(`Unexpected filter type '${filter.type}'`);
     }
 
-    result[name] = filterFunction;
+    result[name] = (value) => filterFunction(value, filter.arguments);
     return result;
   }, {});
 };

@@ -14,7 +14,7 @@ dependencies:
     - docker run -d --name dest_es -p 9201:9200 elasticsearch:2.2
     - docker run -d --name redis -p 6379:6379 redis:3
     - echo 'waiting for databases to start ....'
-    - sleep 30
+    - sleep 40
     - npm install --global gulp-cli
 test:
   override:

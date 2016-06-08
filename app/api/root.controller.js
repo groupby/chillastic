@@ -2,7 +2,7 @@
 const services = require('../services');
 const utils    = require('../../config/utils');
 
-const getHealth = (req, res) => {
+const getStatus = (req, res) => {
   const status = [
     services.manager.isRunning(),
     services.manager.getWorkersStatus()
@@ -19,5 +19,5 @@ const getHealth = (req, res) => {
 };
 
 module.exports = {
-  getHealth: getHealth
+  getStatus: getStatus
 };

@@ -30,7 +30,7 @@ const SCHEMA = {
         }
       }
     },
-    spec:        {
+    transfer:        {
       type:       'object',
       properties: {
         indices:   {
@@ -63,14 +63,18 @@ const SCHEMA = {
                   type:       'object',
                   optional:   true,
                   properties: {
-                    value: {
+                    value:     {
                       type:      'string',
                       minLength: 1
                     },
-                    type:  {
+                    type:      {
                       type:    'string',
                       pattern: /^path$|^regex$/,
                       error:   `Must be 'path' or 'regex'`
+                    },
+                    arguments: {
+                      type:     'object',
+                      optional: true
                     }
                   }
                 },
@@ -78,14 +82,18 @@ const SCHEMA = {
                   type:       'object',
                   optional:   true,
                   properties: {
-                    value: {
+                    value:     {
                       type:      'string',
                       minLength: 1
                     },
-                    type:  {
+                    type:      {
                       type:    'string',
                       pattern: /^path$|^regex$/,
                       error:   `Must be 'path' or 'regex'`
+                    },
+                    arguments: {
+                      type:     'object',
+                      optional: true
                     }
                   }
                 }
@@ -96,8 +104,17 @@ const SCHEMA = {
       }
     },
     mutators:    {
-      type:     'string',
-      optional: true
+      type:       'object',
+      optional:   true,
+      properties: {
+        path:      {
+          type:     'string'
+        },
+        arguments: {
+          type:     'object',
+          optional: true
+        }
+      }
     }
   }
 };

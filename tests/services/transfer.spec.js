@@ -397,22 +397,33 @@ describe('transfer', function () {
   it('load all mutators from directory', ()=> {
     expect(_.size(transfer.getMutators())).to.eql(0);
 
-    transfer.loadMutators(`${__dirname}/testMutators`);
+    const mutatorArguments = {
+      first:  'this thing',
+      second: 'other thing'
+    };
+
+    transfer.loadMutators(`${__dirname}/testMutators`, mutatorArguments);
 
     const mutators = transfer.getMutators();
     expect(_.size(mutators)).to.eql(3);
+
     expect(mutators['data']).to.have.length(1);
     expect(mutators['data'][0].type).to.eql('data');
     expect(_.isFunction(mutators['data'][0].predicate)).to.be.true;
     expect(_.isFunction(mutators['data'][0].mutate)).to.be.true;
+    expect(mutators['data'][0].arguments).to.eql(mutatorArguments);
+
     expect(mutators['template']).to.have.length(1);
     expect(mutators['template'][0].type).to.eql('template');
     expect(_.isFunction(mutators['template'][0].predicate)).to.be.true;
     expect(_.isFunction(mutators['template'][0].mutate)).to.be.true;
-    expect(mutators['index']).to.have.length(1);
+    expect(mutators['template'][0].arguments).to.eql(mutatorArguments);
+
+    expect(mutators['index']).to.have.length(2);
     expect(mutators['index'][0].type).to.eql('index');
     expect(_.isFunction(mutators['index'][0].predicate)).to.be.true;
     expect(_.isFunction(mutators['index'][0].mutate)).to.be.true;
+    expect(mutators['index'][0].arguments).to.eql(mutatorArguments);
   });
 
   it('should load a specific mutator', ()=> {
@@ -536,6 +547,34 @@ describe('transfer', function () {
       return dest.indices.get({index: 'new_index_name'});
     }).then((index)=> {
       expect(index.new_index_name.settings.index.number_of_shards).to.eql('4');
+      return dest.indices.get({index: 'index_to_mutate'}).catch((error)=> {
+        expect(error.status).to.eql(404);
+        return 'not found';
+      });
+    }).then((result)=> {
+      expect(result).to.eql('not found');
+      done();
+    });
+  });
+
+  it('should call mutator with arguments', (done)=> {
+    const arguments = {
+      name:   'creative',
+      target: 'index_to_mutate'
+    };
+    transfer.loadMutators(`${__dirname}/testMutators/indexMutatorWithArgs.js`, arguments);
+
+    source.indices.create({
+      index: 'index_to_mutate',
+      body:  {settings: {number_of_shards: 4}}
+    }).then(()=> {
+      return transfer.transferIndices('index_to_mutate');
+    }).then(()=> {
+      return dest.indices.refresh();
+    }).then(()=> {
+      return dest.indices.get({index: 'creative'});
+    }).then((index)=> {
+      expect(index.creative.settings.index.number_of_shards).to.eql('4');
       return dest.indices.get({index: 'index_to_mutate'}).catch((error)=> {
         expect(error.status).to.eql(404);
         return 'not found';
