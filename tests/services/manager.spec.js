@@ -17,8 +17,8 @@ Promise.onPossiblyUnhandledRejection((error) => {
   log.error('Likely error: ', error.stack);
 });
 
-describe('job manager', () => {
-  // this.timeout(8000);
+describe('job manager', function() {
+  this.timeout(5000);
 
   let manager = null;
   let source  = null;
