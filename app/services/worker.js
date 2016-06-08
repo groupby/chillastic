@@ -30,6 +30,10 @@ const Worker = function (redisClient) {
 
   const taskNames = [];
 
+  /**
+   * Return the name of the next task to work on.
+   * @returns {*}
+   */
   const getTaskName = ()=> {
     if (taskNames.length === 0) {
       return self.manager.getTasks().then(tasks => {
@@ -45,6 +49,12 @@ const Worker = function (redisClient) {
     }
   };
 
+  /**
+   * Get a task name, then get a subtask within that task to complete.
+   *
+   * Repeat as long as there are subtasks to complete.
+   * @returns {Promise.<TResult>}
+   */
   const doSubtask = ()=> {
     return self.manager.isRunning().then(running => {
       if (!running) {
@@ -125,6 +135,13 @@ const Worker = function (redisClient) {
     }
   };
 
+  /**
+   * Update the progress of a specific subtask
+   * @param taskName
+   * @param subtask
+   * @param update
+   * @returns {Promise.<TResult>|*}
+   */
   const updateProgress = (taskName, subtask, update)=> {
     const progress = new Progress({
       tick:        update.tick,
@@ -147,6 +164,12 @@ const Worker = function (redisClient) {
     });
   };
 
+  /**
+   * Mark a specific subtask as completed
+   * @param taskName
+   * @param subtask
+   * @returns {Promise.<TResult>|*}
+   */
   const completeSubtask = (taskName, subtask) => {
     log.info(`completed task: '${taskName}' subtask: ${subtask}`);
     return self.manager.completeSubtask(taskName, subtask).then(()=> {

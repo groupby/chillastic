@@ -111,7 +111,7 @@ Subtask.createFromID = (id, count)=> {
     throw new Error('id must be stringified json');
   }
 
-  let params   = JSON.parse(id);
+  const params   = JSON.parse(id);
   params.count = count;
 
   return new Subtask(params);
