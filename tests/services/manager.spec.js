@@ -242,11 +242,27 @@ describe('job manager', () => {
     expect(throws).to.throw(/Unexpected filter type/);
   });
 
+  it('should pass along arguments to filter', () => {
+    const filterSpec = {
+      types:   {
+        type:  'path',
+        value: '/home/ehacke/workspace/chillastic/tests/services/testFilters/argFilter.js'
+      }
+    };
+
+    const filters = manager.createFilterFunctions(filterSpec, {
+      fieldValue: 'match value'
+    });
+
+    expect(filters.indices({field: 'match value'})).to.eql(true);
+    expect(filters.indices({field: 'not match'})).to.eql(false);
+  });
+
   it('should create filter functions from paths', ()=> {
     const filterSpec = {
       indices: {
         type:  'path',
-        value:  path.join(__dirname, 'testFilters/indexFilter.js')
+        value: path.join(__dirname, 'testFilters/indexFilter.js')
       },
       types:   {
         type:  'path',
@@ -1325,11 +1341,22 @@ describe('job manager', () => {
     }).then((overallProgress)=> {
       expect(overallProgress.length).to.eql(2);
 
-      // let target = _.find();
-      expect(overallProgress[0].subtask.transfer.documents.index).to.eql('myindex1');
-      expect(overallProgress[0].progress.tick).to.eql(10);
-      expect(overallProgress[1].subtask.transfer.documents.index).to.eql('myindex3');
-      expect(overallProgress[1].progress.tick).to.eql(5);
+      const predicate = {
+        subtask: {
+          transfer: {
+            documents: {
+              index: 'myindex1'
+            }
+          }
+        }
+      };
+      let target      = _.find(overallProgress, predicate);
+      expect(target.progress.tick).to.eql(10);
+
+      predicate.subtask.transfer.documents.index = 'myindex3';
+
+      target = _.find(overallProgress, predicate);
+      expect(target.progress.tick).to.eql(5);
       done();
     }).catch(done);
   });
