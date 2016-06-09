@@ -19,3 +19,10 @@ dependencies:
 test:
   override:
     - gulp test
+deployment:
+  hub:
+    branch: master
+    commands:
+      - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
+      - docker build -t groupbyinc/chillastic .
+      - docker push groupbyinc/chillastic
