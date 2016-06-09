@@ -1,18 +1,15 @@
 {
   "source": {
-    "host": "localhost:9200",
-    "apiVersion": "1.4"
+    "host": "localhost",
+    "port": 9200
   },
   "destination": {
-    "host": "localhost:9201",
-    "apiVersion": "2.2"
+    "host": "localhost",
+    "port": 9201
   },
   "transfer": {
     "documents": {
       "fromIndices": "*"
     }
-  },
-  "mutators": {
-    "path": "path/to/mutators"
   }
 }

@@ -68,5 +68,7 @@ currentConfig.setLogLevel    = setLogLevel;
 currentConfig.configureRedis = configureRedis;
 currentConfig.setPort        = setPort;
 currentConfig.log            = log;
+currentConfig.jsonIndent     = 2;
+currentConfig.numDigits      = 2;
 
 module.exports = currentConfig;

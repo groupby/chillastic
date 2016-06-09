@@ -1,6 +1,6 @@
-const path = require('path');
-const _    = require('lodash');
-
+const _          = require('lodash');
+const path       = require('path');
+const HttpStatus = require('http-status');
 
 const parsePath = (input)=> {
   if (path.isAbsolute(input)) {
@@ -15,16 +15,16 @@ const isNonZeroString = (input) => {
 };
 
 const processError = function (error, res) {
-  const log  = require('../config').log;
+  const log = require('../config').log;
 
   let message = '';
-  let code    = 400;
+  let code    = HttpStatus.BAD_REQUEST;
   if (_.isUndefined(error)) {
     log.error('undefined error caught', error);
     message = 'error triggered, but error is undefined';
   } else if (_.isString(error.message) && error.message.indexOf('does not exist') !== -1) {
     message = error;
-    code    = 404;
+    code    = HttpStatus.NOT_FOUND;
   } else if (_.isString(error)) {
     log.warn('error', error);
     message = error;

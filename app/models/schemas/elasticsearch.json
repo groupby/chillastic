@@ -1,0 +1,13 @@
+{
+  "type": "object",
+  "properties": {
+    "host": {
+      "type": "string"
+    },
+    "port": {
+      "type": "integer",
+      "optional": false,
+      "def": 9200
+    }
+  }
+}

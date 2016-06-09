@@ -5,10 +5,14 @@ const cookieParser   = require('cookie-parser');
 const errorHandler   = require('errorhandler');
 const cors           = require('cors');
 const expressLogger  = require('express-bunyan-logger');
-const config         = require('./index');
+const HttpStatus     = require('http-status');
 const PrettyStream   = require('bunyan-prettystream');
-const prettyStdOut   = new PrettyStream({mode: 'dev'});
+const config         = require('./index');
+
+const prettyStdOut = new PrettyStream({mode: 'dev'});
 prettyStdOut.pipe(process.stdout);
+
+const MAX_ACCEPTABLE_RESPONSE_TIME = 30000;
 
 module.exports = function (app) {
   const env = app.get('env');
@@ -37,11 +41,11 @@ module.exports = function (app) {
     ],
     excludes: ['*'],
     levelFn:  (status, err, meta)=> {
-      if (meta["response-time"] > 30000) {
+      if (meta["response-time"] > MAX_ACCEPTABLE_RESPONSE_TIME) {
         return "fatal";
-      } else if (meta["status-code"] >= 500) {
+      } else if (meta["status-code"] >= HttpStatus.INTERNAL_SERVER_ERROR) {
         return "error";
-      } else if (meta["status-code"] >= 400) {
+      } else if (meta["status-code"] >= HttpStatus.BAD_REQUEST) {
         return "warn";
       } else {
         return "info";

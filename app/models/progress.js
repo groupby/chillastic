@@ -1,5 +1,5 @@
 const _         = require('lodash');
-const inspector = require('schema-inspector');
+const inspector = require('./inspector');
 
 const ISO_86001_REGEX = /(\d{4})-(0[1-9]|1[0-2]|[1-9])-(\3([12]\d|0[1-9]|3[01])|[1-9])[tT\s]([01]\d|2[0-3])\:(([0-5]\d)|\d)\:(([0-5]\d)|\d)([\.,]\d+)?([zZ]|([\+-])([01]\d|2[0-3]|\d):(([0-5]\d)|\d))$/;
 
@@ -31,7 +31,7 @@ const SCHEMA = {
   }
 };
 
-const Progress = function (params) {
+const Progress  = function (params) {
   const self = this;
 
   inspector.sanitize(SCHEMA, params);
@@ -45,5 +45,6 @@ const Progress = function (params) {
 
   return self;
 };
+Progress.coerce = (progress)=> progress instanceof Progress ? progress : new Progress(progress);
 
 module.exports = Progress;

@@ -1,67 +1,47 @@
 const _         = require('lodash');
-const inspector = require('schema-inspector');
+const inspector = require('./inspector');
 const utils     = require('../../config/utils');
 
 const SCHEMA = {
   type:       'object',
   properties: {
     source:      {
-      type:       'object',
-      properties: {
-        host:       {
-          type:      'string',
-          minLength: 3
-        },
-        apiVersion: {
-          type:      'string',
-          minLength: 3
-        }
-      }
+      $type: 'elasticsearch'
     },
     destination: {
-      type:       'object',
-      properties: {
-        host:       {
-          type:      'string',
-          minLength: 3
-        },
-        apiVersion: {
-          type:      'string',
-          minLength: 3
-        }
-      }
+      $type: 'elasticsearch'
     },
     transfer:    {
       type:       'object',
       properties: {
-        documents: {
-          type:       'object',
-          optional:   true,
-          properties: {
-            index: {
-              type:      'string',
-              minLength: 1
-            },
-            type:  {
-              type:      'string',
-              minLength: 1
-            }
-          }
-        },
-        index:     {
+        index:    {
           type:      'string',
           optional:  true,
           minLength: 1
         },
-        template:  {
+        template: {
           type:      'string',
           optional:  true,
           minLength: 1
         }
+      },
+      documents:  {
+        type:       'object',
+        optional:   true,
+        properties: {
+          index: {
+            type:      'string',
+            minLength: 1
+          },
+          type:  {
+            type:      'string',
+            minLength: 1
+          }
+        }
       }
     },
     mutators:    {
-      type:     'string',
+      $type:    'mutators',
       optional: true
     },
     count:       {
@@ -71,7 +51,7 @@ const SCHEMA = {
   }
 };
 
-const Subtask = function (params) {
+const Subtask  = function (params) {
   const self = this;
 
   inspector.sanitize(SCHEMA, params);
@@ -87,16 +67,12 @@ const Subtask = function (params) {
   _.merge(idSource, params);
   delete idSource.count;
 
-  self.getID = ()=> {
-    return JSON.stringify(idSource);
-  };
-
-  self.toString = ()=> {
-    return JSON.stringify(params);
-  };
+  self.getID    = ()=> JSON.stringify(idSource);
+  self.toString = ()=> JSON.stringify(params);
 
   return self;
 };
+Subtask.coerce = (subtask)=> subtask instanceof Subtask ? subtask : new Subtask(subtask);
 
 /**
  * Static factory for creating subtasks directly from the ID and count
@@ -106,12 +82,11 @@ const Subtask = function (params) {
  * @returns {Subtask}
  */
 Subtask.createFromID = (id, count)=> {
-
   if (!utils.isNonZeroString(id)) {
     throw new Error('id must be stringified json');
   }
 
-  const params   = JSON.parse(id);
+  const params = JSON.parse(id);
   params.count = count;
 
   return new Subtask(params);

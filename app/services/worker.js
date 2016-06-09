@@ -1,11 +1,15 @@
 const _              = require('lodash');
+const Promise        = require('bluebird');
 const Manager        = require('./manager');
+const Mutators       = require('./mutators');
+const Subtasks       = require('./subtasks');
+const Tasks          = require('./tasks');
 const Transfer       = require('./transfer');
 const Progress       = require('../models/progress');
 const createEsClient = require('../../config/elasticsearch');
 const log            = require('../../config').log;
 
-let RUN_CHECK_INTERVAL_MSEC = 2 * 1000;
+let RUN_CHECK_INTERVAL_MS = 2000;
 
 const Worker = function (redisClient) {
   const self            = this;
@@ -13,41 +17,42 @@ const Worker = function (redisClient) {
   let completedCallback = null;
   let name              = null;
 
-  self.manager = new Manager(redisClient);
+  const manager  = new Manager(redisClient);
+  const mutators = new Mutators(redisClient);
+  const subtasks = new Subtasks(redisClient);
+  const tasks    = new Tasks(redisClient);
 
   self.setUpdateCallback = (callback) => {
     updateCallback = callback;
   };
 
-  self.setCompletdCallback = (callback) => {
+  self.setCompletedCallback = (callback) => {
     completedCallback = callback;
   };
 
-  let killNow = false;
+  let killNow      = false;
   self.killStopped = () => {
     killNow = true;
   };
-
-  const taskNames = [];
 
   /**
    * Return the name of the next task to work on.
    * @returns {*}
    */
-  const getTaskName = ()=> {
-    if (taskNames.length === 0) {
-      return self.manager.getTasks().then(tasks => {
-        if (tasks.length === 0) {
+  const taskIds     = [];
+  const getTaskName = ()=> taskIds.length !== 0 ?
+      taskIds.pop() :
+      tasks.getAll()
+      .then((allTasks)=> {
+        if (allTasks.length === 0) {
           return null;
+        } else {
+          allTasks.forEach((task)=> taskIds.push(task));
+          return taskIds.pop();
         }
-
-        _.forEach(tasks, task => taskNames.push(task));
-        return taskNames.pop();
       });
-    } else {
-      return taskNames.pop();
-    }
-  };
+
+  const timeoutPromise = (timeout)=> new Promise((resolve)=> setTimeout(resolve, timeout));
 
   /**
    * Get a task name, then get a subtask within that task to complete.
@@ -55,73 +60,71 @@ const Worker = function (redisClient) {
    * Repeat as long as there are subtasks to complete.
    * @returns {Promise.<TResult>}
    */
-  const doSubtask = ()=> {
-    return self.manager.isRunning().then(running => {
-      if (!running) {
-        if (killNow) {
-          throw new Error('Worker killed');
-        }
-
-        log.info('Currently stopped. Waiting for run...');
-        self.manager.workerHeartbeat(name, {status: 'stopped'});  // Not waiting for promise
-        return new Promise(resolve => setTimeout(resolve, RUN_CHECK_INTERVAL_MSEC));
-      }
-
-      return getTaskName().then(taskName => {
-        if (taskName === null) {
-          log.info('No tasks found, waiting...');
-          self.manager.workerHeartbeat(name, {status: `waiting for task...`});  // Not waiting for promise
-          return new Promise(resolve => setTimeout(resolve, RUN_CHECK_INTERVAL_MSEC));
-        }
-
-        log.info(`got task: ${taskName}`);
-        return self.manager.fetchSubtask(taskName).then((subtask)=> {
-          if (!subtask) {
-            log.info('No subtask to execute, waiting...');
-            self.manager.workerHeartbeat(name, {status: `waiting for subtask...`});  // Not waiting for promise
-            return new Promise(resolve => setTimeout(resolve, RUN_CHECK_INTERVAL_MSEC));
+  const doSubtask = ()=>
+      manager.isRunning()
+      .then(running => {
+        if (!running) {
+          if (killNow) {
+            throw new Error('Worker killed');
           }
 
-          self.manager.workerHeartbeat(name, {
-            status:  'starting..',
-            task:    taskName,
-            subtask: subtask
-          });  // Not waiting for promise
+          log.info('Currently stopped. Waiting for run...');
+          manager.workerHeartbeat(name, {status: 'stopped'});  // Not waiting for promise
+          return timeoutPromise(RUN_CHECK_INTERVAL_MS);
+        }
 
-          log.info(`got subtask: ${subtask}`);
+        return getTaskName()
+        .then(taskId => {
+          if (taskId === null) {
+            log.info('No tasks found, waiting...');
+            manager.workerHeartbeat(name, {status: `waiting for task...`});  // Not waiting for promise
+            return timeoutPromise(RUN_CHECK_INTERVAL_MS);
+          }
 
-          return doTransfer(taskName, subtask)
-            .then(()=> completeSubtask(taskName, subtask))
+          log.info(`got task: ${taskId}`);
+          return subtasks.fetch(taskId)
+          .then((subtask)=> {
+            if (!subtask) {
+              log.info('No subtask to execute, waiting...');
+              manager.workerHeartbeat(name, {status: `waiting for subtask...`});  // Not waiting for promise
+              return timeoutPromise(RUN_CHECK_INTERVAL_MS);
+            }
+
+            manager.workerHeartbeat(name, {
+              status: 'starting..',
+              task:   taskId,
+                      subtask
+            });  // Not waiting for promise
+
+            log.info(`got subtask: ${subtask}`);
+
+            return doTransfer(taskId, subtask)
+            .then(()=> completeSubtask(taskId, subtask))
             .catch((error)=> {
-              const message = `Error: ${JSON.stringify(error)}`;
-              self.manager.logError(taskName, subtask, message);
-
-              // Requeue entire subtask on error
-              self.manager.queueSubtask(taskName, subtask);
+              tasks.logError(taskId, subtask, `Error: ${JSON.stringify(error)}`);
+              subtasks.queue(taskId, subtask); // Requeue entire subtask on error
               return Promise.resolve();
             });
-        })
+          })
+        });
+      })
+      .then(doSubtask).catch(error => {
+        if (error.message === 'Worker killed') {
+          log.warn('Worker killed');
+        } else {
+          throw error;
+        }
       });
-    }).then(doSubtask).catch(error => {
-      if (error.message === 'Worker killed') {
-        log.warn('Worker killed');
-      } else {
-        throw error;
-      }
-    });
-  };
 
-  const doTransfer = (taskName, subtask) => {
-    const source = createEsClient(subtask.source.host, subtask.source.apiVersion);
-    const dest   = createEsClient(subtask.destination.host, subtask.destination.apiVersion);
+  const doTransfer = (taskId, subtask) => {
+    const source = createEsClient(subtask.source);
+    const dest   = createEsClient(subtask.destination);
 
     const transfer = new Transfer(source, dest);
-
     if (subtask.mutators) {
-      transfer.loadMutators(subtask.mutators.path, subtask.mutators.arguments);
+      transfer.setMutators(mutators.load(taskId, subtask.mutators));
     }
-
-    transfer.setUpdateCallback(update => updateProgress(taskName, subtask, update));
+    transfer.setUpdateCallback(update => updateProgress(taskId, subtask, update));
 
     if (subtask.transfer.documents) {
       return transfer.transferData(subtask.transfer.documents.index, subtask.transfer.documents.type);
@@ -131,18 +134,17 @@ const Worker = function (redisClient) {
       return transfer.transferTemplates(subtask.transfer.template);
     } else {
       log.error(`subtask ${subtask} has unhandled requirements`);
-      return;
     }
   };
 
   /**
    * Update the progress of a specific subtask
-   * @param taskName
+   * @param taskId
    * @param subtask
    * @param update
    * @returns {Promise.<TResult>|*}
    */
-  const updateProgress = (taskName, subtask, update)=> {
+  const updateProgress = (taskId, subtask, update)=> {
     const progress = new Progress({
       tick:        update.tick,
       transferred: update.transferred,
@@ -150,36 +152,38 @@ const Worker = function (redisClient) {
       worker:      name
     });
 
-    self.manager.workerHeartbeat(name, {
+    manager.workerHeartbeat(name, {
       status:   'running',
-      task:     taskName,
-      subtask:  subtask,
+      task:     taskId,
+                subtask,
       progress: progress
     });  // Not waiting for promise
 
-    return self.manager.updateProgress(taskName, subtask, progress).then(()=> {
+    return subtasks.updateProgress(taskId, subtask, progress)
+    .then(()=> {
       if (_.isFunction(updateCallback)) {
-        updateCallback(taskName, subtask, progress);
+        updateCallback(taskId, subtask, progress);
       }
     });
   };
 
   /**
    * Mark a specific subtask as completed
-   * @param taskName
+   * @param taskId
    * @param subtask
    * @returns {Promise.<TResult>|*}
    */
-  const completeSubtask = (taskName, subtask) => {
-    log.info(`completed task: '${taskName}' subtask: ${subtask}`);
-    return self.manager.completeSubtask(taskName, subtask).then(()=> {
+  const completeSubtask = (taskId, subtask)=> {
+    log.info(`completed task: '${taskId}' subtask: ${subtask}`);
+    return subtasks.complete(taskId, subtask)
+    .then(()=> {
       if (_.isFunction(completedCallback)) {
-        completedCallback(taskName, subtask);
+        completedCallback(taskId, subtask);
       }
     });
   };
 
-  self.manager.getWorkerName().then(workerName => {
+  manager.getWorkerName().then((workerName)=> {
     name = workerName;
     log.info(`Starting worker: ${name}`);
     doSubtask();
@@ -187,8 +191,7 @@ const Worker = function (redisClient) {
 };
 
 Worker.__overrideCheckInterval = (intervalMsec)=> {
-  RUN_CHECK_INTERVAL_MSEC = intervalMsec;
+  RUN_CHECK_INTERVAL_MS = intervalMsec;
 };
-
 
 module.exports = Worker;

@@ -1,9 +1,12 @@
-const config        = require('../config');
 const Promise       = require('bluebird');
 const elasticsearch = require('elasticsearch');
+const sr            = require('sync-request');
 const bunyan        = require('bunyan');
 const PrettyStream  = require('bunyan-prettystream');
-const prettyStdOut  = new PrettyStream({mode: 'dev'});
+const semver        = require('semver');
+const config        = require('../config');
+
+const prettyStdOut = new PrettyStream({mode: 'dev'});
 prettyStdOut.pipe(process.stdout);
 
 const LogToBunyan = function () {
@@ -28,12 +31,26 @@ const LogToBunyan = function () {
       responseStatus: responseStatus
     });
   };
-  self.close   = () => {};
+  self.close   = () => {
+  };
 };
 
-const createEsClient = (host, apiVersion) => {
+const DEFAULT_ELASTICSEARCH_PORT = 9200;
+
+const createEsClient = (hostConfig) => {
+  const host = hostConfig.host || 'localhost';
+  const port = hostConfig.port || DEFAULT_ELASTICSEARCH_PORT;
+
+  let uri = `${host}:${port}`;
+  if (!uri.startsWith('http')) {
+    uri = `http://${uri}`;
+  }
+
+  const results    = sr('GET', uri);
+  const version    = JSON.parse(results.getBody('utf8')).version.number;
+  const apiVersion = `${semver.major(version)}.${semver.minor(version)}`;
   return new elasticsearch.Client({
-    host:       host,
+    host:       {host, port},
     apiVersion: apiVersion,
     log:        LogToBunyan,
     defer:      function () {

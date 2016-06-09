@@ -1,16 +1,23 @@
+/*eslint no-magic-numbers: "off"*/
+/*eslint no-invalid-this: "off"*/
+const _              = require('lodash');
 const expect         = require('chai').expect;
+const Promise        = require('bluebird');
+const TestConfig     = require('../config');
+const Utils          = require('../utils');
+const Compiler       = require('../../app/services/compiler');
 const Transfer       = require('../../app/services/transfer');
 const createEsClient = require('../../config/elasticsearch.js');
 const config         = require('../../config/index');
-const _              = require('lodash');
 
-const log = config.log;
+const log      = config.log;
+const compiler = new Compiler();
+const utils    = new Utils();
 
-const Promise = require('bluebird');
 Promise.longStackTraces();
-Promise.onPossiblyUnhandledRejection((error) => {
-  log.error('Likely error: ', error.stack);
-});
+Promise.onPossiblyUnhandledRejection((error) => log.error('Likely error: ', error.stack));
+
+const loadMutator = (path)=> compiler.compile(utils.loadFile(path));
 
 describe('transfer', function () {
   this.timeout(5000);
@@ -20,102 +27,121 @@ describe('transfer', function () {
   let dest     = null;
 
   before((done)=> {
-    source = createEsClient('localhost:9200', '1.4');
-    dest   = createEsClient('localhost:9201', '2.2');
+    source = createEsClient(TestConfig.elasticsearch.source);
+    dest   = createEsClient(TestConfig.elasticsearch.destination);
 
     transfer = new Transfer(source, dest);
 
-    transfer.source.indices.deleteTemplate({name: '*'}).finally(()=> {
-      return transfer.dest.indices.deleteTemplate({name: '*'});
-    }).finally(()=> {
-      return transfer.source.indices.delete({index: '*'});
-    }).finally(()=> {
-      return transfer.dest.indices.delete({index: '*'});
-    }).finally(()=> {
-      done();
-    });
+    transfer.source.indices.deleteTemplate({name: '*'})
+    .finally(()=> transfer.dest.indices.deleteTemplate({name: '*'}))
+    .finally(()=> transfer.source.indices.delete({index: '*'}))
+    .finally(()=> transfer.dest.indices.delete({index: '*'}))
+    .finally(()=> done());
   });
 
-  const addTemplate = ()=> {
-    return transfer.source.indices.putTemplate({
-      name: 'test_template',
-      body: {
-        template: "te*",
-        refresh:  true,
-        settings: {
-          number_of_shards: 1
-        },
-        mappings: {
-          type1: {
-            _source:    {
-              enabled: false
+  afterEach((done)=> {
+    transfer.clearMutators();
+    transfer.setUpdateCallback(null);
+
+    transfer.source.indices.deleteTemplate({name: '*'})
+    .finally(()=> transfer.dest.indices.deleteTemplate({name: '*'}))
+    .finally(()=> transfer.source.indices.delete({index: '*'}))
+    .finally(()=> transfer.dest.indices.delete({index: '*'}))
+    .finally(()=> done());
+  });
+
+  const addTemplate = ()=> transfer.source.indices.putTemplate({
+    name: 'test_template',
+    body: {
+      template: "te*",
+      refresh:  true,
+      settings: {
+        number_of_shards: 1
+      },
+      mappings: {
+        type1: {
+          _source:    {
+            enabled: false
+          },
+          properties: {
+            host_name:  {
+              type: "keyword"
             },
-            properties: {
-              host_name:  {
-                type: "keyword"
-              },
-              created_at: {
-                type:   "date",
-                format: "EEE MMM dd HH:mm:ss Z YYYY"
-              }
+            created_at: {
+              type:   "date",
+              format: "EEE MMM dd HH:mm:ss Z YYYY"
             }
           }
         }
       }
-    });
-  };
-
-  const addLotsOfData = ()=> {
-    return transfer.source.bulk({
-      refresh: true,
-      body:    require('./lotsOfData.json')
-    });
-  };
-
-  it('should throw if getTemplates arg is not a non-zero string', () => {
-    let throws = ()=> {
-      transfer.getTemplates({});
-    };
-    expect(throws).to.throw(/targetTemplates must be string with length/);
-
-    throws = ()=> {
-      transfer.getTemplates(()=> {});
-    };
-    expect(throws).to.throw(/targetTemplates must be string with length/);
-
-    throws = ()=> {
-      transfer.getTemplates(1);
-    };
-    expect(throws).to.throw(/targetTemplates must be string with length/);
-
-    throws = ()=> {
-      transfer.getTemplates('');
-    };
-    expect(throws).to.throw(/targetTemplates must be string with length/);
+    }
   });
 
+  it('should get all indices and types', (done)=>
+      utils.addData(source)
+      .then(()=> source.indices.refresh())
+      .then(()=> Transfer.getIndices(source, '*'))
+      .then((indices)=> {
+        expect(_.size(indices)).to.be.equals(3);
+
+        const myindex1 = _.find(indices, {name: 'myindex1'});
+        expect(myindex1).to.be.defined;
+        expect(_.size(myindex1.mappings)).to.be.equals(2);
+        expect(myindex1.mappings.mytype1).to.be.defined;
+        expect(myindex1.mappings.mytype2).to.be.defined;
+
+        const myindex2 = _.find(indices, {name: 'myindex2'});
+        expect(myindex2).to.be.defined;
+        expect(_.size(myindex2.mappings)).to.be.equals(1);
+        expect(myindex2.mappings.mytype1).to.be.defined;
+
+        const myindex3 = _.find(indices, {name: 'myindex3'});
+        expect(myindex3).to.be.defined;
+        expect(_.size(myindex1.mappings)).to.be.equals(2);
+        expect(myindex3.mappings.mytype2).to.be.defined;
+        expect(myindex3.mappings.mytype3).to.be.defined;
+      })
+      .then(()=> done())
+      .catch(done)
+  );
+
+  it('should throw if getTemplates arg is not a non-zero string', (done) =>
+      Transfer.getTemplates(source, {})
+      .then(()=> done('fail'))
+      .catch((e)=> expect(e.message).to.be.equals('targetTemplates must be string with length'))
+      .then(()=> Transfer.getTemplates(source, ()=> {
+      }))
+      .then(()=> done('fail'))
+      .catch((e)=> expect(e.message).to.be.equals('targetTemplates must be string with length'))
+      .then(()=> Transfer.getTemplates(source, 1))
+      .then(()=> done('fail'))
+      .catch((e)=> expect(e.message).to.be.equals('targetTemplates must be string with length'))
+      .then(()=> Transfer.getTemplates(source, ''))
+      .then(()=> done('fail'))
+      .catch((e)=> expect(e.message).to.be.equals('targetTemplates must be string with length'))
+      .then(()=> done())
+  );
+
   it('should reject if there are no templates', (done) => {
-    transfer.getTemplates('*').then(()=> {
-      done('fail');
-    }).catch((error)=> {
+    Transfer.getTemplates(source, '*')
+    .then(()=> done('fail'))
+    .catch((error)=> {
       expect(error).to.match(/Templates asked to be copied, but none found/);
       done();
     });
   });
 
   it('should get templates', (done) => {
-    addTemplate().then(()=> {
-      return transfer.getTemplates('*').then((templates)=> {
-        expect(templates).to.be.instanceOf(Array);
-        expect(_.size(templates)).to.eql(1);
-        expect(templates[0].name).to.eql('test_template');
-        expect(templates[0].template).to.eql('te*');
-        done();
-      });
+    addTemplate()
+    .then(()=> Transfer.getTemplates(source, '*'))
+    .then((templates)=> {
+      expect(templates).to.be.an.instanceof(Array);
+      expect(_.size(templates)).to.be.equals(1);
+      expect(templates[0].name).to.be.equals('test_template');
+      expect(templates[0].template).to.be.equals('te*');
+      done();
     })
-      .catch((error)=> {
-        done(`fail ${error}`);
-      });
+    .catch(done);
   });
 
   it('should put templates', (done)=> {
@@ -170,14 +196,14 @@ describe('transfer', function () {
       }
     ];
 
-    transfer.putTemplates(sourceTemplates).then(()=> {
-      return transfer.dest.indices.getTemplate({name: '*'});
-    }).then((destTemplates)=> {
-      expect(_.size(destTemplates)).to.eql(2);
+    transfer.putTemplates(sourceTemplates)
+    .then(()=> transfer.dest.indices.getTemplate({name: '*'}))
+    .then((destTemplates)=> {
+      expect(_.size(destTemplates)).to.be.equals(2);
       expect(destTemplates).to.have.property('test_template');
-      expect(destTemplates.test_template.template).to.eql('te*');
+      expect(destTemplates.test_template.template).to.be.equals('te*');
       expect(destTemplates).to.have.property('test_template_2');
-      expect(destTemplates.test_template_2.template).to.eql('te2*');
+      expect(destTemplates.test_template_2.template).to.be.equals('te2*');
       done();
     });
   });
@@ -203,14 +229,10 @@ describe('transfer', function () {
     transfer.source.indices.create({
       index: 'twitter1',
       body:  index
-    }).then(()=> {
-      return transfer.source.indices.create({
-        index: 'twitter2',
-        body:  index
-      });
-    }).then(()=> {
-      return transfer.getIndices('*');
-    }).then((indices)=> {
+    })
+    .then(()=> transfer.source.indices.create({index: 'twitter2', body: index}))
+    .then(()=> Transfer.getIndices(transfer.source, '*'))
+    .then((indices)=> {
       expect(indices).to.have.length(2);
       expect(Object.keys(indices[0])).to.include('name', 'settings', 'mappings', 'alias', 'warmers');
       expect(indices[0].name).to.be.oneOf([
@@ -223,16 +245,14 @@ describe('transfer', function () {
         'twitter2'
       ]);
       expect(indices[0].name).to.not.eql(indices[1].name);
-      done();
-    });
+    })
+    .then(()=> done())
   });
 
   it('should reject if there is an error during get indices', (done)=> {
-    transfer.getIndices('missingIndexName').then(()=> {
-      done('fail');
-    }).catch(()=> {
-      done();
-    });
+    Transfer.getIndices(transfer.source, 'missingIndexName')
+    .then(()=> done('fail'))
+    .catch(()=> done());
   });
 
   it('should put indices', (done)=> {
@@ -253,36 +273,27 @@ describe('transfer', function () {
       }
     };
 
-    transfer.dest.indices.delete({index: '*'}).then(()=> {
-      return transfer.source.indices.create({
-        index: 'twitter1',
-        body:  index
-      });
-    }).then(()=> {
-      return transfer.source.indices.create({
-        index: 'twitter2',
-        body:  index
-      });
-    }).then(()=> {
-      return transfer.getIndices('*');
-    }).then((indices)=> {
-      return transfer.putIndices(indices);
-    }).then(()=> {
-      return transfer.dest.indices.get({index: '*'});
-    }).then((response)=> {
-      expect(_.size(response)).to.eql(2);
+    transfer.dest.indices.delete({index: '*'})
+    .then(()=> transfer.source.indices.create({index: 'twitter1', body: index}))
+    .then(()=> transfer.source.indices.create({index: 'twitter2', body: index}))
+    .then(()=> Transfer.getIndices(transfer.source, '*'))
+    .then((indices)=> transfer.putIndices(indices))
+    .then(()=> transfer.dest.indices.get({index: '*'}))
+    .then((response)=> {
+      expect(_.size(response)).to.be.equals(2);
+
       expect(response.twitter1).to.be.defined;
-      expect(response.twitter1.settings.index.number_of_shards).to.eql('1');
-      expect(response.twitter1.settings.index.number_of_replicas).to.eql('2');
-      expect(response.twitter1.mappings.type1.properties.field1.type).to.eql('string');
+      expect(response.twitter1.settings.index.number_of_shards).to.be.equals('1');
+      expect(response.twitter1.settings.index.number_of_replicas).to.be.equals('2');
+      expect(response.twitter1.mappings.type1.properties.field1.type).to.be.equals('string');
+
       expect(response.twitter2).to.be.defined;
-      expect(response.twitter2.settings.index.number_of_shards).to.eql('1');
-      expect(response.twitter2.settings.index.number_of_replicas).to.eql('2');
-      expect(response.twitter2.mappings.type1.properties.field1.type).to.eql('string');
-      done();
-    }).catch((error)=> {
-      done(error);
-    });
+      expect(response.twitter2.settings.index.number_of_shards).to.be.equals('1');
+      expect(response.twitter2.settings.index.number_of_replicas).to.be.equals('2');
+      expect(response.twitter2.mappings.type1.properties.field1.type).to.be.equals('string');
+    })
+    .then(()=> done())
+    .catch(done);
   });
 
   it('should reject if there is an error during put indices', (done)=> {
@@ -305,73 +316,58 @@ describe('transfer', function () {
       }
     ];
 
-    transfer.putIndices(indices).then(()=> {
-      done('fail');
-    }).catch(()=> {
-      done();
-    });
+    transfer.putIndices(indices)
+    .then(()=> done('fail'))
+    .catch(()=> done());
   });
 
   it('should get all data in given index and type', (done)=> {
-    addLotsOfData().then(()=> {
-      return transfer.transferData('myindex1', 'mytype1', {});
-    }).then(()=> {
-      return transfer.dest.indices.refresh({index: ''})
-    }).then(()=> {
-      return transfer.dest.search({size: 100});
-    }).then((response)=> {
-      expect(response.hits.hits).to.be.length(20);
-      done();
-    }).catch((error)=> {
-      done(error);
-    });
+    const index = 'myindex1';
+    const type  = 'mytype1';
+
+    utils.createIndices(transfer, index, index)
+    .then(()=> source.bulk({
+      refresh: true,
+      body:    require('./lotsOfData.json')
+    }))
+    .then(()=> transfer.transferData(index, type, {}))
+    .then(()=> transfer.dest.indices.refresh({index: '*'}))
+    .then(()=> transfer.dest.search({size: 100}))
+    .then((response)=> expect(response.hits.hits).to.be.length(20))
+    .then(()=> done())
+    .catch(done);
   });
 
   it('should throw if no indexName is provided', (done)=> {
-    const throws = ()=> {
-      transfer.transferData(null, 'mytype1');
-    };
-
-    expect(throws).to.throw(/targetIndex must be string with length/);
+    const throws = ()=> transfer.transferData(null, 'mytype1');
+    expect(throws).to.throw('targetIndex must be string with length');
     done();
   });
 
   it('should throw if no typeName is provided', (done)=> {
-    const throws = ()=> {
-      transfer.transferData('myindex', null);
-    };
-
-    expect(throws).to.throw(/targetType must be string with length/);
+    const throws = ()=> transfer.transferData('myindex', null);
+    expect(throws).to.throw('targetType must be string with length');
     done();
   });
 
   it('should throw if body is not an object', (done)=> {
-    const throws = ()=> {
-      transfer.transferData('myindex', 'mytype', 'body');
-    };
-
-    expect(throws).to.throw(/if provided, body must be an object/);
+    const throws = ()=> transfer.transferData('myindex', 'mytype', 'body');
+    expect(throws).to.throw('if provided, body must be an object');
     done();
   });
 
   it('should reject if index does not exist', (done)=> {
-    transfer.transferData('notthere', 'mytype1').then(()=> {
-      done('fail');
-    }).catch(()=> {
-      done();
-    });
+    transfer.transferData('notthere', 'mytype1')
+    .then(()=> done('fail'))
+    .catch(()=> done());
   });
 
   it('should call callback with status updates', (done)=> {
-    const data = [];
+    const index = 'myindex1';
+    const data  = [];
 
     _.times(100, (n)=> {
-      data.push({
-        index: {
-          _index: 'myindex1',
-          _type:  'myindex1'
-        }
-      });
+      data.push({index: {_index: index, _type: index}});
       data.push({something: `data${n}`});
     });
 
@@ -382,289 +378,118 @@ describe('transfer', function () {
       }
     });
 
-    source.bulk({body: data}).then((results)=> {
-      if (results.errors) {
-        log.error('errors', results);
-        return Promise.reject(`errors: ${results.errors}`);
-      }
-
-      return source.indices.refresh();
-    }).then(()=> {
-      return transfer.transferData('myindex1', 'myindex1');
-    });
-  });
-
-  it('load all mutators from directory', ()=> {
-    expect(_.size(transfer.getMutators())).to.eql(0);
-
-    const mutatorArguments = {
-      first:  'this thing',
-      second: 'other thing'
-    };
-
-    transfer.loadMutators(`${__dirname}/testMutators`, mutatorArguments);
-
-    const mutators = transfer.getMutators();
-    expect(_.size(mutators)).to.eql(3);
-
-    expect(mutators['data']).to.have.length(1);
-    expect(mutators['data'][0].type).to.eql('data');
-    expect(_.isFunction(mutators['data'][0].predicate)).to.be.true;
-    expect(_.isFunction(mutators['data'][0].mutate)).to.be.true;
-    expect(mutators['data'][0].arguments).to.eql(mutatorArguments);
-
-    expect(mutators['template']).to.have.length(1);
-    expect(mutators['template'][0].type).to.eql('template');
-    expect(_.isFunction(mutators['template'][0].predicate)).to.be.true;
-    expect(_.isFunction(mutators['template'][0].mutate)).to.be.true;
-    expect(mutators['template'][0].arguments).to.eql(mutatorArguments);
-
-    expect(mutators['index']).to.have.length(2);
-    expect(mutators['index'][0].type).to.eql('index');
-    expect(_.isFunction(mutators['index'][0].predicate)).to.be.true;
-    expect(_.isFunction(mutators['index'][0].mutate)).to.be.true;
-    expect(mutators['index'][0].arguments).to.eql(mutatorArguments);
-  });
-
-  it('should load a specific mutator', ()=> {
-    expect(_.size(transfer.getMutators())).to.eql(0);
-
-    transfer.loadMutators(`${__dirname}/testMutators/dataMutator.js`);
-
-    const mutators = transfer.getMutators();
-    expect(_.size(mutators)).to.eql(1);
-    expect(mutators['data']).to.have.length(1);
-    expect(mutators['data'][0].type).to.eql('data');
-    expect(_.isFunction(mutators['data'][0].predicate)).to.be.true;
-    expect(_.isFunction(mutators['data'][0].mutate)).to.be.true;
-  });
-
-  it('should not load a directory with malformed mutators', ()=> {
-    expect(_.size(transfer.getMutators())).to.eql(0);
-
-    const throws = ()=> {
-      transfer.loadMutators(`${__dirname}/invalidMutators`);
-    };
-
-    expect(throws).to.throw();
-  });
-
-  it('should not load a mutator with no mutate function', ()=> {
-    expect(_.size(transfer.getMutators())).to.eql(0);
-
-    const throws = ()=> {
-      transfer.loadMutators(`${__dirname}/invalidMutators/noMutateMutator.js`);
-    };
-
-    expect(throws).to.throw(/Mutator mutate\(\) not provided/);
-  });
-
-  it('should not load a mutator with no predicate function', ()=> {
-    expect(_.size(transfer.getMutators())).to.eql(0);
-
-    const throws = ()=> {
-      transfer.loadMutators(`${__dirname}/invalidMutators/noPredicateMutator.js`);
-    };
-
-    expect(throws).to.throw(/Mutator predicate\(\) not provided/);
-  });
-
-  it('should not load a mutator with no type', ()=> {
-    expect(_.size(transfer.getMutators())).to.eql(0);
-
-    const throws = ()=> {
-      transfer.loadMutators(`${__dirname}/invalidMutators/noTypeMutator.js`);
-    };
-
-    expect(throws).to.throw(/Mutator type string not provided/);
-  });
-
-  it('should not load a mutator with invalid type', ()=> {
-    expect(_.size(transfer.getMutators())).to.eql(0);
-
-    const throws = ()=> {
-      transfer.loadMutators(`${__dirname}/invalidMutators/invalidType.js`);
-    };
-
-    expect(throws).to.throw(/Mutator type 'wrong' not one of/);
-  });
-
-  it('should not load a mutator that isn\'t js', ()=> {
-    expect(_.size(transfer.getMutators())).to.eql(0);
-
-    const throws = ()=> {
-      transfer.loadMutators(`${__dirname}/invalidMutators/notAJsFile`);
-    };
-
-    expect(throws).to.throw(/No \.js file\(s\) at/);
+    utils.createIndices(transfer, index, index)
+    .then(()=> source.bulk({body: data}))
+    .then((results)=> results.errors ? Promise.reject(`errors: ${results.errors}`) : source.indices.refresh())
+    .then(()=> transfer.transferData(index, index))
+    .catch(done);
   });
 
   it('should return the original when no mutator is present', (done)=> {
     source.indices.create({
       index: 'index_to_mutate',
       body:  {settings: {number_of_shards: 4}}
-    }).then(()=> {
-      return transfer.transferIndices('index_to_mutate');
-    }).then(()=> {
-      return dest.indices.refresh();
-    }).then(()=> {
-      return dest.indices.get({index: 'index_to_mutate'});
-    }).then((index)=> {
-      expect(index.index_to_mutate.settings.index.number_of_shards).to.eql('4');
-      done();
-    });
+    })
+    .then(()=> transfer.transferIndices('index_to_mutate'))
+    .then(()=> dest.indices.refresh())
+    .then(()=> dest.indices.get({index: 'index_to_mutate'}))
+    .then((index)=> expect(index.index_to_mutate.settings.index.number_of_shards).to.be.equals('4'))
+    .then(() => done());
   });
 
   it('should return the original when the mutator does not apply', (done)=> {
-    transfer.loadMutators(`${__dirname}/testMutators/indexMutator.js`);
+    transfer.setMutators({index: [loadMutator(`${__dirname}/validMutators/index.js`)]});
 
     source.indices.create({
       index: 'index_not_to_mutate',
       body:  {settings: {number_of_shards: 4}}
-    }).then(()=> {
-      return transfer.transferIndices('index_not_to_mutate');
-    }).then(()=> {
-      return dest.indices.refresh();
-    }).then(()=> {
-      return dest.indices.get({index: 'index_not_to_mutate'});
-    }).then((index)=> {
-      expect(index.index_not_to_mutate.settings.index.number_of_shards).to.eql('4');
-      done();
-    });
+    })
+    .then(()=> transfer.transferIndices('index_not_to_mutate'))
+    .then(()=> dest.indices.refresh())
+    .then(()=> dest.indices.get({index: 'index_not_to_mutate'}))
+    .then((index)=> expect(index.index_not_to_mutate.settings.index.number_of_shards).to.be.equals('4'))
+    .then(() => done());
   });
 
   it('should use index mutator to change index during transfer', (done)=> {
-    transfer.loadMutators(`${__dirname}/testMutators/indexMutator.js`);
+    transfer.setMutators({index: [loadMutator(`${__dirname}/validMutators/index.js`)]});
 
     source.indices.create({
       index: 'index_to_mutate',
       body:  {settings: {number_of_shards: 4}}
-    }).then(()=> {
-      return transfer.transferIndices('index_to_mutate');
-    }).then(()=> {
-      return dest.indices.refresh();
-    }).then(()=> {
-      return dest.indices.get({index: 'new_index_name'});
-    }).then((index)=> {
-      expect(index.new_index_name.settings.index.number_of_shards).to.eql('4');
+    })
+    .then(()=> transfer.transferIndices('index_to_mutate'))
+    .then(()=> dest.indices.refresh())
+    .then(()=> dest.indices.get({index: 'new_index_name'}))
+    .then((index)=> {
+      expect(index.new_index_name.settings.index.number_of_shards).to.be.equals('4');
       return dest.indices.get({index: 'index_to_mutate'}).catch((error)=> {
-        expect(error.status).to.eql(404);
+        expect(error.status).to.be.equals(404);
         return 'not found';
       });
-    }).then((result)=> {
-      expect(result).to.eql('not found');
-      done();
-    });
+    })
+    .then((result)=> expect(result).to.be.equals('not found'))
+    .then(() => done());
   });
 
   it('should call mutator with arguments', (done)=> {
-    const arguments = {
+    const mutator     = loadMutator(`${__dirname}/validMutators/indexWithArgs.js`);
+    mutator.arguments = {
       name:   'creative',
       target: 'index_to_mutate'
     };
-    transfer.loadMutators(`${__dirname}/testMutators/indexMutatorWithArgs.js`, arguments);
+
+    transfer.setMutators({index: [mutator]});
 
     source.indices.create({
       index: 'index_to_mutate',
       body:  {settings: {number_of_shards: 4}}
-    }).then(()=> {
-      return transfer.transferIndices('index_to_mutate');
-    }).then(()=> {
-      return dest.indices.refresh();
-    }).then(()=> {
-      return dest.indices.get({index: 'creative'});
-    }).then((index)=> {
-      expect(index.creative.settings.index.number_of_shards).to.eql('4');
+    })
+    .then(()=> transfer.transferIndices('index_to_mutate'))
+    .then(()=> dest.indices.refresh())
+    .then(()=> dest.indices.get({index: 'creative'}))
+    .then((index)=> {
+      expect(index.creative.settings.index.number_of_shards).to.be.equals('4');
       return dest.indices.get({index: 'index_to_mutate'}).catch((error)=> {
-        expect(error.status).to.eql(404);
+        expect(error.status).to.be.equals(404);
         return 'not found';
       });
-    }).then((result)=> {
-      expect(result).to.eql('not found');
-      done();
-    });
+    })
+    .then((result)=> expect(result).to.be.equals('not found'))
+    .then(() => done());
   });
 
   it('should use a template mutator to change template during transfer', (done)=> {
-    transfer.loadMutators(`${__dirname}/testMutators/templateMutator.js`);
+    transfer.setMutators({template: [loadMutator(`${__dirname}/validMutators/template.js`)]});
 
     source.indices.putTemplate({
       name: 'test_template',
       body: {template: 'template_this*'}
-    }).then(()=> {
-      return transfer.transferTemplates('test_template');
-    }).then(()=> {
-      return dest.indices.getTemplate({name: 'test_template'});
-    }).then((template)=> {
-      expect(template.test_template.template).to.eql('template_that*');
-      done();
-    });
+    })
+    .then(()=> transfer.transferTemplates('test_template'))
+    .then(()=> dest.indices.getTemplate({name: 'test_template'}))
+    .then((template)=> expect(template.test_template.template).to.be.equals('template_that*'))
+    .then(() => done());
   });
 
   it('should use a data mutator to change documents during transfer', (done)=> {
-    transfer.loadMutators(`${__dirname}/testMutators/dataMutator.js`);
+    transfer.setMutators({data: [loadMutator(`${__dirname}/validMutators/data.js`)]});
 
-    source.create({
-      index: 'something_1990-05-21',
-      type:  'sometype',
-      body:  {field: 'daata'}
-    }).then(()=> {
-      return source.indices.refresh();
-    }).then(()=> {
-      return transfer.transferData('something_1990-05-21', 'sometype');
-    }).then(()=> {
-      return dest.indices.refresh();
-    }).then(()=> {
-      return dest.search({index: 'something_1990*'});
-    }).then((document)=> {
-      expect(document.hits.hits.length).to.eql(1);
-      expect(document.hits.hits[0]._index).to.eql('something_1990-05');
-      expect(document.hits.hits[0]._source.field).to.eql('daata');
-      done();
-    });
-  });
+    const srcIndex = 'something_1990-05-21';
+    const dstIndex = 'something_1990-05';
+    const type     = 'sometype';
 
-  // it('should recover from some errors', (done)=>{
-  //   let results = {
-  //     errors: 5,
-  //     items: [
-  //       {
-  //         update: {
-  //           status: 'success'
-  //         }
-  //       },
-  //       {
-  //         update: {
-  //           error: {
-  //             type: 'es_rejected_execution_exception'
-  //           }
-  //         }
-  //       }
-  //     ]
-  //   };
-  //
-  //   let bulkBody = [
-  //     { update: { _index: 'something', _type: 'type'}},
-  //     { field: 'data1'},
-  //     { update: { _index: 'something2', _type: 'type2'}},
-  //     { field: 'data2'}
-  //   ];
-  //
-  //   transfer.handleBulkErrors(results, bulkBody).then();
-  // });
-
-  afterEach((done)=> {
-    transfer.clearMutators();
-    transfer.setUpdateCallback(null);
-
-    transfer.source.indices.deleteTemplate({name: '*'}).finally(()=> {
-      return transfer.dest.indices.deleteTemplate({name: '*'});
-    }).finally(()=> {
-      return transfer.source.indices.delete({index: '*'});
-    }).finally(()=> {
-      return transfer.dest.indices.delete({index: '*'});
-    }).finally(()=> {
-      done();
-    });
+    utils.createIndices(transfer, srcIndex, dstIndex)
+    .then(()=> source.create({index: srcIndex, type: type, body: {field: 'daata'}}))
+    .then(()=> source.indices.refresh())
+    .then(()=> transfer.transferData(srcIndex, type))
+    .then(()=> dest.indices.refresh())
+    .then(()=> dest.search({index: 'something_1990*'}))
+    .then((document)=> {
+      expect(document.hits.hits.length).to.be.equals(1);
+      expect(document.hits.hits[0]._index).to.be.equals('something_1990-05');
+      expect(document.hits.hits[0]._source.field).to.be.equals('daata');
+    })
+    .then(() => done());
   });
 });
