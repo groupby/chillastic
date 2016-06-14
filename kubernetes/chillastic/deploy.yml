@@ -19,7 +19,8 @@ spec:
     spec:
       containers:
       - name: chillastic
-        image: groupbyinc/chillastic
+        image: groupbyinc/chillastic:latest
+        imagePullPolicy: Always
         ports:
           - containerPort: 8080
         readinessProbe:
