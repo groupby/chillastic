@@ -1,36 +1,17 @@
 const _         = require('lodash');
-const inspector = require('schema-inspector');
+const inspector = require('./inspector');
+const ObjectId  = require('./objectId');
 
 const SCHEMA = {
   type:       'object',
   properties: {
     source:      {
-      type:       'object',
-      properties: {
-        host:       {
-          type:      'string',
-          minLength: 3
-        },
-        apiVersion: {
-          type:      'string',
-          minLength: 3
-        }
-      }
+      $type: 'elasticsearch'
     },
     destination: {
-      type:       'object',
-      properties: {
-        host:       {
-          type:      'string',
-          minLength: 3
-        },
-        apiVersion: {
-          type:      'string',
-          minLength: 3
-        }
-      }
+      $type: 'elasticsearch'
     },
-    transfer:        {
+    transfer:    {
       type:       'object',
       properties: {
         indices:   {
@@ -56,70 +37,21 @@ const SCHEMA = {
               minLength: 1
             },
             filters:     {
-              type:       'object',
-              optional:   true,
-              properties: {
-                indices: {
-                  type:       'object',
-                  optional:   true,
-                  properties: {
-                    value:     {
-                      type:      'string',
-                      minLength: 1
-                    },
-                    type:      {
-                      type:    'string',
-                      pattern: /^path$|^regex$/,
-                      error:   `Must be 'path' or 'regex'`
-                    },
-                    arguments: {
-                      type:     'object',
-                      optional: true
-                    }
-                  }
-                },
-                types:   {
-                  type:       'object',
-                  optional:   true,
-                  properties: {
-                    value:     {
-                      type:      'string',
-                      minLength: 1
-                    },
-                    type:      {
-                      type:    'string',
-                      pattern: /^path$|^regex$/,
-                      error:   `Must be 'path' or 'regex'`
-                    },
-                    arguments: {
-                      type:     'object',
-                      optional: true
-                    }
-                  }
-                }
-              }
+              $type:    'filters',
+              optional: true
             }
           }
         }
       }
     },
     mutators:    {
-      type:       'object',
-      optional:   true,
-      properties: {
-        path:      {
-          type:     'string'
-        },
-        arguments: {
-          type:     'object',
-          optional: true
-        }
-      }
+      $type:    'mutators',
+      optional: true
     }
   }
 };
 
-const Task = function (params) {
+const Task           = function (params) {
   const self = this;
 
   inspector.sanitize(SCHEMA, params);
@@ -133,7 +65,12 @@ const Task = function (params) {
 
   return self;
 };
-
-Task.NAME_REGEX = /^[a-zA-Z][a-zA-Z0-9]{1,40}$/;
+Task.validateId      = (id)=> new ObjectId({id: id}).validate('taskId');
+Task.coerce          = (task)=> task instanceof Task ? task : new Task(task);
+Task.errorKey        = (taskId)=> `${taskId}_error`;
+Task.progressKey     = (taskId)=> `${taskId}_progress`;
+Task.completedKey    = (taskId)=> `${taskId}_completed`;
+Task.backlogQueueKey = (taskId)=> `${taskId}_backlog_queue`;
+Task.backlogHSetKey  = (taskId)=> `${taskId}_backlog_hset`;
 
 module.exports = Task;

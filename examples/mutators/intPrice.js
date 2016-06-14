@@ -1,4 +1,5 @@
-const _ = require('lodash');
+const _      = require('lodash');
+const DIGITS = 2;
 
 module.exports = {
   type:      'data',
@@ -13,14 +14,14 @@ module.exports = {
     if (_.has(doc._source, 'products')) {
       doc._source.products = _.map((product)=> {
         if (_.isInteger(product.price)) {
-          product.price = product.price.toFixed(2);
+          product.price = product.price.toFixed(DIGITS);
         }
 
         return product;
       });
     } else {
       if (_.isInteger(doc._source.product.price)) {
-        doc._source.product.price = doc._source.product.price.toFixed(2);
+        doc._source.product.price = doc._source.product.price.toFixed(DIGITS);
       }
     }
 

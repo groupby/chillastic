@@ -21,7 +21,7 @@ const create = (redisHost, redisPort, port)=> {
 
   const cleanConfig = _.cloneDeep(config);
   delete cleanConfig.log;
-  log.warn(`Starting with config: ${JSON.stringify(cleanConfig, null, 2)}`);
+  log.warn(`Starting with config: ${JSON.stringify(cleanConfig, null, config.jsonIndent)}`);
 
   app.run = () => {
     app.services.manager.setRunning(true);

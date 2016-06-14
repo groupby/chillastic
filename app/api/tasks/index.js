@@ -1,17 +1,12 @@
 const express    = require('express');
-const router     = express.Router();
 const controller = require('./tasks.controller');
 
-router.get('/', controller.getTasks);
-
-router.post('/_start', controller.start);
-router.post('/_stop', controller.stop);
+const router = express.Router();
+router.get('/', controller.getAll);
 
 router.get('/:id/errors', controller.getErrors);
-router.post('/:id', controller.addTask);
-router.get('/:id', controller.getTask);
-router.delete('/:id', controller.deleteTask);
+router.post('/:id', controller.add);
+router.get('/:id', controller.get);
+router.delete('/:id', controller.delete);
 
-module.exports = function () {
-  return router;
-};
+module.exports = ()=> router;
