@@ -1,0 +1,34 @@
+kind: List
+apiVersion: v1
+items:
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: redis
+    labels:
+      domain: devops
+      component: redis
+      type: single
+  spec:
+    ports:
+    - port: 6379
+      targetPort: 6379
+    selector:
+      domain: devops
+      component: redis
+      type: single
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: api
+    labels:
+      domain: devops
+      component: api
+  spec:
+    ports:
+    - port: 33080
+      targetPort: 8080
+    selector:
+      domain: devops
+      component: api
+    type: LoadBalancer

@@ -1,10 +1,10 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: chillastic-redis
+  name: redis
   labels:
-    component: chillastic-redis
     domain: devops
+    component: redis
     type: single
 spec:
   minReadySeconds: 5
@@ -17,8 +17,8 @@ spec:
   template:
     metadata:
       labels:
-        component: chillastic-redis
         domain: devops
+        component: redis
         type: single
     spec:
       containers:

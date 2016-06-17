@@ -1,9 +1,10 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: chillastic
+  name: api
   labels:
     domain: devops
+    component: api
 spec:
   replicas: 3
   strategy:
@@ -15,7 +16,7 @@ spec:
     metadata:
       labels:
         domain: devops
-        name: chillastic
+        component: api
     spec:
       containers:
       - name: chillastic
@@ -28,6 +29,6 @@ spec:
             port: 8080
         env:
           - name: REDIS_HOST
-            value: chillastic-redis.default.svc.cluster.local
+            value: redis
           - name: REDIS_PORT
             value: '6379'
