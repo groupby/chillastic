@@ -11,6 +11,8 @@ router.post('/_stop', controller.stop);
 router.get('/status', controller.getStatus);
 
 router.use(bodyParser.json());
+router.use(bodyParser.text());
+
 router.use('/tasks', tasks());
 router.use('/filters', filters());
 router.use('/mutators', mutators());
