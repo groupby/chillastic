@@ -1,5 +1,5 @@
 const express    = require('express');
-const bodyParser = require('bodyParser');
+const bodyParser = require('body-parser');
 const controller = require('./root.controller');
 const tasks      = require('./tasks');
 const filters    = require('./filters');
