@@ -103,17 +103,16 @@ const Mutators    = function (redisClient) {
       .then((objectIds)=> Promise.mapSeries(objectIds, (objectId)=>
           objectId.validate()
           .then(()=> redis.hget(getNamespacedKey(objectId.namespace), objectId.id))
-          .then((src)=> _.assign(compiler.compile(src), {arguments: objectId.arguments}))))
+          .then((src)=> _.assign(compiler.compile(src), objectId))))
       .then((modules)=> Promise.reduce(modules, (loadedModules, module)=> {
         if (!_.isArray(loadedModules[module.type])) {
           loadedModules[module.type] = [];
         }
 
-        log.info(`adding mutator type ${module.type}`);
+        log.info(`adding mutator [${module.namespace}:${module.id}] [type ${module.type}]`);
         loadedModules[module.type].push(module);
         return loadedModules;
       }, {}));
-
 };
 Mutators.NAME_KEY = 'mutators';
 Mutators.TYPES    = [
