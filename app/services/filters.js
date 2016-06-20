@@ -91,24 +91,26 @@ const Filters    = function (redisClient) {
    * @returns {*|{arity, flags, keyStart, keyStop, step}}
    */
   self.load = (taskName, filters) =>
-      Promise.mapSeries(filters.actions, (action)=> {
-        const id     = new ObjectId({namespace: _.isString(action.namespace) ? action.namespace : taskName, id: action.id});
-        id.arguments = action.arguments || filters.arguments;
-        return id;
-      })
-      .then((objectIds)=> Promise.mapSeries(objectIds, (objectId)=>
-          objectId.validate()
-          .then(()=> redis.hget(getNamespacedKey(objectId.namespace), objectId.id))
-          .then((src)=> _.assign(compiler.compile(src), objectId))))
-      .then((modules)=> Promise.reduce(modules, (loadedModules, module)=> {
-        if (!_.isArray(loadedModules[module.type])) {
-          loadedModules[module.type] = [];
-        }
+      !_.isObject(filters) || !_.isArray(filters.actions) ?
+          Promise.resolve({}) :
+          Promise.mapSeries(filters.actions, (action)=> {
+            const id     = new ObjectId({namespace: _.isString(action.namespace) ? action.namespace : taskName, id: action.id});
+            id.arguments = action.arguments || filters.arguments;
+            return id;
+          })
+          .then((objectIds)=> Promise.mapSeries(objectIds, (objectId)=>
+              objectId.validate()
+              .then(()=> redis.hget(getNamespacedKey(objectId.namespace), objectId.id))
+              .then((src)=> _.assign(compiler.compile(src), objectId))))
+          .then((modules)=> Promise.reduce(modules, (loadedModules, module)=> {
+            if (!_.isArray(loadedModules[module.type])) {
+              loadedModules[module.type] = [];
+            }
 
-        log.info(`adding filter [${module.namespace}:${module.id}] [type ${module.type}]`);
-        loadedModules[module.type].push(module);
-        return loadedModules;
-      }, {}));
+            log.info(`adding filter [${module.namespace}:${module.id}] [type ${module.type}]`);
+            loadedModules[module.type].push(module);
+            return loadedModules;
+          }, {}));
 };
 Filters.NAME_KEY = 'filters';
 Filters.TYPES    = [

@@ -122,7 +122,7 @@ const Worker = function (redisClient) {
 
     const transfer = new Transfer(source, dest);
     if (subtask.mutators) {
-      transfer.setMutators(mutators.load(taskId, subtask.mutators));
+      mutators.load(taskId, subtask.mutators).then(transfer.setMutators);
     }
     transfer.setUpdateCallback(update => updateProgress(taskId, subtask, update));
 

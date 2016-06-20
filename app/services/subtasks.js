@@ -138,9 +138,11 @@ const Subtasks = function (redisClient) {
       log.info('No documents specified in task');
       return Promise.resolve([]);
     } else {
-      const loadedFilters = task.transfer.documents.filters ? filters.load(taskId, task.transfer.documents.filters) : {};
-      return Transfer.getIndices(client, task.transfer.documents.fromIndices)
-      .then((allIndices)=> self.filterDocumentSubtasks(task, allIndices, loadedFilters));
+      return filters.load(taskId, task.transfer.documents.filters)
+      .then((loadedFilters)=>
+          Transfer.getIndices(client, task.transfer.documents.fromIndices)
+          .then((allIndices)=> self.filterDocumentSubtasks(task, allIndices, loadedFilters))
+      );
     }
   };
 
