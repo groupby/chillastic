@@ -5,10 +5,6 @@ const tasks      = require('./tasks');
 const filters    = require('./filters');
 const mutators   = require('./mutators');
 
-const app = express();
-app.use(bodyParser.json());
-app.use(bodyParser.text());
-
 const router = express.Router();
 router.post('/_start', controller.start);
 router.post('/_stop', controller.stop);
