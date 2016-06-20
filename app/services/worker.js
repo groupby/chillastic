@@ -102,7 +102,6 @@ const Worker = function (redisClient) {
             .then(()=> completeSubtask(taskId, subtask))
             .catch((error)=> {
               tasks.logError(taskId, subtask, `Error: ${JSON.stringify(error)}`);
-              subtasks.queue(taskId, subtask); // Requeue entire subtask on error
               return Promise.resolve();
             });
           })

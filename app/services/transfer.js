@@ -258,7 +258,7 @@ const Transfer = function (sourceEs, destEs) {
     const shouldDrop    = (obj)=> _.isUndefined(obj) || _.isNull(obj) || _.isEmpty(obj);
     const mutators      = mutatorsByType[type];
     const applyMutators = (obj)=> mutators.reduce((result, mutator)=> shouldDrop(result) ? null : mutator.predicate(result, mutator.arguments) ? mutator.mutate(result, mutator.arguments) : result, obj);
-    return !(_.isArray(mutators) && mutators.length > 0) ? objs : objs.map(applyMutators).filter((obj) => !shouldDrop(obj));
+    return !_.isArray(mutators) || mutators.length === 0 ? objs : objs.map(applyMutators).filter((obj) => !shouldDrop(obj));
   };
 
   self.setUpdateCallback = (callback)=> {
