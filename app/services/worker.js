@@ -41,14 +41,14 @@ const Worker = function (redisClient) {
    */
   const taskIds     = [];
   const getTaskName = ()=> taskIds.length !== 0 ?
-      taskIds.pop() :
+      Promise.resolve(taskIds.pop()) :
       tasks.getAll()
       .then((allTasks)=> {
         if (allTasks.length === 0) {
-          return null;
+          return Promise.resolve(null);
         } else {
           allTasks.forEach((task)=> taskIds.push(task));
-          return taskIds.pop();
+          return Promise.resolve(taskIds.pop());
         }
       });
 
@@ -74,7 +74,7 @@ const Worker = function (redisClient) {
         }
 
         return getTaskName()
-        .then(taskId => {
+        .then((taskId)=> {
           if (taskId === null) {
             log.info('No tasks found, waiting...');
             manager.workerHeartbeat(name, {status: `waiting for task...`});  // Not waiting for promise
@@ -108,7 +108,8 @@ const Worker = function (redisClient) {
           })
         });
       })
-      .then(doSubtask).catch(error => {
+      .then(doSubtask)
+      .catch(error => {
         if (error.message === 'Worker killed') {
           log.warn('Worker killed');
         } else {

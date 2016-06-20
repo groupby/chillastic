@@ -1,3 +1,4 @@
+const _              = require('lodash');
 const compression    = require('compression');
 const bodyParser     = require('body-parser');
 const methodOverride = require('method-override');
@@ -18,13 +19,15 @@ module.exports = function (app) {
   const env = app.get('env');
 
   app.use(compression());
-  app.use(bodyParser.urlencoded({extended: false}));
-  app.use(bodyParser.text());
   app.use((req, res, next) => {
-    // fall back to expect json
-    req.headers['content-type'] = 'application/json';
+    // fall back to json post bodies
+    const contentType = req.get('content-type');
+    if (!contentType || contentType === 'application/x-www-form-urlencoded') {
+      req.headers['content-type'] = 'application/json';
+    }
     next();
   });
+  app.use(bodyParser.text());
   app.use(bodyParser.json());
   app.use(methodOverride());
   app.use(cookieParser());

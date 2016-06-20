@@ -1,11 +1,11 @@
 {
   "source": {
-    "host": "localhost",
+    "host": "es",
     "port": 9200
   },
   "destination": {
-    "host": "localhost",
-    "port": 9201
+    "host": "es-new",
+    "port": 9200
   },
   "transfer": {
     "documents": {
