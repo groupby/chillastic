@@ -408,7 +408,8 @@ describe('transfer', function () {
     .then(()=> dest.indices.refresh())
     .then(()=> dest.indices.get({index: 'index_not_to_mutate'}))
     .then((index)=> expect(index.index_not_to_mutate.settings.index.number_of_shards).to.be.equals('4'))
-    .then(() => done());
+    .then(() => done())
+    .catch(done);
   });
 
   it('should use index mutator to change index during transfer', (done)=> {
@@ -429,7 +430,8 @@ describe('transfer', function () {
       });
     })
     .then((result)=> expect(result).to.be.equals('not found'))
-    .then(() => done());
+    .then(() => done())
+    .catch(done);
   });
 
   it('should call mutator with arguments', (done)=> {
@@ -456,7 +458,8 @@ describe('transfer', function () {
       });
     })
     .then((result)=> expect(result).to.be.equals('not found'))
-    .then(() => done());
+    .then(() => done())
+    .catch(done);
   });
 
   it('should use a template mutator to change template during transfer', (done)=> {
@@ -469,7 +472,8 @@ describe('transfer', function () {
     .then(()=> transfer.transferTemplates('test_template'))
     .then(()=> dest.indices.getTemplate({name: 'test_template'}))
     .then((template)=> expect(template.test_template.template).to.be.equals('template_that*'))
-    .then(() => done());
+    .then(() => done())
+    .catch(done);
   });
 
   it('should use a data mutator to change documents during transfer', (done)=> {
@@ -490,6 +494,33 @@ describe('transfer', function () {
       expect(document.hits.hits[0]._index).to.be.equals('something_1990-05');
       expect(document.hits.hits[0]._source.field).to.be.equals('daata');
     })
-    .then(() => done());
+    .then(() => done())
+    .catch(done);
+  });
+
+  it('should use a data mutator to drop some documents during transfer', (done)=> {
+    const mutator     = loadMutator(`${__dirname}/validMutators/dropWithArgs.js`);
+    mutator.arguments = {
+      match: 'daata2'
+    };
+    transfer.setMutators({data: [mutator]});
+
+    const index = 'something_1990-05-21';
+    const type  = 'sometype';
+
+    utils.createIndices(transfer, index, index)
+    .then(()=> source.create({index: index, type: type, body: {field: 'daata'}}))
+    .then(()=> source.create({index: index, type: type, body: {field: 'daata2'}}))
+    .then(()=> source.indices.refresh())
+    .then(()=> transfer.transferData(index, type))
+    .then(()=> dest.indices.refresh())
+    .then(()=> dest.search({index}))
+    .then((document)=> {
+      expect(document.hits.hits.length).to.be.equals(1);
+      expect(document.hits.hits[0]._index).to.be.equals(index);
+      expect(document.hits.hits[0]._source.field).to.be.equals('daata');
+    })
+    .then(() => done())
+    .catch(done);
   });
 });

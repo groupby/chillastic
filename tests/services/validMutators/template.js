@@ -1,10 +1,7 @@
+const _ = require('lodash');
+
 module.exports = {
   type:      'template',
-  predicate: (template) => {
-    return template.template === 'template_this*';
-  },
-  mutate:    (template) => {
-    template.template = 'template_that*';
-    return template;
-  }
+  predicate: (template) => template.template === 'template_this*',
+  mutate:    (template) => _.assign(template, {template: 'template_that*'})
 };

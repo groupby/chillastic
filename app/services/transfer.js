@@ -25,7 +25,7 @@ const Transfer = function (sourceEs, destEs) {
 
   let flushRetryCount = 0;
   const bulkQueue     = [];
-  let mutators        = {};
+  let mutatorsByType  = {};
   let queueSummary    = {
     tick:        0,
     transferred: 0,
@@ -243,35 +243,22 @@ const Transfer = function (sourceEs, destEs) {
     });
   };
 
-  self.getMutators = ()=> _.cloneDeep(mutators);
-  self.setMutators = (newMutators)=> mutators = newMutators;
-  self.clearMutators = ()=> mutators = {};
+  self.getMutators = ()=> _.cloneDeep(mutatorsByType);
+  self.setMutators = (newMutators)=> mutatorsByType = newMutators;
+  self.clearMutators = ()=> mutatorsByType = {};
 
   /**
    * Apply appropriate mutations each original object
    *
-   * @param originals
+   * @param objs
    * @param type
    * @returns {*}
    */
-  self.mutate = (originals, type) => {
-    if (_.isArray(mutators[type]) && mutators[type].length > 0) {
-      return originals.reduce((result, original)=> {
-        for (let i = 0; i < mutators[type].length; i++) {
-          if (mutators[type][i].predicate(original, mutators[type][i].arguments)) {
-            const mutated = mutators[type][i].mutate(original, mutators[type][i].arguments);
-
-            if (!_.isUndefined(mutated) && !_.isNull(mutated) && !_.isEmpty(mutated)) {
-              original = mutated;
-            }
-          }
-        }
-
-        return result.concat(original);
-      }, []);
-    }
-
-    return originals;
+  self.mutate = (objs, type) => {
+    const shouldDrop    = (obj)=> _.isUndefined(obj) || _.isNull(obj) || _.isEmpty(obj);
+    const mutators      = mutatorsByType[type];
+    const applyMutators = (obj)=> mutators.reduce((result, mutator)=> shouldDrop(result) ? null : mutator.predicate(result, mutator.arguments) ? mutator.mutate(result, mutator.arguments) : result, obj);
+    return !(_.isArray(mutators) && mutators.length > 0) ? objs : objs.map(applyMutators).filter((obj) => !shouldDrop(obj));
   };
 
   self.setUpdateCallback = (callback)=> {

@@ -1,10 +1,7 @@
+const _ = require('lodash');
+
 module.exports = {
   type:      'index',
-  predicate: (index, args) => {
-    return index.name === args.target;
-  },
-  mutate:    (index, args) => {
-    index.name = args.name;
-    return index;
-  }
+  predicate: (index, args) => index.name === args.target,
+  mutate:    (index, args) => _.assign(index, {name: args.name})
 };
