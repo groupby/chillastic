@@ -17,17 +17,15 @@ const MAX_ACCEPTABLE_RESPONSE_TIME = 30000;
 module.exports = function (app) {
   const env = app.get('env');
 
-  const defaultContentTypeMiddleware = (req, res, next) => {
-    req.headers['content-type'] = 'application/json';
-    next();
-  };
-
-  app.use(defaultContentTypeMiddleware);
-
   app.use(compression());
   app.use(bodyParser.urlencoded({extended: false}));
-  app.use(bodyParser.json());
   app.use(bodyParser.text());
+  app.use((req, res, next) => {
+    // fall back to expect json
+    req.headers['content-type'] = 'application/json';
+    next();
+  });
+  app.use(bodyParser.json());
   app.use(methodOverride());
   app.use(cookieParser());
   app.use(cors());
