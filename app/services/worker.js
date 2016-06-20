@@ -45,10 +45,10 @@ const Worker = function (redisClient) {
       tasks.getAll()
       .then((allTasks)=> {
         if (allTasks.length === 0) {
-          return Promise.resolve(null);
+          return null;
         } else {
           allTasks.forEach((task)=> taskIds.push(task));
-          return Promise.resolve(taskIds.pop());
+          return taskIds.pop();
         }
       });
 

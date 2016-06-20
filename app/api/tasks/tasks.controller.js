@@ -72,7 +72,6 @@ module.exports = {
   delete: (req, res)=>
               services.tasks.remove(req.params.id)
               .then(()=> res.status(HttpStatus.NO_CONTENT).json())
-              .then(()=> res.status(HttpStatus.NO_CONTENT).json())
               .catch((e)=> utils.processError(e, res)),
 
   /**

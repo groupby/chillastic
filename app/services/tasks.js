@@ -1,6 +1,9 @@
 const _        = require('lodash');
 const moment   = require('moment');
+const Filters  = require('./filters');
+const Mutators = require('./mutators');
 const Subtasks = require('./subtasks');
+const ObjectId = require('../models/objectId');
 const Progress = require('../models/progress');
 const Subtask  = require('../models/subtask');
 const Task     = require('../models/task');
@@ -9,9 +12,13 @@ const config   = require('../../config/index');
 const log = config.log;
 
 const Tasks    = function (redisClient) {
-  const self     = this;
-  const redis    = redisClient;
-  const subtasks = new Subtasks(redis);
+  const self               = this;
+  const redis              = redisClient;
+  const subtasks           = new Subtasks(redis);
+  const namespacedServices = [
+    new Mutators(redis),
+    new Filters(redis)
+  ];
 
   /**
    * Return the names of all known tasks
@@ -45,6 +52,7 @@ const Tasks    = function (redisClient) {
       Task.validateId(taskId)
       .then(()=> subtasks.clearBacklog(taskId))
       .then(()=> subtasks.clearCompleted(taskId))
+      .then(()=> _.map(namespacedServices, (service)=> service.removeAllNamespacedBy(new ObjectId({namespace: taskId, id: 'dummy'}))))
       .then(()=> redis.srem(Tasks.NAME_KEY, taskId));
 
   /**

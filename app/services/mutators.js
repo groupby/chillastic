@@ -70,6 +70,16 @@ const Mutators    = function (redisClient) {
       .then((id)=> redis.hdel(getNamespacedKey(objectId.namespace), objectId.id));
 
   /**
+   * Remove all filters by namespace
+   * @param objectId
+   * @returns {Promise.<TResult>}
+   */
+  self.removeAllNamespacedBy = (objectId) =>
+      ObjectId.coerce(objectId).validate()
+      .then(()=> self.getIds(objectId.namespace))
+      .then((ids)=> _.map(ids, (id)=> redis.hdel(getNamespacedKey(objectId.namespace), id)));
+
+  /**
    * Return TRUE if a mutator exists in the system based on it's objectId
    * @param objectId
    * @returns {*|{arity, flags, keyStart, keyStop, step}}

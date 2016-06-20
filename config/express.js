@@ -1,4 +1,3 @@
-const _              = require('lodash');
 const compression    = require('compression');
 const bodyParser     = require('body-parser');
 const methodOverride = require('method-override');
