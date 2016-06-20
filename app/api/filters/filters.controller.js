@@ -5,7 +5,7 @@ const utils      = require('../../../config/utils');
 
 module.exports = {
   /**
-   * Add a new mutator by id
+   * Add a new filter by id
    * @param req
    * @param res
    */
@@ -16,7 +16,7 @@ module.exports = {
            .catch((e)=> utils.processError(e, res)),
 
   /**
-   * Delete a mutator by id
+   * Delete a filter by id
    * @param req
    * @param res
    */
@@ -27,7 +27,7 @@ module.exports = {
               .catch((e)=> utils.processError(e, res)),
 
   /**
-   * Returns list of all mutators in a namespace by id
+   * Returns list of all filters in a namespace by id
    */
   getAllIdsByNamespace: (req, res) =>
                             new ObjectId({namespace: req.params.namespace, id: 'dummy'}).validate()
