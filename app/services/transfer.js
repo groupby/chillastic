@@ -50,7 +50,7 @@ const Transfer = function (sourceEs, destEs) {
 
       queueSummary.tick = 0;
 
-      return self.dest.bulk({body: bulkBody})
+      return self.dest.bulk({refresh: true, body: bulkBody})
       .then((results)=> {
         log.trace('response: %s', JSON.stringify(results, null, config.jsonIndent));
 
