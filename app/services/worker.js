@@ -127,7 +127,7 @@ const Worker = function (redisClient) {
     transfer.setUpdateCallback(update => updateProgress(taskId, subtask, update));
 
     if (subtask.transfer.documents) {
-      return transfer.transferData(subtask.transfer.documents.index, subtask.transfer.documents.type);
+      return transfer.transferData(subtask.transfer.documents.index, subtask.transfer.documents.type, subtask.transfer.flushSize);
     } else if (subtask.transfer.index) {
       return transfer.transferIndices(subtask.transfer.index);
     } else if (subtask.transfer.template) {

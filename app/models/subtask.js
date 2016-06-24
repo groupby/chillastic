@@ -1,5 +1,6 @@
 const _         = require('lodash');
 const inspector = require('./inspector');
+const Task      = require('./task');
 const utils     = require('../../config/utils');
 
 const SCHEMA = {
@@ -14,12 +15,17 @@ const SCHEMA = {
     transfer:    {
       type:       'object',
       properties: {
-        index:    {
+        flushSize: {
+          type:     'integer',
+          optional: false,
+          def:      Task.DEFAULT_FLUSH_SIZE
+        },
+        index:     {
           type:      'string',
           optional:  true,
           minLength: 1
         },
-        template: {
+        template:  {
           type:      'string',
           optional:  true,
           minLength: 1

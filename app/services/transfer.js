@@ -5,8 +5,6 @@ const config     = require('../../config/index');
 
 const log = config.log;
 
-const FLUSH_SIZE = 450;
-
 const MAX_FLUSH_RETRY   = 5;
 const MIN_RETRY_WAIT_MS = 2000;
 const MAX_RETRY_WAIT_MS = 7000;
@@ -83,9 +81,9 @@ const Transfer = function (sourceEs, destEs) {
    * Optionally provide query to restrict the data to be retrieved.
    * @param targetIndex
    * @param targetType
-   * @param body
+   * @param flushSize
    */
-  self.transferData = (targetIndex, targetType, body) => {
+  self.transferData = (targetIndex, targetType, flushSize) => {
     queueSummary = {
       tick:        0,
       transferred: 0,
@@ -95,14 +93,8 @@ const Transfer = function (sourceEs, destEs) {
 
     if (!_.isString(targetIndex) || targetIndex.length === 0) {
       throw new Error('targetIndex must be string with length');
-    }
-
-    if (!_.isString(targetType) || targetType.length === 0) {
+    } else if (!_.isString(targetType) || targetType.length === 0) {
       throw new Error('targetType must be string with length');
-    }
-
-    if (body && !_.isObject(body)) {
-      throw new Error('if provided, body must be an object');
     }
 
     flushRetryCount = 0;
@@ -114,7 +106,7 @@ const Transfer = function (sourceEs, destEs) {
         queueSummary.scrolled++;
       });
 
-      return putData(self.mutate(documents, 'data'))
+      return putData(self.mutate(documents, 'data'), flushSize)
       .then(()=> {
         if (response.hits.total !== queueSummary.scrolled) {
           return self.source.scroll({
@@ -138,7 +130,6 @@ const Transfer = function (sourceEs, destEs) {
       index:  targetIndex,
       type:   targetType,
       scroll: '1m',
-      body:   body,
       size:   40
     })
     .then(scrollAndGetData)
@@ -151,11 +142,12 @@ const Transfer = function (sourceEs, destEs) {
   /**
    * Queue docs for upsert into dest elasticsearch
    * @param documents
+   * @param flushSize
    * @returns {*}
    */
-  const putData = (documents) => {
+  const putData = (documents, flushSize) => {
     documents.reduce(docToBulk, bulkQueue);
-    if (bulkQueue.length > FLUSH_SIZE) {
+    if (bulkQueue.length > flushSize) {
       return flushQueue();
     } else {
       return Promise.resolve();

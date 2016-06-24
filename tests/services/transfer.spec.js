@@ -350,12 +350,6 @@ describe('transfer', function () {
     done();
   });
 
-  it('should throw if body is not an object', (done)=> {
-    const throws = ()=> transfer.transferData('myindex', 'mytype', 'body');
-    expect(throws).to.throw('if provided, body must be an object');
-    done();
-  });
-
   it('should reject if index does not exist', (done)=> {
     transfer.transferData('notthere', 'mytype1')
     .then(()=> done('fail'))

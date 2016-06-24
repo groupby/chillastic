@@ -64,7 +64,6 @@ const Subtasks = function (redisClient) {
    */
   self.complete = (taskId, subtask)=> {
     subtask = Subtask.coerce(subtask);
-
     return Task.validateId(taskId)
     .then(()=> self.removeProgress(taskId, subtask))
     .then(()=> redis.hset(Task.completedKey(taskId), subtask.getID(), subtask.count));
@@ -160,6 +159,7 @@ const Subtasks = function (redisClient) {
       source:      task.source,
       destination: task.destination,
       transfer:    {
+        flushSize: task.transfer && task.transfer.flushSize ? task.transfer.flushSize : Task.DEFAULT_FLUSH_SIZE,
         documents: {
           index: indexName,
           type:  typeName

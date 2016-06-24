@@ -6,6 +6,7 @@ const Promise           = require('bluebird');
 const TestConfig        = require('../config');
 const Utils             = require('../utils');
 const Subtask           = require('../../app/models/subtask');
+const Task              = require('../../app/models/task');
 const Subtasks          = require('../../app/services/subtasks');
 const Tasks             = require('../../app/services/tasks');
 const createEsClient    = require('../../config/elasticsearch');
@@ -47,6 +48,26 @@ describe('tasks service', function () {
     .finally(()=> redis.flushdb())
     .finally(()=> done());
   });
+
+  it('invalid flushSize', (done)=> {
+        const task = {
+          source:      TestConfig.elasticsearch.source,
+          destination: TestConfig.elasticsearch.destination,
+          transfer:    {
+            flushSize: 10000,
+            documents: {
+              fromIndices: '*'
+            }
+          }
+        };
+        tasks.add(TASK_NAME, task)
+        .then(()=> done('fail'))
+        .catch((e)=> {
+          expect(e.message).equals(`flushSize must be ${Task.DEFAULT_FLUSH_SIZE} or less, given 10000`);
+          done();
+        })
+      }
+  );
 
   it('should add task and create subtasks in backlog', (done)=> {
     const task = {

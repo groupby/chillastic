@@ -38,6 +38,8 @@ const Tasks    = function (redisClient) {
       .then(exists => {
         if (exists) {
           throw new Error(`task: '${taskId}' exists. Delete first.`);
+        } else if (task.transfer.flushSize > Task.DEFAULT_FLUSH_SIZE) {
+          throw new Error(`flushSize must be ${Task.DEFAULT_FLUSH_SIZE} or less, given ${task.transfer.flushSize}`);
         }
       })
       .then(()=> redis.sadd(Tasks.NAME_KEY, taskId))
