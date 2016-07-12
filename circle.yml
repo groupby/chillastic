@@ -18,7 +18,7 @@ dependencies:
     - npm install --global gulp-cli
 test:
   override:
-    - environment=circle gulp test
+    - environment=circle gulp coveralls
 deployment:
   hub:
     branch: master

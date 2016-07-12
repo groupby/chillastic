@@ -1,9 +1,11 @@
 /*eslint no-process-env: "off" */
+const path      = require('path');
 const gulp     = require('gulp');
 const mocha    = require('gulp-mocha');
 const eslint   = require('gulp-eslint');
 const istanbul = require('gulp-istanbul');
 const gulpExit = require('gulp-exit');
+const coveralls = require('gulp-coveralls');
 
 gulp.task('test:dirty', ()=> {
   return gulp.src('tests/**/*.spec.js')
@@ -60,4 +62,13 @@ gulp.task('test:lint', ['test:coverage'], ()=> {
 
 gulp.task('test', ['test:lint'], ()=> {
   return gulp.src(['*.js']).pipe(gulpExit());
+});
+
+gulp.task('coveralls', ['test'], () => {
+  // if (!process.env.CI) {
+  //   return;
+  // }
+
+  return gulp.src(path.join(__dirname, 'coverage/lcov.info'))
+    .pipe(coveralls());
 });
