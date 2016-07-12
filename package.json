@@ -8,7 +8,10 @@
     "url": "git://github.com/groupby/chillastic.git"
   },
   "scripts": {
-    "test": "gulp test"
+    "test": "gulp test",
+    "patch": "npm version patch && git push && git push --tags && npm publish",
+    "minor": "npm version minor && git push && git push --tags && npm publish",
+    "major": "npm version major && git push && git push --tags && npm publish"
   },
   "author": "Eric Hacke",
   "license": "MIT",

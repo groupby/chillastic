@@ -1,10 +1,11 @@
 /*eslint no-process-env: "off" */
+/*eslint no-console: "off" */
 const path      = require('path');
-const gulp     = require('gulp');
-const mocha    = require('gulp-mocha');
-const eslint   = require('gulp-eslint');
-const istanbul = require('gulp-istanbul');
-const gulpExit = require('gulp-exit');
+const gulp      = require('gulp');
+const mocha     = require('gulp-mocha');
+const eslint    = require('gulp-eslint');
+const istanbul  = require('gulp-istanbul');
+const gulpExit  = require('gulp-exit');
 const coveralls = require('gulp-coveralls');
 
 gulp.task('test:dirty', ()=> {
@@ -24,7 +25,11 @@ const lint = ()=> {
       fix: true
     }))
     .pipe(eslint.format())
-    .pipe(eslint.failAfterError());
+    .pipe(eslint.failAfterError())
+    .once('error', () => {
+      console.error('lint failed');
+      process.exit(1);
+    });
 };
 
 gulp.task('lint', ()=> {
@@ -53,7 +58,11 @@ gulp.task('test:coverage', ['pre-test'], ()=> {
         functions:  80,
         statements: 80
       }
-    }));
+    }))
+    .once('error', () => {
+      console.error('coverage failed');
+      process.exit(1);
+    });
 });
 
 gulp.task('test:lint', ['test:coverage'], ()=> {
@@ -61,13 +70,13 @@ gulp.task('test:lint', ['test:coverage'], ()=> {
 });
 
 gulp.task('test', ['test:lint'], ()=> {
-  return gulp.src(['*.js']).pipe(gulpExit());
+  return gulp.src(['*.js']);
 });
 
 gulp.task('coveralls', ['test'], () => {
-  // if (!process.env.CI) {
-  //   return;
-  // }
+  if (!process.env.CI) {
+    return;
+  }
 
   return gulp.src(path.join(__dirname, 'coverage/lcov.info'))
     .pipe(coveralls());
