@@ -79,5 +79,12 @@ gulp.task('coveralls', ['test'], () => {
   }
 
   return gulp.src(path.join(__dirname, 'coverage/lcov.info'))
-    .pipe(coveralls());
+    .pipe(coveralls())
+    .once('error', () => {
+      console.error('coveralls failed');
+      process.exit(1);
+    })
+    .once('end', () => {
+      process.exit();
+    });;
 });
