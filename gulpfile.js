@@ -48,7 +48,8 @@ gulp.task('test:coverage', ['pre-test'], ()=> {
     .pipe(istanbul.writeReports({
       reporters: [
         'text',
-        'html'
+        'html',
+        'lcov'
       ]
     }))
     .pipe(istanbul.enforceThresholds({
@@ -86,5 +87,5 @@ gulp.task('coveralls', ['test'], () => {
     })
     .once('end', () => {
       process.exit();
-    });;
+    });
 });
