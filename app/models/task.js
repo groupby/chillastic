@@ -23,7 +23,7 @@ Task.progressKey        = (taskId)=> `${taskId}_progress`;
 Task.completedKey       = (taskId)=> `${taskId}_completed`;
 Task.backlogQueueKey    = (taskId)=> `${taskId}_backlog_queue`;
 Task.backlogHSetKey     = (taskId)=> `${taskId}_backlog_hset`;
-Task.DEFAULT_FLUSH_SIZE = 500;
+Task.DEFAULT_FLUSH_SIZE = 25000;
 
 const SCHEMA = {
   type:       'object',

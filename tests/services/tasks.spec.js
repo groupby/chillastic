@@ -54,7 +54,7 @@ describe('tasks service', function () {
           source:      TestConfig.elasticsearch.source,
           destination: TestConfig.elasticsearch.destination,
           transfer:    {
-            flushSize: 10000,
+            flushSize: 1000000,
             documents: {
               fromIndices: '*'
             }
@@ -63,7 +63,7 @@ describe('tasks service', function () {
         tasks.add(TASK_NAME, task)
         .then(()=> done('fail'))
         .catch((e)=> {
-          expect(e.message).equals(`flushSize must be ${Task.DEFAULT_FLUSH_SIZE} or less, given 10000`);
+          expect(e.message).equals(`flushSize must be ${Task.DEFAULT_FLUSH_SIZE} or less, given 1000000`);
           done();
         })
       }

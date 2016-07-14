@@ -279,9 +279,10 @@ const Transfer = function (sourceEs, destEs) {
    *
    * @param results
    * @param bulkBody
+   * @param retryTimeout
    * @returns {*}
    */
-  self.handleBulkErrors = (results, bulkBody)=> {
+  self.handleBulkErrors = (results, bulkBody, retryTimeout = null) => {
     const skip                = 2;
     const unrecoverableErrors = [];
     results.items.forEach((item, id)=> {
@@ -302,7 +303,6 @@ const Transfer = function (sourceEs, destEs) {
           log.error('Source data: ', JSON.stringify(bulkBody[index + 1]));
           unrecoverableErrors.push(item[actionType]);
         }
-
         queueSummary.errors++;
       } else {
         queueSummary.transferred++;
@@ -318,9 +318,9 @@ const Transfer = function (sourceEs, destEs) {
       flushRetryCount++;
 
       return new Promise((resolve)=> {
-        const timeout = _.random(MIN_RETRY_WAIT_MS, MAX_RETRY_WAIT_MS);
+        const timeout = retryTimeout || _.random(MIN_RETRY_WAIT_MS, MAX_RETRY_WAIT_MS);
 
-        log.warn(`Recoverable errors detected, sleeping ${timeout}msec and retrying...`);
+        log.warn(`Recoverable errors detected, sleeping ${timeout} msec and retrying...`);
 
         setTimeout(()=> {
           log.warn(`Flush retry ${flushRetryCount}`);
