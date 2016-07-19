@@ -5,9 +5,10 @@ const config     = require('../../config/index');
 
 const log = config.log;
 
-const MAX_FLUSH_RETRY   = 5;
-const MIN_RETRY_WAIT_MS = 2000;
-const MAX_RETRY_WAIT_MS = 7000;
+const MAX_FLUSH_RETRY         = 5;
+const MIN_RETRY_WAIT_MS       = 2000;
+const MAX_RETRY_WAIT_MS       = 7000;
+const BULK_REQUEST_TIMEOUT_MS = 3600000;
 
 /**
  * Transfer constructor
@@ -48,7 +49,7 @@ const Transfer = function (sourceEs, destEs) {
 
       queueSummary.tick = 0;
 
-      return self.dest.bulk({refresh: true, body: bulkBody})
+      return self.dest.bulk({refresh: true, body: bulkBody, requestTimeout: BULK_REQUEST_TIMEOUT_MS})
       .then((results)=> {
         log.trace('response: %s', JSON.stringify(results, null, config.jsonIndent));
 
@@ -111,7 +112,7 @@ const Transfer = function (sourceEs, destEs) {
         if (response.hits.total !== queueSummary.scrolled) {
           return self.source.scroll({
             scroll_id: response._scroll_id,
-            scroll:    '1m'
+            scroll:    '2h'
           })
           .then((inner_response)=> {
             log.debug('scrolling: ', queueSummary);
