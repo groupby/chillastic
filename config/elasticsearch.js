@@ -50,10 +50,11 @@ const createEsClient = (hostConfig) => {
   const version    = JSON.parse(results.getBody('utf8')).version.number;
   const apiVersion = `${semver.major(version)}.${semver.minor(version)}`;
   return new elasticsearch.Client({
-    host:       {host, port},
-    apiVersion: apiVersion,
-    log:        LogToBunyan,
-    defer:      function () {
+    host:               {host, port},
+    apiVersion:         apiVersion,
+    suggestCompression: true,
+    log:                LogToBunyan,
+    defer:              function () {
       let resolve = null;
       let reject  = null;
 
