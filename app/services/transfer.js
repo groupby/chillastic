@@ -112,7 +112,8 @@ const Transfer = function (sourceEs, destEs) {
         if (response.hits.total !== queueSummary.scrolled) {
           return self.source.scroll({
             scroll_id: response._scroll_id,
-            scroll:    '2h'
+            scroll:    '1h',
+            size: 1000
           })
           .then((inner_response)=> {
             log.debug('scrolling: ', queueSummary);
