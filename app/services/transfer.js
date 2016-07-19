@@ -113,7 +113,7 @@ const Transfer = function (sourceEs, destEs) {
           return self.source.scroll({
             scroll_id: response._scroll_id,
             scroll:    '1h',
-            size: 1000
+            size:      flushSize
           })
           .then((inner_response)=> {
             log.debug('scrolling: ', queueSummary);
