@@ -2,11 +2,8 @@ machine:
   services:
     - docker
   node:
-    version: 6.2.0
+    version: 6.3.0
 dependencies:
-  pre:
-    - sudo service redis-server stop
-    - sudo service elasticsearch stop
   override:
     - npm install
   post:
