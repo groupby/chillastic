@@ -31,4 +31,4 @@ items:
     selector:
       domain: devops
       component: api
-    type: LoadBalancer
+    type: NodePort
