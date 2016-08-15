@@ -29,9 +29,6 @@ const lint = ()=> {
     .once('error', () => {
       console.error('lint failed');
       process.exit(1);
-    })
-    .once('end', () => {
-      process.exit(0);
     });
 };
 
@@ -66,9 +63,6 @@ gulp.task('test:coverage', ['pre-test'], ()=> {
     .once('error', () => {
       console.error('coverage failed');
       process.exit(1);
-    })
-    .once('end', () => {
-      process.exit(0);
     });
 });
 
