@@ -46,7 +46,7 @@ const createEsClient = (hostConfig) => {
     uri = `http://${uri}`;
   }
 
-  const results    = sr('GET', uri, {timeout: 30000, retry: true});
+  const results    = sr('GET', uri, {timeout: 600000});
   const version    = JSON.parse(results.getBody('utf8')).version.number;
   const apiVersion = `${semver.major(version)}.${semver.minor(version)}`;
   return new elasticsearch.Client({
