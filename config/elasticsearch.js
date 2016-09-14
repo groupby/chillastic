@@ -46,9 +46,21 @@ const createEsClient = (hostConfig) => {
     uri = `http://${uri}`;
   }
 
-  const results    = sr('GET', uri, {timeout: 600000});
-  const version    = JSON.parse(results.getBody('utf8')).version.number;
-  const apiVersion = `${semver.major(version)}.${semver.minor(version)}`;
+  let apiVersion = null;
+  for (let i = 10; i >= 0; i--) {
+    try {
+      const results = sr('GET', uri);
+      const version = JSON.parse(results.getBody('utf8')).version.number;
+      apiVersion    = `${semver.major(version)}.${semver.minor(version)}`;
+      break;
+    } catch (e) {
+      config.log.warn(e);
+    }
+  }
+  if (!apiVersion) {
+    throw new Error(`unable to connect to '${uri}' to get es version`);
+  }
+
   return new elasticsearch.Client({
     host:               {host, port},
     apiVersion:         apiVersion,
