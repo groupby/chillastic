@@ -33,14 +33,14 @@ const Transfer = function (sourceEs, destEs) {
   };
 
   self.source = sourceEs;
-  self.dest   = destEs;
+  self.dest = destEs;
 
   /**
    * Flushes any queued bulk inserts
    *
    * @returns {Promise.<TResult>}
    */
-  const flushQueue = ()=> {
+  const flushQueue = () => {
     if (bulkQueue.length > 0) {
       const bulkBody = [];
       while (bulkQueue.length > 0) {
@@ -50,7 +50,7 @@ const Transfer = function (sourceEs, destEs) {
       queueSummary.tick = 0;
 
       return self.dest.bulk({refresh: true, body: bulkBody, requestTimeout: BULK_REQUEST_TIMEOUT_MS})
-      .then((results)=> {
+      .then((results) => {
         log.trace('response: %s', JSON.stringify(results, null, config.jsonIndent));
 
         if (results.errors && results.errors > 0) {
@@ -100,28 +100,28 @@ const Transfer = function (sourceEs, destEs) {
 
     flushRetryCount = 0;
 
-    const scrollAndGetData = (response)=> {
+    const scrollAndGetData = (response) => {
       const documents = [];
-      response.hits.hits.forEach((hit)=> {
+      response.hits.hits.forEach((hit) => {
         documents.push(hit);
         queueSummary.scrolled++;
       });
 
       return putData(self.mutate(documents, 'data'), flushSize)
-      .then(()=> {
+      .then(() => {
         if (response.hits.total !== queueSummary.scrolled) {
           return self.source.scroll({
             scroll_id: response._scroll_id,
             scroll:    '1h',
             size:      flushSize
           })
-          .then((inner_response)=> {
+          .then((inner_response) => {
             log.debug('scrolling: ', queueSummary);
             return scrollAndGetData(inner_response);
           });
         } else {
           return flushQueue()
-          .then(()=> {
+          .then(() => {
             log.debug('transfer complete: ', queueSummary);
             return queueSummary.transferred;
           });
@@ -135,7 +135,7 @@ const Transfer = function (sourceEs, destEs) {
       size:   40
     })
     .then(scrollAndGetData)
-    .catch((error)=> {
+    .catch((error) => {
       log.error('Error during search: ', error);
       return Promise.reject(error);
     });
@@ -163,7 +163,7 @@ const Transfer = function (sourceEs, destEs) {
    * @param document
    * @returns {*}
    */
-  const docToBulk = (queue, document)=> {
+  const docToBulk = (queue, document) => {
     queue.push({
       update: {
         _index: document._index,
@@ -185,12 +185,12 @@ const Transfer = function (sourceEs, destEs) {
    * @param templates
    * @returns {*|Array}
    */
-  self.putTemplates = (templates)=> {
+  self.putTemplates = (templates) => {
     if (!_.isArray(templates)) {
       throw new Error('templates must be an array');
     }
 
-    return Promise.map(templates, (template)=> {
+    return Promise.map(templates, (template) => {
       const name = template.name;
       delete template.name;
 
@@ -199,7 +199,7 @@ const Transfer = function (sourceEs, destEs) {
         name: name,
         body: template
       })
-      .catch((e)=> {
+      .catch((e) => {
         log.error('Error during put templates: %s', JSON.stringify(e));
         return Promise.reject(e);
       });
@@ -212,12 +212,12 @@ const Transfer = function (sourceEs, destEs) {
    * @param indices
    * @returns {Array|*}
    */
-  self.putIndices = (indices)=> {
+  self.putIndices = (indices) => {
     if (!_.isArray(indices)) {
       throw new Error('indices must be an array');
     }
 
-    return Promise.map(indices, (index)=> {
+    return Promise.map(indices, (index) => {
       const name = index.name;
       delete index.name;
 
@@ -231,16 +231,16 @@ const Transfer = function (sourceEs, destEs) {
       return self.dest.indices.create({
         index: name,
         body:  index
-      }).catch((error)=> {
+      }).catch((error) => {
         log.error(`Error during index (${name}) put: `, error);
         return Promise.reject(error);
       });
     });
   };
 
-  self.getMutators = ()=> _.cloneDeep(mutatorsByType);
-  self.setMutators = (newMutators)=> mutatorsByType = newMutators;
-  self.clearMutators = ()=> mutatorsByType = {};
+  self.getMutators = () => _.cloneDeep(mutatorsByType);
+  self.setMutators = (newMutators) => mutatorsByType = newMutators;
+  self.clearMutators = () => mutatorsByType = {};
 
   /**
    * Apply appropriate mutations each original object
@@ -250,9 +250,9 @@ const Transfer = function (sourceEs, destEs) {
    * @returns {*}
    */
   self.mutate = (objs, type) => {
-    const shouldDrop    = (obj)=> _.isUndefined(obj) || _.isNull(obj) || _.isEmpty(obj);
+    const shouldDrop    = (obj) => _.isUndefined(obj) || _.isNull(obj) || _.isEmpty(obj);
     const mutators      = mutatorsByType[type];
-    const applyMutators = (obj)=> mutators.reduce((result, mutator)=> {
+    const applyMutators = (obj) => mutators.reduce((result, mutator) => {
       if (shouldDrop(result)) {
         return null;
       } else if (mutator.predicate(result, mutator.arguments)) {
@@ -264,17 +264,17 @@ const Transfer = function (sourceEs, destEs) {
     return !_.isArray(mutators) || mutators.length === 0 ? objs : objs.map(applyMutators).filter((obj) => !shouldDrop(obj));
   };
 
-  self.setUpdateCallback = (callback)=> {
+  self.setUpdateCallback = (callback) => {
     updateCallback = callback;
   };
 
-  self.transferIndices = (indicesNames)=>
+  self.transferIndices = (indicesNames) =>
       Transfer.getIndices(self.source, indicesNames)
-      .then((indices)=> self.putIndices(self.mutate(indices, 'index')));
+      .then((indices) => self.putIndices(self.mutate(indices, 'index')));
 
-  self.transferTemplates = (templateNames)=>
+  self.transferTemplates = (templateNames) =>
       Transfer.getTemplates(self.source, templateNames)
-      .then((templates)=> self.putTemplates(self.mutate(templates, 'template')));
+      .then((templates) => self.putTemplates(self.mutate(templates, 'template')));
 
   /**
    * If any errors are detected in the transfer, they are handled here for possible recovery
@@ -287,7 +287,7 @@ const Transfer = function (sourceEs, destEs) {
   self.handleBulkErrors = (results, bulkBody, retryTimeout = null) => {
     const skip                = 2;
     const unrecoverableErrors = [];
-    results.items.forEach((item, id)=> {
+    results.items.forEach((item, id) => {
       // There is only ever one key per item in the response
       const actionType = Object.keys(item)[0];
 
@@ -319,12 +319,12 @@ const Transfer = function (sourceEs, destEs) {
     } else {
       flushRetryCount++;
 
-      return new Promise((resolve)=> {
+      return new Promise((resolve) => {
         const timeout = retryTimeout || _.random(MIN_RETRY_WAIT_MS, MAX_RETRY_WAIT_MS);
 
         log.warn(`Recoverable errors detected, sleeping ${timeout} msec and retrying...`);
 
-        setTimeout(()=> {
+        setTimeout(() => {
           log.warn(`Flush retry ${flushRetryCount}`);
           resolve(flushQueue());
         }, timeout);
@@ -346,11 +346,11 @@ Transfer.getIndices = (client, targetIndices) =>
     !_.isString(targetIndices) || targetIndices.length === 0 ?
         Promise.reject(new Error('targetIndices must be string with length')) :
         client.indices.get({index: targetIndices, allowNoIndices: true})
-        .then((response)=> _.reduce(response, (result, index, name)=> {
+        .then((response) => _.reduce(response, (result, index, name) => {
           log.info('got index: ', name);
           return result.concat(_.assign(index, {name}));
         }, []))
-        .catch((e)=> {
+        .catch((e) => {
           log.error('Error during index get: %s', JSON.stringify(e));
           return Promise.reject(e);
         });
@@ -368,8 +368,8 @@ Transfer.getTemplates = (client, targetTemplates) =>
     !_.isString(targetTemplates) || targetTemplates.length === 0 ?
         Promise.reject(new Error('targetTemplates must be string with length')) :
         client.indices.getTemplate({name: targetTemplates})
-        .then((templates)=> _.reduce(templates, (result, template, name)=> result.concat(_.assign(template, {name})), []))
-        .catch((error)=> {
+        .then((templates) => _.reduce(templates, (result, template, name) => result.concat(_.assign(template, {name})), []))
+        .catch((error) => {
           if (error.status === HttpStatus.NOT_FOUND) {
             log.warn('Templates asked to be copied, but none found');
             return Promise.reject('Templates asked to be copied, but none found');

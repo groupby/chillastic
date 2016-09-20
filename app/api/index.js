@@ -13,4 +13,4 @@ router.use('/tasks', tasks());
 router.use('/filters', filters());
 router.use('/mutators', mutators());
 
-module.exports = ()=> router;
+module.exports = () => router;

@@ -19,11 +19,11 @@ module.exports = (app) => {
         res.status(HttpStatus.BAD_REQUEST);
         res.send({error: 'api key required'});
       } else {
-        log.info(`api key provided`);
+        log.info('api key provided');
 
         if (apiKey !== config.apiKey) {
           res.status(HttpStatus.UNAUTHORIZED);
-          log.error(`unknown api key`);
+          log.error('unknown api key');
           res.send({error: 'unknown api key'});
         } else {
           next();

@@ -40,19 +40,19 @@ const Worker = function (redisClient) {
    * @returns {*}
    */
   const taskIds     = [];
-  const getTaskName = ()=> taskIds.length !== 0 ?
+  const getTaskName = () => taskIds.length !== 0 ?
       Promise.resolve(taskIds.pop()) :
       tasks.getAll()
-      .then((allTasks)=> {
+      .then((allTasks) => {
         if (allTasks.length === 0) {
           return null;
         } else {
-          allTasks.forEach((task)=> taskIds.push(task));
+          allTasks.forEach((task) => taskIds.push(task));
           return taskIds.pop();
         }
       });
 
-  const timeoutPromise = (timeout)=> new Promise((resolve)=> setTimeout(resolve, timeout));
+  const timeoutPromise = (timeout) => new Promise((resolve) => setTimeout(resolve, timeout));
 
   /**
    * Get a task name, then get a subtask within that task to complete.
@@ -60,9 +60,9 @@ const Worker = function (redisClient) {
    * Repeat as long as there are subtasks to complete.
    * @returns {Promise.<TResult>}
    */
-  const doSubtask = ()=>
+  const doSubtask = () =>
       manager.isRunning()
-      .then(running => {
+      .then((running) => {
         if (!running) {
           if (killNow) {
             throw new Error('Worker killed');
@@ -74,41 +74,41 @@ const Worker = function (redisClient) {
         }
 
         return getTaskName()
-        .then((taskId)=> {
+        .then((taskId) => {
           if (taskId === null) {
             log.info('No tasks found, waiting...');
-            manager.workerHeartbeat(name, {status: `waiting for task...`});  // Not waiting for promise
+            manager.workerHeartbeat(name, {status: 'waiting for task...'});  // Not waiting for promise
             return timeoutPromise(RUN_CHECK_INTERVAL_MS);
           }
 
           log.info(`got task: ${taskId}`);
           return subtasks.fetch(taskId)
-          .then((subtask)=> {
+          .then((subtask) => {
             if (!subtask) {
               log.info('No subtask to execute, waiting...');
-              manager.workerHeartbeat(name, {status: `waiting for subtask...`});  // Not waiting for promise
+              manager.workerHeartbeat(name, {status: 'waiting for subtask...'});  // Not waiting for promise
               return timeoutPromise(RUN_CHECK_INTERVAL_MS);
             }
 
             manager.workerHeartbeat(name, {
               status: 'starting..',
               task:   taskId,
-                      subtask
+              subtask
             });  // Not waiting for promise
 
             log.info(`got subtask: ${subtask}`);
 
             return doTransfer(taskId, subtask)
-            .then(()=> completeSubtask(taskId, subtask))
-            .catch((error)=> {
+            .then(() => completeSubtask(taskId, subtask))
+            .catch((error) => {
               tasks.logError(taskId, subtask, `Error: ${JSON.stringify(error)}`);
               return Promise.resolve();
             });
-          })
+          });
         });
       })
       .then(doSubtask)
-      .catch(error => {
+      .catch((error) => {
         if (error.message === 'Worker killed') {
           log.warn('Worker killed');
         } else {
@@ -124,7 +124,7 @@ const Worker = function (redisClient) {
     if (subtask.mutators) {
       mutators.load(taskId, subtask.mutators).then(transfer.setMutators);
     }
-    transfer.setUpdateCallback(update => updateProgress(taskId, subtask, update));
+    transfer.setUpdateCallback((update) => updateProgress(taskId, subtask, update));
 
     if (subtask.transfer.documents) {
       return transfer.transferData(subtask.transfer.documents.index, subtask.transfer.documents.type, subtask.transfer.flushSize);
@@ -144,7 +144,7 @@ const Worker = function (redisClient) {
    * @param update
    * @returns {Promise.<TResult>|*}
    */
-  const updateProgress = (taskId, subtask, update)=> {
+  const updateProgress = (taskId, subtask, update) => {
     const progress = new Progress({
       tick:        update.tick,
       transferred: update.transferred,
@@ -155,12 +155,12 @@ const Worker = function (redisClient) {
     manager.workerHeartbeat(name, {
       status:   'running',
       task:     taskId,
-                subtask,
+      subtask,
       progress: progress
     });  // Not waiting for promise
 
     return subtasks.updateProgress(taskId, subtask, progress)
-    .then(()=> {
+    .then(() => {
       if (_.isFunction(updateCallback)) {
         updateCallback(taskId, subtask, progress);
       }
@@ -173,24 +173,24 @@ const Worker = function (redisClient) {
    * @param subtask
    * @returns {Promise.<TResult>|*}
    */
-  const completeSubtask = (taskId, subtask)=> {
+  const completeSubtask = (taskId, subtask) => {
     log.info(`completed task: '${taskId}' subtask: ${subtask}`);
     return subtasks.complete(taskId, subtask)
-    .then(()=> {
+    .then(() => {
       if (_.isFunction(completedCallback)) {
         completedCallback(taskId, subtask);
       }
     });
   };
 
-  manager.getWorkerName().then((workerName)=> {
+  manager.getWorkerName().then((workerName) => {
     name = workerName;
     log.info(`Starting worker: ${name}`);
     doSubtask();
   });
 };
 
-Worker.__overrideCheckInterval = (intervalMsec)=> {
+Worker.__overrideCheckInterval = (intervalMsec) => {
   RUN_CHECK_INTERVAL_MS = intervalMsec;
 };
 

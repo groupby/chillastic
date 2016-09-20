@@ -27,17 +27,17 @@ const Manager = function (redisClient) {
 
   redis = redisClient;
 
-  self.isRunning  = isRunning;
+  self.isRunning = isRunning;
   self.setRunning = setRunning;
 
-  self.getWorkerName    = reserveWorkerName;
-  self.workerHeartbeat  = workerHeartbeat;
+  self.getWorkerName = reserveWorkerName;
+  self.workerHeartbeat = workerHeartbeat;
   self.getWorkersStatus = getWorkersStatus;
 
-  self._setWorkerName       = setWorkerName;
+  self._setWorkerName = setWorkerName;
   self._overrideNameTimeout = (timeout) => {
     NAME_TIMEOUT_SEC = timeout;
-  }
+  };
 };
 
 /**
@@ -49,8 +49,8 @@ const setWorkerName = (getName) => {
   const name = getName();
 
   return purgeOldWorkerData()
-  .then(()=> redis.zadd(WORKER_NAME_KEY, 'NX', moment().valueOf(), name))
-  .then((result)=> result ? redis.hset(WORKER_STATUS_KEY, name, 'new').return(name) : setWorkerName(getName));
+  .then(() => redis.zadd(WORKER_NAME_KEY, 'NX', moment().valueOf(), name))
+  .then((result) => result ? redis.hset(WORKER_STATUS_KEY, name, 'new').return(name) : setWorkerName(getName));
 };
 
 /**
@@ -60,8 +60,8 @@ const setWorkerName = (getName) => {
  */
 const getWorkersStatus = () =>
     purgeOldWorkerData()
-    .then(()=> redis.hgetall(WORKER_STATUS_KEY))
-    .then((workersStatus)=> _.reduce(workersStatus, (result, status, workerName) => _.assign(result, {[workerName]: JSON.parse(status)}), {}));
+    .then(() => redis.hgetall(WORKER_STATUS_KEY))
+    .then((workersStatus) => _.reduce(workersStatus, (result, status, workerName) => _.assign(result, {[workerName]: JSON.parse(status)}), {}));
 
 /**
  * Called by the workers to indicate they are alive
@@ -72,7 +72,7 @@ const getWorkersStatus = () =>
  */
 const workerHeartbeat = (name, status) =>
     redis.zadd(WORKER_NAME_KEY, moment().valueOf(), name)
-    .then(()=> redis.hset(WORKER_STATUS_KEY, name, JSON.stringify(status)))
+    .then(() => redis.hset(WORKER_STATUS_KEY, name, JSON.stringify(status)))
     .then(purgeOldWorkerData);
 
 /**
@@ -80,35 +80,35 @@ const workerHeartbeat = (name, status) =>
  *
  * @returns {Promise.<TResult>}
  */
-const purgeOldWorkerData = ()=>
+const purgeOldWorkerData = () =>
     redis.zremrangebyscore(WORKER_NAME_KEY, '-inf', moment().subtract(NAME_TIMEOUT_SEC, 'seconds').valueOf())
-    .then(()=> redis.zrangebyscore(WORKER_NAME_KEY, '-inf', '+inf'))
-    .then((activeWorkerNames)=> {
+    .then(() => redis.zrangebyscore(WORKER_NAME_KEY, '-inf', '+inf'))
+    .then((activeWorkerNames) => {
       log.debug(`Active workers: ${activeWorkerNames}`);
 
       return redis.hkeys(WORKER_STATUS_KEY)
-      .then(allWorkerNames => {
+      .then((allWorkerNames) => {
         log.debug(`All workers: ${allWorkerNames}`);
         return _.difference(allWorkerNames, activeWorkerNames);
       })
-      .then(oldWorkerNames => {
+      .then((oldWorkerNames) => {
         if (oldWorkerNames.length > 0) {
           log.info(`Expiring status of workers: ${oldWorkerNames}`);
         }
-        return Promise.each(oldWorkerNames, oldName => redis.hdel(WORKER_STATUS_KEY, oldName));
+        return Promise.each(oldWorkerNames, (oldName) => redis.hdel(WORKER_STATUS_KEY, oldName));
       });
     });
 
 /**
  * Uses sillyname to reserve a unique name
  */
-const reserveWorkerName = ()=> setWorkerName(sillyname);
+const reserveWorkerName = () => setWorkerName(sillyname);
 
 /**
  * Return TRUE if workers are supposed to be running
  * @returns {Promise.<boolean>|*}
  */
-const isRunning = () => redis.get(RUN_KEY).then(running => running === 'running');
+const isRunning = () => redis.get(RUN_KEY).then((running) => running === 'running');
 
 /**
  * Start/stop the workers from running

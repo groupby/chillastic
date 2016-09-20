@@ -17,12 +17,12 @@ const createLogger = () => {
         stream: prettyStdOut
       }
     ]
-  })
+  });
 };
 
 const setLogLevel = (level) => {
   currentConfig.logLevel = level;
-  currentConfig.log      = createLogger();
+  currentConfig.log = createLogger();
 };
 
 const configureRedis = (host, port) => {
@@ -52,11 +52,11 @@ const DEFAULT_CONFIG = {
   elasticsearch:  {
     logLevel: 'warn'
   },
-  redis:          {
+  redis: {
     host: null,
     port: null
   },
-  port:           8080
+  port: 8080
 };
 
 const currentConfig = {};
@@ -64,11 +64,11 @@ _.defaultsDeep(currentConfig, DEFAULT_CONFIG);
 
 const log = createLogger();
 
-currentConfig.setLogLevel    = setLogLevel;
+currentConfig.setLogLevel = setLogLevel;
 currentConfig.configureRedis = configureRedis;
-currentConfig.setPort        = setPort;
-currentConfig.log            = log;
-currentConfig.jsonIndent     = 2;
-currentConfig.numDigits      = 2;
+currentConfig.setPort = setPort;
+currentConfig.log = log;
+currentConfig.jsonIndent = 2;
+currentConfig.numDigits = 2;
 
 module.exports = currentConfig;

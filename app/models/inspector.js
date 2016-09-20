@@ -7,7 +7,7 @@ const CUSTOM_TYPES = {
   filters:       require('./schemas/filters')
 };
 
-const getCustomTypeFromSchema = (schema)=> _.get(CUSTOM_TYPES, schema.$type, {type: schema.$type});
+const getCustomTypeFromSchema = (schema) => _.get(CUSTOM_TYPES, schema.$type, {type: schema.$type});
 
 inspector.Sanitization.extend({
   type: function (schema, candidate) {

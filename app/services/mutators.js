@@ -11,9 +11,9 @@ const Mutators    = function (redisClient) {
   const self  = this;
   const redis = redisClient;
 
-  const getNamespacedKey = (namespace)=> `${namespace}.${Mutators.NAME_KEY}`;
+  const getNamespacedKey = (namespace) => `${namespace}.${Mutators.NAME_KEY}`;
 
-  const validate = (mutatorSrc)=> {
+  const validate = (mutatorSrc) => {
     if (!_.isString(mutatorSrc)) {
       throw new Error('mutatorSrc must be string');
     }
@@ -40,7 +40,7 @@ const Mutators    = function (redisClient) {
    * @param namespace
    * @returns {*|Promise.<TResult>}
    */
-  self.getIds = (namespace)=> redis.hkeys(getNamespacedKey(namespace));
+  self.getIds = (namespace) => redis.hkeys(getNamespacedKey(namespace));
 
   /**
    * Add a mutator
@@ -49,10 +49,10 @@ const Mutators    = function (redisClient) {
    * @param mutatorSrc
    * @returns {*|Promise.<TResult>}
    */
-  self.add = (objectId, mutatorSrc)=>
+  self.add = (objectId, mutatorSrc) =>
       ObjectId.coerce(objectId).validate()
-      .then(()=> validate(mutatorSrc))
-      .then(()=> self.exists(objectId))
+      .then(() => validate(mutatorSrc))
+      .then(() => self.exists(objectId))
       .then((exists) => {
         if (exists) {
           throw new Error(`Mutator '${objectId.namespace}/${objectId.id}' exists, delete first.`);
@@ -67,7 +67,7 @@ const Mutators    = function (redisClient) {
    */
   self.remove = (objectId) =>
       ObjectId.coerce(objectId).validate()
-      .then((id)=> redis.hdel(getNamespacedKey(objectId.namespace), objectId.id));
+      .then(() => redis.hdel(getNamespacedKey(objectId.namespace), objectId.id));
 
   /**
    * Remove all filters by namespace
@@ -76,8 +76,8 @@ const Mutators    = function (redisClient) {
    */
   self.removeAllNamespacedBy = (objectId) =>
       ObjectId.coerce(objectId).validate()
-      .then(()=> self.getIds(objectId.namespace))
-      .then((ids)=> _.map(ids, (id)=> redis.hdel(getNamespacedKey(objectId.namespace), id)));
+      .then(() => self.getIds(objectId.namespace))
+      .then((ids) => _.map(ids, (id) => redis.hdel(getNamespacedKey(objectId.namespace), id)));
 
   /**
    * Return TRUE if a mutator exists in the system based on it's objectId
@@ -86,7 +86,7 @@ const Mutators    = function (redisClient) {
    */
   self.exists = (objectId) =>
       ObjectId.coerce(objectId).validate()
-      .then((id)=> redis.hexists(getNamespacedKey(id.namespace), id.id));
+      .then((id) => redis.hexists(getNamespacedKey(id.namespace), id.id));
 
   /**
    * Return TRUE if a mutator exists in the system based on it's id
@@ -95,16 +95,16 @@ const Mutators    = function (redisClient) {
    * @returns {*|{arity, flags, keyStart, keyStop, step}}
    */
   self.load = (taskName, mutators) =>
-      Promise.mapSeries(mutators.actions, (action)=> {
+      Promise.mapSeries(mutators.actions, (action) => {
         const id     = new ObjectId({namespace: _.isString(action.namespace) ? action.namespace : taskName, id: action.id});
         id.arguments = action.arguments || mutators.arguments;
         return id;
       })
-      .then((objectIds)=> Promise.mapSeries(objectIds, (objectId)=>
+      .then((objectIds) => Promise.mapSeries(objectIds, (objectId) =>
           objectId.validate()
-          .then(()=> redis.hget(getNamespacedKey(objectId.namespace), objectId.id))
-          .then((src)=> _.assign(compiler.compile(src), objectId))))
-      .then((modules)=> Promise.reduce(modules, (loadedModules, module)=> {
+          .then(() => redis.hget(getNamespacedKey(objectId.namespace), objectId.id))
+          .then((src) => _.assign(compiler.compile(src), objectId))))
+      .then((modules) => Promise.reduce(modules, (loadedModules, module) => {
         if (!_.isArray(loadedModules[module.type])) {
           loadedModules[module.type] = [];
         }
@@ -115,7 +115,7 @@ const Mutators    = function (redisClient) {
       }, {}));
 };
 Mutators.NAME_KEY = 'mutators';
-Mutators.TYPES    = [
+Mutators.TYPES = [
   'data',
   'template',
   'index'

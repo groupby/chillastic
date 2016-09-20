@@ -29,14 +29,14 @@ const MOCK_ALL_INDICES = [
           }
         }
       },
-      newtype:   {
+      newtype: {
         properties: {
           something2: {
             type: 'string'
           }
         }
       },
-      oldtype:   {
+      oldtype: {
         properties: {
           something3: {
             type: 'string'
@@ -55,7 +55,7 @@ const MOCK_ALL_INDICES = [
         }
       }
     },
-    warmers:  {}
+    warmers: {}
   },
   {
     name:     'index_number_2',
@@ -68,7 +68,7 @@ const MOCK_ALL_INDICES = [
           }
         }
       },
-      newtype:   {
+      newtype: {
         properties: {
           something: {
             type: 'string'
@@ -87,7 +87,7 @@ const MOCK_ALL_INDICES = [
         }
       }
     },
-    warmers:  {}
+    warmers: {}
   }
 ];
 
@@ -100,27 +100,27 @@ describe('subtasks service', function () {
   let subtasks = null;
   let utils    = null;
 
-  before((done)=> {
-    source   = createEsClient(TestConfig.elasticsearch.source);
-    redis    = createRedisClient(TestConfig.redis.host, TestConfig.redis.port);
-    tasks    = new Tasks(redis);
+  before((done) => {
+    source = createEsClient(TestConfig.elasticsearch.source);
+    redis = createRedisClient(TestConfig.redis.host, TestConfig.redis.port);
+    tasks = new Tasks(redis);
     subtasks = new Subtasks(redis);
-    utils    = new Utils();
+    utils = new Utils();
 
     source.indices.deleteTemplate({name: '*'})
-    .finally(()=> source.indices.delete({index: '*'}))
-    .finally(()=> redis.flushdb())
-    .finally(()=> done());
+    .finally(() => source.indices.delete({index: '*'}))
+    .finally(() => redis.flushdb())
+    .finally(() => done());
   });
 
-  afterEach((done)=> {
+  afterEach((done) => {
     source.indices.deleteTemplate({name: '*'})
-    .finally(()=> source.indices.delete({index: '*'}))
-    .finally(()=> redis.flushdb())
-    .finally(()=> done());
+    .finally(() => source.indices.delete({index: '*'}))
+    .finally(() => redis.flushdb())
+    .finally(() => done());
   });
 
-  it('should get subtasks in the same order they were added', (done)=> {
+  it('should get subtasks in the same order they were added', (done) => {
     const expected = [
       {
         source:      TestConfig.elasticsearch.source,
@@ -131,7 +131,7 @@ describe('subtasks service', function () {
             type:  'mytype1'
           }
         },
-        count:       10
+        count: 10
       },
       {
         source:      TestConfig.elasticsearch.source,
@@ -142,7 +142,7 @@ describe('subtasks service', function () {
             type:  'mytype1'
           }
         },
-        count:       20
+        count: 20
       },
       {
         source:      TestConfig.elasticsearch.source,
@@ -153,36 +153,36 @@ describe('subtasks service', function () {
             type:  'mytype4'
           }
         },
-        count:       1
+        count: 1
       }
     ];
 
-    Promise.each(expected, subtask => subtasks.queue(TASK_NAME, subtask))
+    Promise.each(expected, (subtask) => subtasks.queue(TASK_NAME, subtask))
     .then(() => subtasks.fetch(TASK_NAME))
-    .then((subtask)=> {
+    .then((subtask) => {
       expect(subtask.transfer.documents.index).to.be.equals(expected[0].transfer.documents.index);
       expect(subtask.transfer.documents.type).to.be.equals(expected[0].transfer.documents.type);
       expect(subtask.count).to.be.equals(expected[0].count);
     })
     .then(() => subtasks.fetch(TASK_NAME))
-    .then((subtask)=> {
+    .then((subtask) => {
       expect(subtask.transfer.documents.index).to.be.equals(expected[1].transfer.documents.index);
       expect(subtask.transfer.documents.type).to.be.equals(expected[1].transfer.documents.type);
       expect(subtask.count).to.be.equals(expected[1].count);
     })
     .then(() => subtasks.fetch(TASK_NAME))
-    .then((subtask)=> {
+    .then((subtask) => {
       expect(subtask.transfer.documents.index).to.be.equals(expected[2].transfer.documents.index);
       expect(subtask.transfer.documents.type).to.be.equals(expected[2].transfer.documents.type);
       expect(subtask.count).to.be.equals(expected[2].count);
     })
     .then(() => subtasks.fetch(TASK_NAME))
-    .then((subtask)=> expect(subtask).to.be.null)
-    .then(()=> done())
+    .then((subtask) => expect(subtask).to.be.null)
+    .then(() => done())
     .catch(done);
   });
 
-  it('should not add the same subtask twice', (done)=> {
+  it('should not add the same subtask twice', (done) => {
     const expected = [
       {
         source:      TestConfig.elasticsearch.source,
@@ -193,7 +193,7 @@ describe('subtasks service', function () {
             type:  'mytype1'
           }
         },
-        count:       22
+        count: 22
       },
       {
         source:      TestConfig.elasticsearch.source,
@@ -204,24 +204,24 @@ describe('subtasks service', function () {
             type:  'mytype1'
           }
         },
-        count:       22
+        count: 22
       }
     ];
 
-    Promise.each(expected, subtask => subtasks.queue(TASK_NAME, subtask))
+    Promise.each(expected, (subtask) => subtasks.queue(TASK_NAME, subtask))
     .then(() => subtasks.fetch(TASK_NAME))
-    .then((subtask)=> {
+    .then((subtask) => {
       expect(subtask.transfer.documents.index).to.be.equals(expected[0].transfer.documents.index);
       expect(subtask.transfer.documents.type).to.be.equals(expected[0].transfer.documents.type);
       expect(subtask.count).to.be.equals(expected[0].count);
     })
     .then(() => subtasks.fetch(TASK_NAME))
-    .then((subtask)=> expect(subtask).to.be.null)
-    .then(()=> done())
+    .then((subtask) => expect(subtask).to.be.null)
+    .then(() => done())
     .catch(done);
   });
 
-  it('should get all completed subtasks', (done)=> {
+  it('should get all completed subtasks', (done) => {
     const expected = [
       {
         source:      TestConfig.elasticsearch.source,
@@ -232,7 +232,7 @@ describe('subtasks service', function () {
             type:  'mytype1'
           }
         },
-        count:       10
+        count: 10
       },
       {
         source:      TestConfig.elasticsearch.source,
@@ -243,7 +243,7 @@ describe('subtasks service', function () {
             type:  'mytype1'
           }
         },
-        count:       20
+        count: 20
       },
       {
         source:      TestConfig.elasticsearch.source,
@@ -254,13 +254,13 @@ describe('subtasks service', function () {
             type:  'mytype4'
           }
         },
-        count:       1
+        count: 1
       }
     ];
 
-    Promise.each(expected, subtask => subtasks.complete(TASK_NAME, subtask))
-    .then(()=> subtasks.getCompleted(TASK_NAME))
-    .then((completedSubtasks)=> {
+    Promise.each(expected, (subtask) => subtasks.complete(TASK_NAME, subtask))
+    .then(() => subtasks.getCompleted(TASK_NAME))
+    .then((completedSubtasks) => {
       let target = _.find(completedSubtasks, {count: expected[0].count});
       expect(target.transfer.documents.index).to.be.equals(expected[0].transfer.documents.index);
       expect(target.transfer.documents.type).to.be.equals(expected[0].transfer.documents.type);
@@ -276,11 +276,11 @@ describe('subtasks service', function () {
       expect(target.transfer.documents.type).to.be.equals(expected[2].transfer.documents.type);
       expect(target.count).to.be.equals(expected[2].count);
     })
-    .then(()=> done())
+    .then(() => done())
     .catch(done);
   });
 
-  it('should get completed subtask count', (done)=> {
+  it('should get completed subtask count', (done) => {
     const expected = [
       {
         source:      TestConfig.elasticsearch.source,
@@ -291,7 +291,7 @@ describe('subtasks service', function () {
             type:  'mytype1'
           }
         },
-        count:       10
+        count: 10
       },
       {
         source:      TestConfig.elasticsearch.source,
@@ -302,7 +302,7 @@ describe('subtasks service', function () {
             type:  'mytype1'
           }
         },
-        count:       20
+        count: 20
       },
       {
         source:      TestConfig.elasticsearch.source,
@@ -313,18 +313,18 @@ describe('subtasks service', function () {
             type:  'mytype4'
           }
         },
-        count:       1
+        count: 1
       }
     ];
 
-    Promise.each(expected, subtask => subtasks.complete(TASK_NAME, subtask))
-    .then(()=> subtasks.countCompleted(TASK_NAME))
-    .then((completedCount)=> expect(completedCount).to.be.equals(31))
-    .then(()=> done())
+    Promise.each(expected, (subtask) => subtasks.complete(TASK_NAME, subtask))
+    .then(() => subtasks.countCompleted(TASK_NAME))
+    .then((completedCount) => expect(completedCount).to.be.equals(31))
+    .then(() => done())
     .catch(done);
   });
 
-  it('should clear completed subtasks', (done)=> {
+  it('should clear completed subtasks', (done) => {
     const expected = [
       {
         source:      TestConfig.elasticsearch.source,
@@ -335,7 +335,7 @@ describe('subtasks service', function () {
             type:  'mytype1'
           }
         },
-        count:       10
+        count: 10
       },
       {
         source:      TestConfig.elasticsearch.source,
@@ -346,7 +346,7 @@ describe('subtasks service', function () {
             type:  'mytype1'
           }
         },
-        count:       20
+        count: 20
       },
       {
         source:      TestConfig.elasticsearch.source,
@@ -357,33 +357,33 @@ describe('subtasks service', function () {
             type:  'mytype4'
           }
         },
-        count:       1
+        count: 1
       }
     ];
 
-    Promise.each(expected, subtask => subtasks.complete(TASK_NAME, subtask))
-    .then(()=> subtasks.clearCompleted(TASK_NAME))
-    .then(()=> subtasks.countCompleted(TASK_NAME))
-    .then((completedCount)=> expect(completedCount).to.be.equals(0))
-    .then(()=> done())
+    Promise.each(expected, (subtask) => subtasks.complete(TASK_NAME, subtask))
+    .then(() => subtasks.clearCompleted(TASK_NAME))
+    .then(() => subtasks.countCompleted(TASK_NAME))
+    .then((completedCount) => expect(completedCount).to.be.equals(0))
+    .then(() => done())
     .catch(done);
   });
 
-  it('should return an empty array when there are no completed subtasks', (done)=> {
+  it('should return an empty array when there are no completed subtasks', (done) => {
     subtasks.getCompleted(TASK_NAME)
-    .then((completedSubtasks)=> expect(completedSubtasks).to.be.empty)
-    .then(()=> done())
+    .then((completedSubtasks) => expect(completedSubtasks).to.be.empty)
+    .then(() => done())
     .catch(done);
   });
 
-  it('should return an empty array when there are no backlog subtasks', (done)=> {
+  it('should return an empty array when there are no backlog subtasks', (done) => {
     subtasks.getBacklog(TASK_NAME)
-    .then((backlogSubtasks)=> expect(backlogSubtasks).to.be.empty)
-    .then(()=> done())
+    .then((backlogSubtasks) => expect(backlogSubtasks).to.be.empty)
+    .then(() => done())
     .catch(done);
   });
 
-  it('should return all backlog subtasks', (done)=> {
+  it('should return all backlog subtasks', (done) => {
     const expected = [
       {
         source:      TestConfig.elasticsearch.source,
@@ -394,7 +394,7 @@ describe('subtasks service', function () {
             type:  'mytype1'
           }
         },
-        count:       10
+        count: 10
       },
       {
         source:      TestConfig.elasticsearch.source,
@@ -405,7 +405,7 @@ describe('subtasks service', function () {
             type:  'mytype1'
           }
         },
-        count:       20
+        count: 20
       },
       {
         source:      TestConfig.elasticsearch.source,
@@ -416,13 +416,13 @@ describe('subtasks service', function () {
             type:  'mytype4'
           }
         },
-        count:       1
+        count: 1
       }
     ];
 
-    Promise.each(expected, substask => subtasks.queue(TASK_NAME, substask))
-    .then(()=> subtasks.getBacklog(TASK_NAME))
-    .then((backlogSubtasks)=> {
+    Promise.each(expected, (substask) => subtasks.queue(TASK_NAME, substask))
+    .then(() => subtasks.getBacklog(TASK_NAME))
+    .then((backlogSubtasks) => {
       let target = _.find(backlogSubtasks, {count: expected[0].count});
       expect(target.transfer.documents.index).to.be.equals(expected[0].transfer.documents.index);
       expect(target.transfer.documents.type).to.be.equals(expected[0].transfer.documents.type);
@@ -438,11 +438,11 @@ describe('subtasks service', function () {
       expect(target.transfer.documents.type).to.be.equals(expected[2].transfer.documents.type);
       expect(target.count).to.be.equals(expected[2].count);
     })
-    .then(()=> done())
+    .then(() => done())
     .catch(done);
   });
 
-  it('should clear all backlog subtasks', (done)=> {
+  it('should clear all backlog subtasks', (done) => {
     const expected = [
       {
         source:      TestConfig.elasticsearch.source,
@@ -453,7 +453,7 @@ describe('subtasks service', function () {
             type:  'mytype1'
           }
         },
-        count:       10
+        count: 10
       },
       {
         source:      TestConfig.elasticsearch.source,
@@ -464,7 +464,7 @@ describe('subtasks service', function () {
             type:  'mytype1'
           }
         },
-        count:       20
+        count: 20
       },
       {
         source:      TestConfig.elasticsearch.source,
@@ -475,33 +475,33 @@ describe('subtasks service', function () {
             type:  'mytype4'
           }
         },
-        count:       1
+        count: 1
       }
     ];
 
-    Promise.each(expected, subtask => subtasks.queue(TASK_NAME, subtask))
-    .then(()=> subtasks.clearBacklog(TASK_NAME))
-    .then(()=> subtasks.getBacklog(TASK_NAME))
-    .then((backlogSubtasks)=> expect(backlogSubtasks).to.be.empty)
-    .then(()=> done())
+    Promise.each(expected, (subtask) => subtasks.queue(TASK_NAME, subtask))
+    .then(() => subtasks.clearBacklog(TASK_NAME))
+    .then(() => subtasks.getBacklog(TASK_NAME))
+    .then((backlogSubtasks) => expect(backlogSubtasks).to.be.empty)
+    .then(() => done())
     .catch(done);
   });
 
-  it('should return count of zero for empty completed', (done)=> {
+  it('should return count of zero for empty completed', (done) => {
     subtasks.countCompleted(TASK_NAME)
-    .then((count)=> expect(count).to.be.equals(0))
-    .then(()=> done())
+    .then((count) => expect(count).to.be.equals(0))
+    .then(() => done())
     .catch(done);
   });
 
-  it('should return count of zero for empty backlog', (done)=> {
+  it('should return count of zero for empty backlog', (done) => {
     subtasks.countBacklog(TASK_NAME)
-    .then((count)=> expect(count).to.be.equals(0))
-    .then(()=> done())
+    .then((count) => expect(count).to.be.equals(0))
+    .then(() => done())
     .catch(done);
   });
 
-  it('should return total count of subtasks in backlog', (done)=> {
+  it('should return total count of subtasks in backlog', (done) => {
     const expected = [
       {
         source:      TestConfig.elasticsearch.source,
@@ -512,7 +512,7 @@ describe('subtasks service', function () {
             type:  'mytype1'
           }
         },
-        count:       10
+        count: 10
       },
       {
         source:      TestConfig.elasticsearch.source,
@@ -523,7 +523,7 @@ describe('subtasks service', function () {
             type:  'mytype1'
           }
         },
-        count:       20
+        count: 20
       },
       {
         source:      TestConfig.elasticsearch.source,
@@ -534,18 +534,18 @@ describe('subtasks service', function () {
             type:  'mytype4'
           }
         },
-        count:       1
+        count: 1
       }
     ];
 
-    Promise.each(expected, subtask => subtasks.queue(TASK_NAME, subtask))
-    .then(()=> subtasks.countBacklog(TASK_NAME))
-    .then((backlogTotal)=> expect(backlogTotal).to.be.equals(expected.reduce((total, subtask)=> total + subtask.count, 0)))
-    .then(()=> done())
+    Promise.each(expected, (subtask) => subtasks.queue(TASK_NAME, subtask))
+    .then(() => subtasks.countBacklog(TASK_NAME))
+    .then((backlogTotal) => expect(backlogTotal).to.be.equals(expected.reduce((total, subtask) => total + subtask.count, 0)))
+    .then(() => done())
     .catch(done);
   });
 
-  it('should get counts for provided jobs', (done)=> {
+  it('should get counts for provided jobs', (done) => {
     const expected = [
       {
         source:      TestConfig.elasticsearch.source,
@@ -570,8 +570,8 @@ describe('subtasks service', function () {
     ];
 
     utils.addData(source)
-    .then(()=> Promise.map(expected, (subtask)=> subtasks.addCount(source, subtask)))
-    .then((subtasksWithCount)=> {
+    .then(() => Promise.map(expected, (subtask) => subtasks.addCount(source, subtask)))
+    .then((subtasksWithCount) => {
       expect(subtasksWithCount.length).to.be.equals(2);
 
       let filter = {transfer: {documents: {index: 'myindex1'}}};
@@ -582,11 +582,11 @@ describe('subtasks service', function () {
       target = _.find(subtasksWithCount, filter);
       expect(target.count).to.be.equals(2);
     })
-    .then(()=> done())
+    .then(() => done())
     .catch(done);
   });
 
-  it('should filter out documents by index regex', ()=> {
+  it('should filter out documents by index regex', () => {
     const fakeTask = {
       source:      TestConfig.elasticsearch.source,
       destination: TestConfig.elasticsearch.destination,
@@ -634,7 +634,7 @@ describe('subtasks service', function () {
     ]);
   });
 
-  it('should filter out documents by type regex', ()=> {
+  it('should filter out documents by type regex', () => {
     const fakeTask = {
       source:      TestConfig.elasticsearch.source,
       destination: TestConfig.elasticsearch.destination,
@@ -671,7 +671,7 @@ describe('subtasks service', function () {
     expect(actual[1].transfer.documents.type).to.be.equals('newtype');
   });
 
-  it('should prep subtasks backlog considering completed jobs', (done)=> {
+  it('should prep subtasks backlog considering completed jobs', (done) => {
     const completedSubtask = {
       source:      TestConfig.elasticsearch.source,
       destination: TestConfig.elasticsearch.destination,
@@ -681,7 +681,7 @@ describe('subtasks service', function () {
           type:  'mytype1'
         }
       },
-      count:       10
+      count: 10
     };
 
     const taskParams = {
@@ -695,7 +695,7 @@ describe('subtasks service', function () {
     };
 
     source.indices.create({index: 'myindex1'})
-    .then(()=> source.bulk({
+    .then(() => source.bulk({
       refresh: true,
       body:    [
         {
@@ -714,20 +714,20 @@ describe('subtasks service', function () {
         {someField1: 'somedata3'}
       ]
     }))
-    .then(()=> subtasks.complete(TASK_NAME, completedSubtask))
-    .then(()=> subtasks.buildBacklog(TASK_NAME, taskParams))
-    .then(()=> subtasks.fetch(TASK_NAME))
-    .then((subtask)=> {
+    .then(() => subtasks.complete(TASK_NAME, completedSubtask))
+    .then(() => subtasks.buildBacklog(TASK_NAME, taskParams))
+    .then(() => subtasks.fetch(TASK_NAME))
+    .then((subtask) => {
       expect(subtask.transfer.documents.index).to.be.equals('myindex1');
       expect(subtask.transfer.documents.type).to.be.equals('mytype2');
     })
-    .then(()=> subtasks.fetch(TASK_NAME))
-    .then((subtask)=> expect(subtask).to.be.null)
-    .then(()=> done())
+    .then(() => subtasks.fetch(TASK_NAME))
+    .then((subtask) => expect(subtask).to.be.null)
+    .then(() => done())
     .catch(done);
   });
 
-  it('should prep job backlog with no completed jobs', (done)=> {
+  it('should prep job backlog with no completed jobs', (done) => {
     const taskParams = {
       source:      TestConfig.elasticsearch.source,
       destination: TestConfig.elasticsearch.destination,
@@ -739,7 +739,7 @@ describe('subtasks service', function () {
     };
 
     source.indices.create({index: 'myindex1'})
-    .then(()=> source.bulk({
+    .then(() => source.bulk({
       refresh: true,
       body:    [
         {
@@ -758,24 +758,24 @@ describe('subtasks service', function () {
         {someField1: 'somedata3'}
       ]
     }))
-    .then(()=> subtasks.buildBacklog(TASK_NAME, taskParams))
-    .then(()=> subtasks.fetch(TASK_NAME))
-    .then((subtask)=> {
+    .then(() => subtasks.buildBacklog(TASK_NAME, taskParams))
+    .then(() => subtasks.fetch(TASK_NAME))
+    .then((subtask) => {
       expect(subtask.transfer.documents.index).to.be.equals('myindex1');
       expect(subtask.transfer.documents.type).to.be.equals('mytype1');
     })
     .then(() => subtasks.fetch(TASK_NAME))
-    .then((subtask)=> {
+    .then((subtask) => {
       expect(subtask.transfer.documents.index).to.be.equals('myindex1');
       expect(subtask.transfer.documents.type).to.be.equals('mytype2');
     })
     .then(() => subtasks.fetch(TASK_NAME))
-    .then((subtask)=> expect(subtask).to.be.null)
-    .then(()=> done())
+    .then((subtask) => expect(subtask).to.be.null)
+    .then(() => done())
     .catch(done);
   });
 
-  it('should keep track of progress for a single task', (done)=> {
+  it('should keep track of progress for a single task', (done) => {
     const subtask = {
       source:      TestConfig.elasticsearch.source,
       destination: TestConfig.elasticsearch.destination,
@@ -785,7 +785,7 @@ describe('subtasks service', function () {
           type:  'mytype1'
         }
       },
-      count:       10
+      count: 10
     };
 
     const progressUpdate = {
@@ -795,29 +795,29 @@ describe('subtasks service', function () {
     };
 
     subtasks.updateProgress(TASK_NAME, subtask, progressUpdate)
-    .then(()=> subtasks.getProgress(TASK_NAME, subtask))
-    .then((progress)=> {
+    .then(() => subtasks.getProgress(TASK_NAME, subtask))
+    .then((progress) => {
       expect(progress.tick).to.be.equals(10);
       expect(progress.total).to.be.equals(20);
       expect(progress.transferred).to.be.equals(10);
       expect(progress.lastModified).to.not.be.undefined;
 
-      progressUpdate.tick        = 5;
+      progressUpdate.tick = 5;
       progressUpdate.transferred = 15;
     })
-    .then(()=> subtasks.updateProgress(TASK_NAME, subtask, progressUpdate))
-    .then(()=> subtasks.getProgress(TASK_NAME, subtask))
-    .then((progress)=> {
+    .then(() => subtasks.updateProgress(TASK_NAME, subtask, progressUpdate))
+    .then(() => subtasks.getProgress(TASK_NAME, subtask))
+    .then((progress) => {
       expect(progress.tick).to.be.equals(5);
       expect(progress.total).to.be.equals(20);
       expect(progress.transferred).to.be.equals(15);
       expect(progress.lastModified).to.not.be.undefined;
     })
-    .then(()=> done())
+    .then(() => done())
     .catch(done);
   });
 
-  it('should keep track of progress for multiple tasks', (done)=> {
+  it('should keep track of progress for multiple tasks', (done) => {
     const subtask1 = {
       source:      TestConfig.elasticsearch.source,
       destination: TestConfig.elasticsearch.destination,
@@ -827,7 +827,7 @@ describe('subtasks service', function () {
           type:  'mytype1'
         }
       },
-      count:       10
+      count: 10
     };
 
     const subtask2 = {
@@ -839,7 +839,7 @@ describe('subtasks service', function () {
           type:  'mytype1'
         }
       },
-      count:       25
+      count: 25
     };
 
     const progressUpdate = {
@@ -849,26 +849,26 @@ describe('subtasks service', function () {
     };
 
     subtasks.updateProgress(TASK_NAME, subtask1, progressUpdate)
-    .then(()=> subtasks.getProgress(TASK_NAME, subtask1))
-    .then((progress)=> {
+    .then(() => subtasks.getProgress(TASK_NAME, subtask1))
+    .then((progress) => {
       expect(progress.tick).to.be.equals(10);
       expect(progress.total).to.be.equals(20);
       expect(progress.transferred).to.be.equals(10);
       expect(progress.lastModified).to.not.be.undefined;
 
-      progressUpdate.tick        = 5;
+      progressUpdate.tick = 5;
       progressUpdate.transferred = 15;
     })
-    .then(()=> subtasks.updateProgress(TASK_NAME, subtask2, progressUpdate))
-    .then(()=> subtasks.getProgress(TASK_NAME, subtask2))
-    .then((progress)=> {
+    .then(() => subtasks.updateProgress(TASK_NAME, subtask2, progressUpdate))
+    .then(() => subtasks.getProgress(TASK_NAME, subtask2))
+    .then((progress) => {
       expect(progress.tick).to.be.equals(5);
       expect(progress.total).to.be.equals(20);
       expect(progress.transferred).to.be.equals(15);
       expect(progress.lastModified).to.not.be.undefined;
     })
-    .then(()=> tasks.getProgress(TASK_NAME))
-    .then((overallProgress)=> {
+    .then(() => tasks.getProgress(TASK_NAME))
+    .then((overallProgress) => {
       expect(overallProgress.length).to.be.equals(2);
 
       const predicate = {
@@ -888,11 +888,11 @@ describe('subtasks service', function () {
       target = _.find(overallProgress, predicate);
       expect(target.progress.tick).to.be.equals(5);
     })
-    .then(()=> done())
+    .then(() => done())
     .catch(done);
   });
 
-  it('should delete progress of specific subtask', (done)=> {
+  it('should delete progress of specific subtask', (done) => {
     const subtask1 = {
       source:      TestConfig.elasticsearch.source,
       destination: TestConfig.elasticsearch.destination,
@@ -902,7 +902,7 @@ describe('subtasks service', function () {
           type:  'mytype1'
         }
       },
-      count:       10
+      count: 10
     };
 
     const subtask2 = {
@@ -914,7 +914,7 @@ describe('subtasks service', function () {
           type:  'mytype1'
         }
       },
-      count:       25
+      count: 25
     };
 
     const progressUpdate = {
@@ -924,23 +924,23 @@ describe('subtasks service', function () {
     };
 
     subtasks.updateProgress(TASK_NAME, subtask1, progressUpdate)
-    .then(()=> subtasks.getProgress(TASK_NAME, subtask1))
-    .then(()=> {
-      progressUpdate.tick        = 5;
+    .then(() => subtasks.getProgress(TASK_NAME, subtask1))
+    .then(() => {
+      progressUpdate.tick = 5;
       progressUpdate.transferred = 15;
     })
-    .then(()=> subtasks.updateProgress(TASK_NAME, subtask2, progressUpdate))
-    .then(()=> subtasks.getProgress(TASK_NAME, subtask2))
-    .then(()=> tasks.getProgress(TASK_NAME))
-    .then((overallProgress)=> expect(overallProgress.length).to.be.equals(2))
-    .then(()=>subtasks.removeProgress(TASK_NAME, subtask1))
-    .then(()=> tasks.getProgress(TASK_NAME))
-    .then((overallProgress)=> {
+    .then(() => subtasks.updateProgress(TASK_NAME, subtask2, progressUpdate))
+    .then(() => subtasks.getProgress(TASK_NAME, subtask2))
+    .then(() => tasks.getProgress(TASK_NAME))
+    .then((overallProgress) => expect(overallProgress.length).to.be.equals(2))
+    .then(() => subtasks.removeProgress(TASK_NAME, subtask1))
+    .then(() => tasks.getProgress(TASK_NAME))
+    .then((overallProgress) => {
       expect(overallProgress.length).to.be.equals(1);
       expect(overallProgress[0].subtask.transfer.documents.index).to.be.equals('myindex3');
       expect(overallProgress[0].progress.tick).to.be.equals(5);
     })
-    .then(()=> done())
+    .then(() => done())
     .catch(done);
   });
 });

@@ -10,7 +10,7 @@ const SCHEMA = {
       def:      'global',
       optional: false
     },
-    id:        {
+    id: {
       type:     'string',
       optional: false
     }
@@ -19,7 +19,7 @@ const SCHEMA = {
 
 const ObjectId    = function (params) {
   const self       = this;
-  const validateId = (id)=> _.isString(id) && ObjectId.ID_REGEX.test(id);
+  const validateId = (id) => _.isString(id) && ObjectId.ID_REGEX.test(id);
 
   inspector.sanitize(SCHEMA, params);
   const result = inspector.validate(SCHEMA, params);
@@ -29,7 +29,7 @@ const ObjectId    = function (params) {
   }
   _.merge(self, params);
 
-  self.validate = (name)=> new Promise((resolve, reject)=> {
+  self.validate = (name) => new Promise((resolve, reject) => {
     name = name || 'Id';
 
     if (!validateId(self.namespace)) {
@@ -43,6 +43,6 @@ const ObjectId    = function (params) {
   return self;
 };
 ObjectId.ID_REGEX = /^[a-zA-Z][a-zA-Z0-9]{1,40}$/;
-ObjectId.coerce   = (id)=> id instanceof ObjectId ? id : new ObjectId(id);
+ObjectId.coerce = (id) => id instanceof ObjectId ? id : new ObjectId(id);
 
 module.exports = ObjectId;

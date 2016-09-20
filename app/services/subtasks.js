@@ -21,17 +21,17 @@ const Subtasks = function (redisClient) {
    *
    * @returns {Promise.<TResult>}
    */
-  self.fetch = (taskId)=> {
+  self.fetch = (taskId) => {
     return Task.validateId(taskId)
-    .then(()=> redis.lpop(Task.backlogQueueKey(taskId)))
-    .then((subtaskID)=> {
+    .then(() => redis.lpop(Task.backlogQueueKey(taskId)))
+    .then((subtaskID) => {
       log.info('ID:', subtaskID);
       return subtaskID;
     })
-    .then((subtaskID)=>
+    .then((subtaskID) =>
         _.isNull(subtaskID) ? null : redis.hget(Task.backlogHSetKey(taskId), subtaskID)
-        .then((count)=> Subtask.createFromID(subtaskID, count))
-        .then((subtask)=> redis.hdel(Task.backlogHSetKey(taskId), subtask.getID()).return(subtask))
+        .then((count) => Subtask.createFromID(subtaskID, count))
+        .then((subtask) => redis.hdel(Task.backlogHSetKey(taskId), subtask.getID()).return(subtask))
     );
   };
 
@@ -41,12 +41,12 @@ const Subtasks = function (redisClient) {
    * @param subtask
    * @returns {*|Promise.<TResult>}
    */
-  self.queue = (taskId, subtask)=> {
+  self.queue = (taskId, subtask) => {
     subtask = Subtask.coerce(subtask);
 
     return Task.validateId(taskId)
-    .then(()=> redis.hset(Task.backlogHSetKey(taskId), subtask.getID(), subtask.count))
-    .then((numberAdded)=> {
+    .then(() => redis.hset(Task.backlogHSetKey(taskId), subtask.getID(), subtask.count))
+    .then((numberAdded) => {
       if (numberAdded === 0) {
         log.warn(`subtask: ${subtask} already in queue`);
         return Promise.resolve();
@@ -62,14 +62,14 @@ const Subtasks = function (redisClient) {
    * @param subtask
    * @returns {*|{arity, flags, keyStart, keyStop, step}}
    */
-  self.complete = (taskId, subtask)=> {
+  self.complete = (taskId, subtask) => {
     subtask = Subtask.coerce(subtask);
     return Task.validateId(taskId)
-    .then(()=> self.removeProgress(taskId, subtask))
-    .then(()=> redis.hset(Task.completedKey(taskId), subtask.getID(), subtask.count));
+    .then(() => self.removeProgress(taskId, subtask))
+    .then(() => redis.hset(Task.completedKey(taskId), subtask.getID(), subtask.count));
   };
 
-  const incrementCount = (subtask, increment)=> {
+  const incrementCount = (subtask, increment) => {
     subtask.count = parseInt(increment);
     return new Subtask(subtask);
   };
@@ -81,13 +81,13 @@ const Subtasks = function (redisClient) {
    * @param subtask
    * @returns {*}
    */
-  self.addCount = (client, subtask)=>
+  self.addCount = (client, subtask) =>
       subtask.transfer.documents ?
           client.count({
             index: subtask.transfer.documents.index,
             type:  subtask.transfer.documents.type
           })
-          .then((result)=> incrementCount(subtask, result.count)) :
+          .then((result) => incrementCount(subtask, result.count)) :
           incrementCount(subtask, 1);
 
   /**
@@ -103,7 +103,7 @@ const Subtasks = function (redisClient) {
       return Promise.resolve([]);
     } else {
       return Transfer.getIndices(client, task.transfer.indices.names)
-      .then(allIndices => allIndices.map((index)=> index.name));
+      .then((allIndices) => allIndices.map((index) => index.name));
     }
   };
 
@@ -120,7 +120,7 @@ const Subtasks = function (redisClient) {
       return Promise.resolve([]);
     } else {
       return Transfer.getTemplates(client, task.transfer.indices.templates)
-      .then(allTemplates => allTemplates.map((template)=> template.name));
+      .then((allTemplates) => allTemplates.map((template) => template.name));
     }
   };
 
@@ -138,9 +138,9 @@ const Subtasks = function (redisClient) {
       return Promise.resolve([]);
     } else {
       return filters.load(taskId, task.transfer.documents.filters)
-      .then((loadedFilters)=>
+      .then((loadedFilters) =>
           Transfer.getIndices(client, task.transfer.documents.fromIndices)
-          .then((allIndices)=> self.filterDocumentSubtasks(task, allIndices, loadedFilters))
+          .then((allIndices) => self.filterDocumentSubtasks(task, allIndices, loadedFilters))
       );
     }
   };
@@ -153,9 +153,9 @@ const Subtasks = function (redisClient) {
    * @returns {*}
    */
   self.filterDocumentSubtasks = (task, allIndices, loadedFilters) => {
-    const predicate                = (allFilters)=> (input)=> allFilters.reduce((result, filter)=> result || filter.predicate(input), false);
-    const getTypesFromMappings     = (mappings)=> _.reduce(mappings, (result, type, name)=> result.concat(_.assign(type, {name})), []);
-    const generatePotentialSubtask = (indexName, typeName)=> _.omitBy({
+    const predicate                = (allFilters) => (input) => allFilters.reduce((result, filter) => result || filter.predicate(input), false);
+    const getTypesFromMappings     = (mappings) => _.reduce(mappings, (result, type, name) => result.concat(_.assign(type, {name})), []);
+    const generatePotentialSubtask = (indexName, typeName) => _.omitBy({
       source:      task.source,
       destination: task.destination,
       transfer:    {
@@ -165,15 +165,15 @@ const Subtasks = function (redisClient) {
           type:  typeName
         }
       },
-      mutators:    task.mutators
+      mutators: task.mutators
     }, _.isUndefined);
 
     const filteredIndices = _.isArray(loadedFilters.index) ? allIndices.filter(predicate(loadedFilters.index)) : allIndices;
-    return filteredIndices.reduce((result, index)=> {
+    return filteredIndices.reduce((result, index) => {
       const allTypes      = getTypesFromMappings(index.mappings);
       const filteredTypes = _.isArray(loadedFilters.type) ? allTypes.filter(predicate(loadedFilters.type)) : allTypes;
 
-      filteredTypes.forEach((filteredType)=> result.push(generatePotentialSubtask(index.name, filteredType.name)));
+      filteredTypes.forEach((filteredType) => result.push(generatePotentialSubtask(index.name, filteredType.name)));
       return result;
     }, []);
   };
@@ -185,11 +185,11 @@ const Subtasks = function (redisClient) {
    * @returns {Promise.<TResult>}
    */
   self.buildBacklog = (taskId, task) => {
-    task             = Task.coerce(task);
+    task = Task.coerce(task);
     const taskSource = createEsClient(task.source);
 
     return Task.validateId(taskId)
-    .then(()=> self.clearBacklog(taskId))
+    .then(() => self.clearBacklog(taskId))
     .then(() =>
         Promise.reduce([
           generateIndexSubtasks(taskSource, task),
@@ -197,11 +197,11 @@ const Subtasks = function (redisClient) {
           generateDocumentSubtasks(taskSource, taskId, task)
         ], (allSubtasks, stepSubtasks) => allSubtasks.concat(stepSubtasks), [])
     )
-    .then(potentialSubtasks => {
+    .then((potentialSubtasks) => {
       log.info(`${potentialSubtasks.length} potential subtasks found`);
 
       return self.getCompleted(taskId)
-      .then((completedSubtasks)=> {
+      .then((completedSubtasks) => {
         log.info(`${completedSubtasks.length} completed subtasks exist`);
         const unfinished = potentialSubtasks.filter((potential) => !_.find(completedSubtasks, potential));
 
@@ -209,8 +209,8 @@ const Subtasks = function (redisClient) {
         return unfinished;
       });
     })
-    .then(allSubtasks => Promise.map(allSubtasks, (subtask)=> self.addCount(taskSource, subtask), {concurrency: 10}))
-    .then(allSubtasks => Promise.map(allSubtasks, (subtask)=> self.queue(taskId, subtask), {concurrency: 10}));
+    .then((allSubtasks) => Promise.map(allSubtasks, (subtask) => self.addCount(taskSource, subtask), {concurrency: 10}))
+    .then((allSubtasks) => Promise.map(allSubtasks, (subtask) => self.queue(taskId, subtask), {concurrency: 10}));
   };
 
   /**
@@ -218,54 +218,54 @@ const Subtasks = function (redisClient) {
    *
    * @returns {Promise.<TResult>}
    */
-  self.clearBacklog = (taskId)=>
+  self.clearBacklog = (taskId) =>
       Task.validateId(taskId)
-      .then(()=> log.info(`clearing existing backlog for task: '${taskId}'`))
-      .then(()=> redis.del(Task.backlogQueueKey(taskId)))
-      .then(()=> redis.del(Task.backlogHSetKey(taskId)));
+      .then(() => log.info(`clearing existing backlog for task: '${taskId}'`))
+      .then(() => redis.del(Task.backlogQueueKey(taskId)))
+      .then(() => redis.del(Task.backlogHSetKey(taskId)));
 
   /**
    * Returns all backlog jobs and their counts
    *
    * @returns {Promise.<TResult>}
    */
-  self.getBacklog = (taskId)=>
+  self.getBacklog = (taskId) =>
       Task.validateId(taskId)
-      .then(()=> redis.hgetall(Task.backlogHSetKey(taskId)))
-      .then((jobsAndCounts)=>
+      .then(() => redis.hgetall(Task.backlogHSetKey(taskId)))
+      .then((jobsAndCounts) =>
           // ioredis returns an object where the keys are the hash fields and the values are the hash values
-          _.map(jobsAndCounts, (count, subtaskID)=> Subtask.createFromID(subtaskID, count)));
+          _.map(jobsAndCounts, (count, subtaskID) => Subtask.createFromID(subtaskID, count)));
 
   /**
    * Get total docs in backlog
    *
    * @returns {Promise.<TResult>}
    */
-  self.countBacklog = (taskId)=>
+  self.countBacklog = (taskId) =>
       Task.validateId(taskId)
-      .then(()=> redis.hvals(Task.backlogHSetKey(taskId)))
-      .then((counts)=> counts.reduce((total, count)=> total + parseInt(count), 0));
+      .then(() => redis.hvals(Task.backlogHSetKey(taskId)))
+      .then((counts) => counts.reduce((total, count) => total + parseInt(count), 0));
 
   /**
    * Clear any completed subtasks
    *
    * @returns {Promise.<TResult>}
    */
-  self.clearCompleted = (taskId)=>
+  self.clearCompleted = (taskId) =>
       Task.validateId(taskId)
-      .then(()=> redis.del(Task.completedKey(taskId)));
+      .then(() => redis.del(Task.completedKey(taskId)));
 
   /**
    * Returns all completed jobs and their counts
    *
    * @returns {Promise.<TResult>}
    */
-  self.getCompleted = (taskId)=>
+  self.getCompleted = (taskId) =>
       Task.validateId(taskId)
-      .then(()=> redis.hgetall(Task.completedKey(taskId)))
-      .then((jobsAndCounts)=>
+      .then(() => redis.hgetall(Task.completedKey(taskId)))
+      .then((jobsAndCounts) =>
           // ioredis returns an object where the keys are the hash fields and the values are the hash values
-          _.map(jobsAndCounts, (count, subtaskID)=> Subtask.createFromID(subtaskID, count))
+          _.map(jobsAndCounts, (count, subtaskID) => Subtask.createFromID(subtaskID, count))
       );
 
   /**
@@ -273,10 +273,10 @@ const Subtasks = function (redisClient) {
    *
    * @returns {Promise.<TResult>}
    */
-  self.countCompleted = (taskId)=>
+  self.countCompleted = (taskId) =>
       Task.validateId(taskId)
-      .then(()=> redis.hvals(Task.completedKey(taskId)))
-      .then((counts)=> counts.reduce((total, count)=> total + parseInt(count), 0));
+      .then(() => redis.hvals(Task.completedKey(taskId)))
+      .then((counts) => counts.reduce((total, count) => total + parseInt(count), 0));
 
   /**
    * Clear the progress of a given subtask within a task
@@ -296,11 +296,11 @@ const Subtasks = function (redisClient) {
    * @returns {*|{arity, flags, keyStart, keyStop, step}}
    */
   self.updateProgress = (taskId, subtask, progress) => {
-    progress              = Progress.coerce(progress);
+    progress = Progress.coerce(progress);
     progress.lastModified = moment().toISOString();
 
     return Task.validateId(taskId)
-    .then(()=> redis.hset(Task.progressKey(taskId), JSON.stringify(Subtask.coerce(subtask)), JSON.stringify(progress)));
+    .then(() => redis.hset(Task.progressKey(taskId), JSON.stringify(Subtask.coerce(subtask)), JSON.stringify(progress)));
   };
 
   /**
@@ -311,8 +311,8 @@ const Subtasks = function (redisClient) {
    */
   self.getProgress = (taskId, subtask) =>
       Task.validateId(taskId)
-      .then(()=> redis.hget(Task.progressKey(taskId), JSON.stringify(Subtask.coerce(subtask))))
-      .then((progress)=> JSON.parse(progress));
+      .then(() => redis.hget(Task.progressKey(taskId), JSON.stringify(Subtask.coerce(subtask))))
+      .then((progress) => JSON.parse(progress));
 };
 
 module.exports = Subtasks;

@@ -18,11 +18,11 @@ const LogToBunyan = function () {
     stream: prettyStdOut
   });
 
-  self.error   = bun.error.bind(bun);
+  self.error = bun.error.bind(bun);
   self.warning = bun.warn.bind(bun);
-  self.info    = bun.info.bind(bun);
-  self.debug   = bun.debug.bind(bun);
-  self.trace   = (method, requestUrl, body, responseBody, responseStatus) => {
+  self.info = bun.info.bind(bun);
+  self.debug = bun.debug.bind(bun);
+  self.trace = (method, requestUrl, body, responseBody, responseStatus) => {
     bun.trace({
       method:         method,
       requestUrl:     requestUrl,
@@ -31,7 +31,7 @@ const LogToBunyan = function () {
       responseStatus: responseStatus
     });
   };
-  self.close   = () => {
+  self.close = () => {
   };
 };
 
@@ -51,7 +51,7 @@ const createEsClient = (hostConfig) => {
     try {
       const results = sr('GET', uri);
       const version = JSON.parse(results.getBody('utf8')).version.number;
-      apiVersion    = `${semver.major(version)}.${semver.minor(version)}`;
+      apiVersion = `${semver.major(version)}.${semver.minor(version)}`;
       break;
     } catch (e) {
       config.log.warn(e);
@@ -72,7 +72,7 @@ const createEsClient = (hostConfig) => {
 
       const promise = new Promise((res, rej) => {
         resolve = res;
-        reject  = rej;
+        reject = rej;
       });
       return {
         resolve: resolve,

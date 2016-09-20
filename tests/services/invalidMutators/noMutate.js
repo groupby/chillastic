@@ -1,5 +1,5 @@
 module.exports = {
-  type: 'index',
+  type:      'index',
   predicate: (index) => {
     return index.name === 'index_to_mutate';
   }

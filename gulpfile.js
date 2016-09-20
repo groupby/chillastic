@@ -7,14 +7,20 @@ const eslint    = require('gulp-eslint');
 const istanbul  = require('gulp-istanbul');
 const gulpExit  = require('gulp-exit');
 const coveralls = require('gulp-coveralls');
+const gulpIf   = require('gulp-if');
 
-gulp.task('test:dirty', ()=> {
+const isFixed = (file) => {
+  // Has ESLint fixed the file contents?
+  return file.eslint != null && file.eslint.fixed;
+};
+
+gulp.task('test:dirty', () => {
   return gulp.src('tests/**/*.spec.js')
     .pipe(mocha({reporter: 'spec'}))
     .pipe(gulpExit());
 });
 
-const lint = ()=> {
+const lint = () => {
   return gulp.src([
     '**/*.js',
     '!node_modules/**',
@@ -29,20 +35,24 @@ const lint = ()=> {
     .once('error', () => {
       console.error('lint failed');
       process.exit(1);
+    })
+    .pipe(gulpIf(isFixed, gulp.dest('.')))
+    .once('end', () => {
+      process.exit();
     });
 };
 
-gulp.task('lint', ()=> {
+gulp.task('lint', () => {
   return lint();
 });
 
-gulp.task('pre-test', ()=> {
+gulp.task('pre-test', () => {
   return gulp.src('app/**/*.js')
     .pipe(istanbul())
     .pipe(istanbul.hookRequire());
 });
 
-gulp.task('test:coverage', ['pre-test'], ()=> {
+gulp.task('test:coverage', ['pre-test'], () => {
   return gulp.src(['tests/**/*.spec.js'])
     .pipe(mocha({reporter: 'spec'}))
     .pipe(istanbul.writeReports({
@@ -66,11 +76,11 @@ gulp.task('test:coverage', ['pre-test'], ()=> {
     });
 });
 
-gulp.task('test:lint', ['test:coverage'], ()=> {
+gulp.task('test:lint', ['test:coverage'], () => {
   return lint();
 });
 
-gulp.task('test', ['test:lint'], ()=> {
+gulp.task('test', ['test:lint'], () => {
   return gulp.src(['*.js']);
 });
 

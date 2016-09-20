@@ -2,7 +2,7 @@ const _          = require('lodash');
 const path       = require('path');
 const HttpStatus = require('http-status');
 
-const parsePath = (input)=> {
+const parsePath = (input) => {
   if (path.isAbsolute(input)) {
     return input;
   } else {
@@ -24,7 +24,7 @@ const processError = function (error, res) {
     message = 'error triggered, but error is undefined';
   } else if (_.isString(error.message) && error.message.indexOf('does not exist') !== -1) {
     message = error;
-    code    = HttpStatus.NOT_FOUND;
+    code = HttpStatus.NOT_FOUND;
   } else if (_.isString(error)) {
     log.warn('error', error);
     message = error;

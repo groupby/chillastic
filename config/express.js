@@ -32,24 +32,24 @@ module.exports = function (app) {
   app.use(cookieParser());
   app.use(cors());
   app.use(expressLogger({
-    name:     `${config.FRAMEWORK_NAME}-express`,
-    format:   ":status-code - :method :url - response-time: :response-time",
-    streams:  [
+    name:    `${config.FRAMEWORK_NAME}-express`,
+    format:  ':status-code - :method :url - response-time: :response-time',
+    streams: [
       {
         level:  'info',
         stream: prettyStdOut
       }
     ],
     excludes: ['*'],
-    levelFn:  (status, err, meta)=> {
-      if (meta["response-time"] > MAX_ACCEPTABLE_RESPONSE_TIME) {
-        return "fatal";
-      } else if (meta["status-code"] >= HttpStatus.INTERNAL_SERVER_ERROR) {
-        return "error";
-      } else if (meta["status-code"] >= HttpStatus.BAD_REQUEST) {
-        return "warn";
+    levelFn:  (status, err, meta) => {
+      if (meta['response-time'] > MAX_ACCEPTABLE_RESPONSE_TIME) {
+        return 'fatal';
+      } else if (meta['status-code'] >= HttpStatus.INTERNAL_SERVER_ERROR) {
+        return 'error';
+      } else if (meta['status-code'] >= HttpStatus.BAD_REQUEST) {
+        return 'warn';
       } else {
-        return "info";
+        return 'info';
       }
     }
   }));

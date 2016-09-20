@@ -24,7 +24,7 @@ const Tasks    = function (redisClient) {
    * Return the names of all known tasks
    * @returns {Promise.<*|Array>|*}
    */
-  self.getAll = () => redis.smembers(Tasks.NAME_KEY).then((tasks)=> tasks || []);
+  self.getAll = () => redis.smembers(Tasks.NAME_KEY).then((tasks) => tasks || []);
 
   /**
    * Convert task into subtasks and queue them for execution
@@ -33,17 +33,17 @@ const Tasks    = function (redisClient) {
    * @param task
    * @returns {*|Promise.<TResult>}
    */
-  self.add = (taskId, task)=>
+  self.add = (taskId, task) =>
       self.exists(taskId)
-      .then(exists => {
+      .then((exists) => {
         if (exists) {
           throw new Error(`task: '${taskId}' exists. Delete first.`);
         } else if (task.transfer.flushSize > Task.DEFAULT_FLUSH_SIZE) {
           throw new Error(`flushSize must be ${Task.DEFAULT_FLUSH_SIZE} or less, given ${task.transfer.flushSize}`);
         }
       })
-      .then(()=> redis.sadd(Tasks.NAME_KEY, taskId))
-      .then(()=> subtasks.buildBacklog(taskId, Task.coerce(task)));
+      .then(() => redis.sadd(Tasks.NAME_KEY, taskId))
+      .then(() => subtasks.buildBacklog(taskId, Task.coerce(task)));
 
   /**
    * Remove a task by name
@@ -52,10 +52,10 @@ const Tasks    = function (redisClient) {
    */
   self.remove = (taskId) =>
       Task.validateId(taskId)
-      .then(()=> subtasks.clearBacklog(taskId))
-      .then(()=> subtasks.clearCompleted(taskId))
-      .then(()=> _.map(namespacedServices, (service)=> service.removeAllNamespacedBy(new ObjectId({namespace: taskId, id: 'dummy'}))))
-      .then(()=> redis.srem(Tasks.NAME_KEY, taskId));
+      .then(() => subtasks.clearBacklog(taskId))
+      .then(() => subtasks.clearCompleted(taskId))
+      .then(() => _.map(namespacedServices, (service) => service.removeAllNamespacedBy(new ObjectId({namespace: taskId, id: 'dummy'}))))
+      .then(() => redis.srem(Tasks.NAME_KEY, taskId));
 
   /**
    * Return TRUE if a task exists in the system based on it's name
@@ -64,7 +64,7 @@ const Tasks    = function (redisClient) {
    */
   self.exists = (taskId) =>
       Task.validateId(taskId)
-      .then(()=> redis.sismember(Tasks.NAME_KEY, taskId));
+      .then(() => redis.sismember(Tasks.NAME_KEY, taskId));
 
   /**
    * Record an error during a task, with timestamp
@@ -79,7 +79,7 @@ const Tasks    = function (redisClient) {
     log.error(error);
 
     return Task.validateId(taskId)
-    .then(()=> redis.zadd(Task.errorKey(taskId), time_ms, error));
+    .then(() => redis.zadd(Task.errorKey(taskId), time_ms, error));
   };
 
   /**
@@ -87,10 +87,10 @@ const Tasks    = function (redisClient) {
    * @param taskId
    * @returns {*|Promise.<TResult>}
    */
-  self.errors = (taskId)=>
+  self.errors = (taskId) =>
       Task.validateId(taskId)
       .then(() => redis.zrangebyscore(Task.errorKey(taskId), '-inf', '+inf', 'WITHSCORES'))
-      .then((rawErrors)=> {
+      .then((rawErrors) => {
         const skip   = 2;
         const errors = [];
         for (let i = 0; i < rawErrors.length; i += skip) {
@@ -111,8 +111,8 @@ const Tasks    = function (redisClient) {
    */
   self.getProgress = (taskId) =>
       Task.validateId(taskId)
-      .then(()=> redis.hgetall(Task.progressKey(taskId)))
-      .then((overallProgress)=>
+      .then(() => redis.hgetall(Task.progressKey(taskId)))
+      .then((overallProgress) =>
           _.reduce(overallProgress, (result, rawProgress, rawSubtask) => result.concat({
             subtask:  new Subtask(JSON.parse(rawSubtask)),
             progress: new Progress(JSON.parse(rawProgress))

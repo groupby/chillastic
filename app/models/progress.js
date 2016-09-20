@@ -6,19 +6,19 @@ const ISO_86001_REGEX = /(\d{4})-(0[1-9]|1[0-2]|[1-9])-(\3([12]\d|0[1-9]|3[01])|
 const SCHEMA = {
   type:       'object',
   properties: {
-    tick:         {
+    tick: {
       type: 'integer',
       gte:  0
     },
-    transferred:  {
+    transferred: {
       type: 'integer',
       gte:  0
     },
-    total:        {
+    total: {
       type: 'integer',
       gte:  0
     },
-    worker:       {
+    worker: {
       type:     'string',
       optional: true
     },
@@ -45,6 +45,6 @@ const Progress  = function (params) {
 
   return self;
 };
-Progress.coerce = (progress)=> progress instanceof Progress ? progress : new Progress(progress);
+Progress.coerce = (progress) => progress instanceof Progress ? progress : new Progress(progress);
 
 module.exports = Progress;

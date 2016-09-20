@@ -21,25 +21,25 @@ describe('job manager', function () {
   let redis   = null;
   let manager = null;
 
-  before((done)=> {
-    source  = createEsClient(TestConfig.elasticsearch.source);
-    redis   = createRedisClient(TestConfig.redis.host, TestConfig.redis.port);
+  before((done) => {
+    source = createEsClient(TestConfig.elasticsearch.source);
+    redis = createRedisClient(TestConfig.redis.host, TestConfig.redis.port);
     manager = new Manager(redis);
 
     source.indices.deleteTemplate({name: '*'})
-    .finally(()=> source.indices.delete({index: '*'}))
-    .finally(()=> redis.flushdb())
-    .finally(()=> done());
+    .finally(() => source.indices.delete({index: '*'}))
+    .finally(() => redis.flushdb())
+    .finally(() => done());
   });
 
-  afterEach((done)=> {
+  afterEach((done) => {
     source.indices.deleteTemplate({name: '*'})
-    .finally(()=> source.indices.delete({index: '*'}))
-    .finally(()=> redis.flushdb())
-    .finally(()=> done());
+    .finally(() => source.indices.delete({index: '*'}))
+    .finally(() => redis.flushdb())
+    .finally(() => done());
   });
 
-  it('should not accept the same name twice', done => {
+  it('should not accept the same name twice', (done) => {
     const names = [
       'same',
       'same',
@@ -50,10 +50,10 @@ describe('job manager', function () {
       return names.shift();
     };
 
-    manager._setWorkerName(getName).then(name => {
+    manager._setWorkerName(getName).then((name) => {
       expect(name).to.be.equals('same');
       return manager._setWorkerName(getName);
-    }).then(name => {
+    }).then((name) => {
       expect(name).to.be.equals('different');
       done();
     }).catch(done);
@@ -72,10 +72,10 @@ describe('job manager', function () {
       return names.shift();
     };
 
-    manager._setWorkerName(getName).delay(1100).then(name => {
+    manager._setWorkerName(getName).delay(1100).then((name) => {
       expect(name).to.be.equals('same');
       return manager._setWorkerName(getName);
-    }).then(name => {
+    }).then((name) => {
       expect(name).to.be.equals('same');
       done();
     }).catch(done);
@@ -94,24 +94,24 @@ describe('job manager', function () {
       return names.shift();
     };
 
-    manager._setWorkerName(getName).then(name => {
+    manager._setWorkerName(getName).then((name) => {
       expect(name).to.be.equals('same');
       return manager._setWorkerName(getName);
-    }).then(name => {
+    }).then((name) => {
       expect(name).to.be.equals('different');
       return manager.workerHeartbeat('same', 'running');
     }).then(() => {
       return manager.workerHeartbeat('different', 'broken');
     }).then(() => {
       return manager.getWorkersStatus();
-    }).delay(500).then(status => {
+    }).delay(500).then((status) => {
       expect(_.size(status)).to.be.equals(2);
       expect(status.same).to.be.equals('running');
       expect(status.different).to.be.equals('broken');
       return manager.workerHeartbeat('same', 'running');
-    }).delay(600).then(()=> {
+    }).delay(600).then(() => {
       return manager.getWorkersStatus();
-    }).then(status => {
+    }).then((status) => {
       expect(_.size(status)).to.be.equals(1);
       expect(status.same).to.be.equals('running');
       done();

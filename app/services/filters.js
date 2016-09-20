@@ -11,9 +11,9 @@ const Filters    = function (redisClient) {
   const self  = this;
   const redis = redisClient;
 
-  const getNamespacedKey = (namespace)=> `${namespace}.${Filters.NAME_KEY}`;
+  const getNamespacedKey = (namespace) => `${namespace}.${Filters.NAME_KEY}`;
 
-  const validate = (filterSrc)=> {
+  const validate = (filterSrc) => {
     if (!_.isString(filterSrc)) {
       throw new Error('filterSrc must be string');
     }
@@ -36,7 +36,7 @@ const Filters    = function (redisClient) {
    * @param namespace
    * @returns {*|Promise.<TResult>}
    */
-  self.getIds = (namespace)=> redis.hkeys(getNamespacedKey(namespace));
+  self.getIds = (namespace) => redis.hkeys(getNamespacedKey(namespace));
 
   /**
    * Add a filter
@@ -45,10 +45,10 @@ const Filters    = function (redisClient) {
    * @param filterSrc
    * @returns {*|Promise.<TResult>}
    */
-  self.add = (objectId, filterSrc)=>
+  self.add = (objectId, filterSrc) =>
       ObjectId.coerce(objectId).validate()
-      .then(()=> validate(filterSrc))
-      .then(()=> self.exists(objectId))
+      .then(() => validate(filterSrc))
+      .then(() => self.exists(objectId))
       .then((exists) => {
         if (exists) {
           throw new Error(`Filter '${objectId.namespace}/${objectId.id}' exists, delete first.`);
@@ -63,7 +63,7 @@ const Filters    = function (redisClient) {
    */
   self.remove = (objectId) =>
       ObjectId.coerce(objectId).validate()
-      .then((id)=> redis.hdel(getNamespacedKey(objectId.namespace), objectId.id));
+      .then(() => redis.hdel(getNamespacedKey(objectId.namespace), objectId.id));
 
   /**
    * Remove all filters by namespace
@@ -72,8 +72,8 @@ const Filters    = function (redisClient) {
    */
   self.removeAllNamespacedBy = (objectId) =>
       ObjectId.coerce(objectId).validate()
-      .then(()=> self.getIds(objectId.namespace))
-      .then((ids)=> _.map(ids, (id)=> redis.hdel(getNamespacedKey(objectId.namespace), id)));
+      .then(() => self.getIds(objectId.namespace))
+      .then((ids) => _.map(ids, (id) => redis.hdel(getNamespacedKey(objectId.namespace), id)));
 
   /**
    * Return TRUE if a filter exists in the system based on it's objectId
@@ -82,7 +82,7 @@ const Filters    = function (redisClient) {
    */
   self.exists = (objectId) =>
       ObjectId.coerce(objectId).validate()
-      .then((id)=> redis.hexists(getNamespacedKey(id.namespace), id.id));
+      .then((id) => redis.hexists(getNamespacedKey(id.namespace), id.id));
 
   /**
    * Return TRUE if a filter exists in the system based on it's id
@@ -93,16 +93,16 @@ const Filters    = function (redisClient) {
   self.load = (taskName, filters) =>
       !_.isObject(filters) || !_.isArray(filters.actions) ?
           Promise.resolve({}) :
-          Promise.mapSeries(filters.actions, (action)=> {
+          Promise.mapSeries(filters.actions, (action) => {
             const id     = new ObjectId({namespace: _.isString(action.namespace) ? action.namespace : taskName, id: action.id});
             id.arguments = action.arguments || filters.arguments;
             return id;
           })
-          .then((objectIds)=> Promise.mapSeries(objectIds, (objectId)=>
+          .then((objectIds) => Promise.mapSeries(objectIds, (objectId) =>
               objectId.validate()
-              .then(()=> redis.hget(getNamespacedKey(objectId.namespace), objectId.id))
-              .then((src)=> _.assign(compiler.compile(src), objectId))))
-          .then((modules)=> Promise.reduce(modules, (loadedModules, module)=> {
+              .then(() => redis.hget(getNamespacedKey(objectId.namespace), objectId.id))
+              .then((src) => _.assign(compiler.compile(src), objectId))))
+          .then((modules) => Promise.reduce(modules, (loadedModules, module) => {
             if (!_.isArray(loadedModules[module.type])) {
               loadedModules[module.type] = [];
             }
@@ -113,7 +113,7 @@ const Filters    = function (redisClient) {
           }, {}));
 };
 Filters.NAME_KEY = 'filters';
-Filters.TYPES    = [
+Filters.TYPES = [
   'index',
   'type'
 ];

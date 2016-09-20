@@ -3,16 +3,16 @@ const DIGITS = 2;
 
 module.exports = {
   type:      'data',
-  predicate: (doc)=> {
+  predicate: (doc) => {
     if (_.has(doc._source, 'products') || _.has(doc._source, 'product')) {
       return true;
     } else {
       return false;
     }
   },
-  mutate:    (doc)=> {
+  mutate: (doc) => {
     if (_.has(doc._source, 'products')) {
-      doc._source.products = _.map((product)=> {
+      doc._source.products = _.map((product) => {
         if (_.isInteger(product.price)) {
           product.price = product.price.toFixed(DIGITS);
         }

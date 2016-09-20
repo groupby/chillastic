@@ -9,7 +9,7 @@ module.exports = {
   predicate: function (doc) {
     return OLD_DATE_REGEX.test(doc._index);
   },
-  mutate:    function (doc) {
+  mutate: function (doc) {
     const date = moment(doc._index.match(OLD_DATE_REGEX), OLD_DATE_FORMAT);
     doc._index = doc._index.replace(OLD_DATE_REGEX, date.format(NEW_DATE_FORMAT));
 

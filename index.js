@@ -4,7 +4,7 @@ const _       = require('lodash');
 const config  = require('./config');
 const log     = require('./config').log;
 
-const create = (redisHost, redisPort, port)=> {
+const create = (redisHost, redisPort, port) => {
   config.configureRedis(redisHost, redisPort);
 
   if (!_.isUndefined(port) && !_.isNull(port)) {
@@ -16,7 +16,7 @@ const create = (redisHost, redisPort, port)=> {
   require('./config/express')(app);
   require('./app/routes')(app);
 
-  app.config   = config;
+  app.config = config;
   app.services = require('./app/services');
 
   const cleanConfig = _.cloneDeep(config);
