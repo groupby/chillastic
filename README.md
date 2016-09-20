@@ -1,5 +1,5 @@
 # chillastic
-[![Coverage Status](https://coveralls.io/repos/github/groupby/chillastic/badge.svg?branch=master)](https://coveralls.io/github/groupby/chillastic?branch=master) [![Circle CI](https://circleci.com/gh/groupby/chillastic.svg?style=svg)](https://circleci.com/gh/groupby/chillastic)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/636e4a8ac9bd43fab11f33e83061044e)](https://www.codacy.com/app/GroupByInc/chillastic?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=groupby/chillastic&amp;utm_campaign=Badge_Grade) [![Coverage Status](https://coveralls.io/repos/github/groupby/chillastic/badge.svg?branch=master)](https://coveralls.io/github/groupby/chillastic?branch=master) [![Circle CI](https://circleci.com/gh/groupby/chillastic.svg?style=svg)](https://circleci.com/gh/groupby/chillastic)
 
 Reindex multiple elasticsearch indices, save your progress, mutate your data in-flight.
 
