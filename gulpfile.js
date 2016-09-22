@@ -1,6 +1,5 @@
 /*eslint no-process-env: "off" */
 /*eslint no-console: "off" */
-const path      = require('path');
 const gulp      = require('gulp');
 const mocha     = require('gulp-mocha');
 const eslint    = require('gulp-eslint');
