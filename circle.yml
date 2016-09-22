@@ -15,7 +15,8 @@ dependencies:
     - npm install --global gulp-cli
 test:
   override:
-    - environment=circle gulp coveralls
+    - environment=circle gulp test
+    - npm run coverage:codacy
 deployment:
   hub:
     branch: master

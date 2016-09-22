@@ -6,7 +6,6 @@ const mocha     = require('gulp-mocha');
 const eslint    = require('gulp-eslint');
 const istanbul  = require('gulp-istanbul');
 const gulpExit  = require('gulp-exit');
-const coveralls = require('gulp-coveralls');
 const gulpIf   = require('gulp-if');
 
 const isFixed = (file) => {
@@ -82,20 +81,4 @@ gulp.task('test:lint', ['test:coverage'], () => {
 
 gulp.task('test', ['test:lint'], () => {
   return gulp.src(['*.js']);
-});
-
-gulp.task('coveralls', ['test'], () => {
-  if (!process.env.CI) {
-    return;
-  }
-
-  return gulp.src(path.join(__dirname, 'coverage/lcov.info'))
-    .pipe(coveralls())
-    .once('error', () => {
-      console.error('coveralls failed');
-      process.exit(1);
-    })
-    .once('end', () => {
-      process.exit();
-    });
 });

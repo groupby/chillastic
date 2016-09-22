@@ -11,12 +11,14 @@
     "test": "gulp test",
     "patch": "npm version patch && git push && git push --tags && npm publish",
     "minor": "npm version minor && git push && git push --tags && npm publish",
-    "major": "npm version major && git push && git push --tags && npm publish"
+    "major": "npm version major && git push && git push --tags && npm publish",
+    "coverage:codacy": "cat ./coverage/lcov.info | codacy-coverage"
   },
   "author": "Eric Hacke",
   "license": "MIT",
   "devDependencies": {
     "chai": "^3.5.0",
+    "codacy-coverage": "^2.0.0",
     "coveralls": "^2.11.11",
     "gulp": "^3.9.1",
     "gulp-coveralls": "^0.1.4",
