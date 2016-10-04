@@ -28,7 +28,7 @@ describe('transfer', function () {
 
   before((done) => {
     source = createEsClient(TestConfig.elasticsearch.source);
-    dest = createEsClient(TestConfig.elasticsearch.destination);
+    dest   = createEsClient(TestConfig.elasticsearch.destination);
 
     transfer = new Transfer(source, dest);
 
@@ -60,11 +60,11 @@ describe('transfer', function () {
       },
       mappings: {
         type1: {
-          _source: {
+          _source:    {
             enabled: false
           },
           properties: {
-            host_name: {
+            host_name:  {
               type: 'keyword'
             },
             created_at: {
@@ -77,50 +77,50 @@ describe('transfer', function () {
     }
   });
 
-  it('should get all indices and types', (done) =>
-      utils.addData(source)
-      .then(() => source.indices.refresh())
-      .then(() => Transfer.getIndices(source, '*'))
-      .then((indices) => {
-        expect(_.size(indices)).to.be.equals(3);
+  it('should get all indices and types', (done) => {
+    utils.addData(source)
+    .then(() => source.indices.refresh())
+    .then(() => Transfer.getIndices(source, '*'))
+    .then((indices) => {
+      expect(_.size(indices)).to.be.equals(3);
 
-        const myindex1 = _.find(indices, {name: 'myindex1'});
-        expect(myindex1).to.be.defined;
-        expect(_.size(myindex1.mappings)).to.be.equals(2);
-        expect(myindex1.mappings.mytype1).to.be.defined;
-        expect(myindex1.mappings.mytype2).to.be.defined;
+      const myindex1 = _.find(indices, {name: 'myindex1'});
+      expect(myindex1).to.be.defined;
+      expect(_.size(myindex1.mappings)).to.be.equals(2);
+      expect(myindex1.mappings.mytype1).to.be.defined;
+      expect(myindex1.mappings.mytype2).to.be.defined;
 
-        const myindex2 = _.find(indices, {name: 'myindex2'});
-        expect(myindex2).to.be.defined;
-        expect(_.size(myindex2.mappings)).to.be.equals(1);
-        expect(myindex2.mappings.mytype1).to.be.defined;
+      const myindex2 = _.find(indices, {name: 'myindex2'});
+      expect(myindex2).to.be.defined;
+      expect(_.size(myindex2.mappings)).to.be.equals(1);
+      expect(myindex2.mappings.mytype1).to.be.defined;
 
-        const myindex3 = _.find(indices, {name: 'myindex3'});
-        expect(myindex3).to.be.defined;
-        expect(_.size(myindex1.mappings)).to.be.equals(2);
-        expect(myindex3.mappings.mytype2).to.be.defined;
-        expect(myindex3.mappings.mytype3).to.be.defined;
-      })
-      .then(() => done())
-      .catch(done)
-  );
+      const myindex3 = _.find(indices, {name: 'myindex3'});
+      expect(myindex3).to.be.defined;
+      expect(_.size(myindex1.mappings)).to.be.equals(2);
+      expect(myindex3.mappings.mytype2).to.be.defined;
+      expect(myindex3.mappings.mytype3).to.be.defined;
+    })
+    .then(() => done())
+    .catch(done)
+  });
 
-  it('should throw if getTemplates arg is not a non-zero string', (done) =>
-      Transfer.getTemplates(source, {})
-      .then(() => done('fail'))
-      .catch((e) => expect(e.message).to.be.equals('targetTemplates must be string with length'))
-      .then(() => Transfer.getTemplates(source, () => {
-      }))
-      .then(() => done('fail'))
-      .catch((e) => expect(e.message).to.be.equals('targetTemplates must be string with length'))
-      .then(() => Transfer.getTemplates(source, 1))
-      .then(() => done('fail'))
-      .catch((e) => expect(e.message).to.be.equals('targetTemplates must be string with length'))
-      .then(() => Transfer.getTemplates(source, ''))
-      .then(() => done('fail'))
-      .catch((e) => expect(e.message).to.be.equals('targetTemplates must be string with length'))
-      .then(() => done())
-  );
+  it('should throw if getTemplates arg is not a non-zero string', (done) => {
+    Transfer.getTemplates(source, {})
+    .then(() => done('fail'))
+    .catch((e) => expect(e.message).to.be.equals('targetTemplates must be string with length'))
+    .then(() => Transfer.getTemplates(source, () => {
+    }))
+    .then(() => done('fail'))
+    .catch((e) => expect(e.message).to.be.equals('targetTemplates must be string with length'))
+    .then(() => Transfer.getTemplates(source, 1))
+    .then(() => done('fail'))
+    .catch((e) => expect(e.message).to.be.equals('targetTemplates must be string with length'))
+    .then(() => Transfer.getTemplates(source, ''))
+    .then(() => done('fail'))
+    .catch((e) => expect(e.message).to.be.equals('targetTemplates must be string with length'))
+    .then(() => done())
+  });
 
   it('should reject if there are no templates', (done) => {
     Transfer.getTemplates(source, '*')
@@ -155,11 +155,11 @@ describe('transfer', function () {
         },
         mappings: {
           type1: {
-            _source: {
+            _source:    {
               enabled: false
             },
             properties: {
-              host_name: {
+              host_name:  {
                 type: 'keyword'
               },
               created_at: {
@@ -179,11 +179,11 @@ describe('transfer', function () {
         },
         mappings: {
           type1: {
-            _source: {
+            _source:    {
               enabled: false
             },
             properties: {
-              host_name: {
+              host_name:  {
                 type: 'keyword'
               },
               created_at: {
@@ -221,7 +221,7 @@ describe('transfer', function () {
           }
         }
       },
-      aliases: {
+      aliases:  {
         alias_1: {}
       }
     };
@@ -268,7 +268,7 @@ describe('transfer', function () {
           }
         }
       },
-      aliases: {
+      aliases:  {
         alias_1: {}
       }
     };
@@ -310,7 +310,7 @@ describe('transfer', function () {
             }
           }
         },
-        aliases: {
+        aliases:  {
           alias_1: {}
         }
       }

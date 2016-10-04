@@ -111,6 +111,20 @@ const Filters    = function (redisClient) {
             loadedModules[module.type].push(module);
             return loadedModules;
           }, {}));
+
+  self.ensureFiltersExist = (taskName, filters) => {
+    if (!filters) {
+      return Promise.resolve();
+    }
+    return !_.isObject(filters) || !_.isArray(filters.actions) ?
+        Promise.resolve({}) :
+        Promise.mapSeries(filters.actions, (action) => {
+          const id     = new ObjectId({namespace: _.isString(action.namespace) ? action.namespace : taskName, id: action.id});
+          id.arguments = action.arguments || filters.arguments;
+          return self.exists(id).then((exists) => exists ? Promise.resolve() : Promise.reject(new Error(`Src for filter id ${id.id} not found`)));
+        });
+  };
+
 };
 Filters.NAME_KEY = 'filters';
 Filters.TYPES = [

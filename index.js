@@ -31,7 +31,7 @@ const create = (redisHost, redisPort, port) => {
   };
 
   app.stop = () => {
-    app.services.worker.setRunning(false);
+    app.services.manager.setRunning(false);
     server.close();
   };
 

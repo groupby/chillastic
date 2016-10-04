@@ -1,9 +1,9 @@
-const chai = require('chai');
-const expect = chai.expect;
+const chai       = require('chai');
+const expect     = chai.expect;
 const asPromised = require('chai-as-promised');
 chai.use(asPromised);
-const TestConfig        = require('../config');
-const Task = require('../../app/models/task');
+const TestConfig   = require('../config');
+const Task         = require('../../app/models/task');
 const TasksService = require('../../app/services/tasks');
 
 describe('tasks service', function () {
@@ -20,11 +20,7 @@ describe('tasks service', function () {
         }
       },
       mutators: {
-        actions: [
-          {
-            id: 'doesNotExist'
-          }
-        ]
+        actions: [{id: 'doesNotExist'}]
       }
     });
 
@@ -39,4 +35,32 @@ describe('tasks service', function () {
     expect(tasksService.add('testid', task)).to.be.rejectedWith('Src for mutator id doesNotExist not found')
     .then(() => done());
   });
+
+  it('does not add a task if a filter cannot be found in redis', (done) => {
+
+    const task = new Task({
+      source:      TestConfig.elasticsearch.source,
+      destination: TestConfig.elasticsearch.destination,
+      transfer:    {
+        documents: {
+          fromIndices: '*',
+          filters:     {
+            actions: [{id: 'doesNotExist'}]
+          }
+        }
+      }
+    });
+
+    const redisClient = {
+      sismember: () => Promise.resolve(false),
+      sadd:      () => done(new Error('Should not be called.')),
+      del:       () => done(new Error('Should not be called.')),
+      hexists:   () => Promise.resolve(false)
+    };
+
+    const tasksService = new TasksService(redisClient);
+    expect(tasksService.add('testid', task)).to.be.rejectedWith('Src for filter id doesNotExist not found')
+    .then(() => done());
+  });
+
 });
