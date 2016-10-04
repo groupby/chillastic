@@ -45,7 +45,7 @@ const Tasks    = function (redisClient) {
         }
       })
       .then(() => mutatorsService.ensureMutatorsExist(taskId, task.mutators))
-          .then(() => filtersService.ensureFiltersExist(taskId, task.transfer.documents.filters))
+      .then(() => filtersService.ensureFiltersExist(taskId, task.transfer.documents.filters))
       .then(() => redis.sadd(Tasks.NAME_KEY, taskId))
       .then(() => subtasks.buildBacklog(taskId, Task.coerce(task)));
 

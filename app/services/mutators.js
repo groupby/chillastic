@@ -117,9 +117,8 @@ const Mutators = function (redisClient) {
           Promise.map(mutators.actions, (action) => {
             const id     = new ObjectId({namespace: _.isString(action.namespace) ? action.namespace : taskName, id: action.id});
             id.arguments = action.arguments || mutators.arguments;
-            return id.validate()
-            .then(() => redis.hget(getNamespacedKey(id.namespace), id.id))
-            .then((src) => src ? _.assign(compiler.compile(src), id) : Promise.reject(new Error(`Src for mutator id ${id.id} not found`)));
+            return self.exists(id)
+            .then((exists) => exists ? Promise.resolve() : Promise.reject(new Error(`Src for mutator id ${id.id} not found`)));
           });
 
 };

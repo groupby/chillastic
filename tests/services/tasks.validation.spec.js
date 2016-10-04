@@ -28,7 +28,7 @@ describe('tasks service', function () {
       sismember: () => Promise.resolve(false),
       sadd:      () => done(new Error('Should not be called.')),
       del:       () => done(new Error('Should not be called.')),
-      hget:      () => Promise.resolve(null)
+      hexists:   () => Promise.resolve(false)
     };
 
     const tasksService = new TasksService(redisClient);

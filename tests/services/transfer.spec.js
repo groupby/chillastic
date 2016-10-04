@@ -28,7 +28,7 @@ describe('transfer', function () {
 
   before((done) => {
     source = createEsClient(TestConfig.elasticsearch.source);
-    dest   = createEsClient(TestConfig.elasticsearch.destination);
+    dest = createEsClient(TestConfig.elasticsearch.destination);
 
     transfer = new Transfer(source, dest);
 
@@ -60,11 +60,11 @@ describe('transfer', function () {
       },
       mappings: {
         type1: {
-          _source:    {
+          _source: {
             enabled: false
           },
           properties: {
-            host_name:  {
+            host_name: {
               type: 'keyword'
             },
             created_at: {
@@ -102,7 +102,7 @@ describe('transfer', function () {
       expect(myindex3.mappings.mytype3).to.be.defined;
     })
     .then(() => done())
-    .catch(done)
+    .catch(done);
   });
 
   it('should throw if getTemplates arg is not a non-zero string', (done) => {
@@ -119,7 +119,7 @@ describe('transfer', function () {
     .then(() => Transfer.getTemplates(source, ''))
     .then(() => done('fail'))
     .catch((e) => expect(e.message).to.be.equals('targetTemplates must be string with length'))
-    .then(() => done())
+    .then(() => done());
   });
 
   it('should reject if there are no templates', (done) => {
@@ -155,11 +155,11 @@ describe('transfer', function () {
         },
         mappings: {
           type1: {
-            _source:    {
+            _source: {
               enabled: false
             },
             properties: {
-              host_name:  {
+              host_name: {
                 type: 'keyword'
               },
               created_at: {
@@ -179,11 +179,11 @@ describe('transfer', function () {
         },
         mappings: {
           type1: {
-            _source:    {
+            _source: {
               enabled: false
             },
             properties: {
-              host_name:  {
+              host_name: {
                 type: 'keyword'
               },
               created_at: {
@@ -221,7 +221,7 @@ describe('transfer', function () {
           }
         }
       },
-      aliases:  {
+      aliases: {
         alias_1: {}
       }
     };
@@ -268,7 +268,7 @@ describe('transfer', function () {
           }
         }
       },
-      aliases:  {
+      aliases: {
         alias_1: {}
       }
     };
@@ -310,7 +310,7 @@ describe('transfer', function () {
             }
           }
         },
-        aliases:  {
+        aliases: {
           alias_1: {}
         }
       }
