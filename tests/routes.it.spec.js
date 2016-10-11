@@ -1,16 +1,14 @@
-const request = require('supertest-as-promised');
+const request    = require('supertest-as-promised');
 const chai       = require('chai');
 const expect     = chai.expect;
 const asPromised = require('chai-as-promised');
 chai.use(asPromised);
 const HTTPStatus = require('http-status');
-const TestConfig   = require('./config');
-const log = require('../config').log;
+const TestConfig = require('./config');
+const log        = require('../config').log;
 
 describe('chillastic full routes', () => {
   log.level('debug');
-
-  log.info(`environment = ${process.env.environment}`);
 
   it('returns 400 response code when mutator src not found', (done) => {
     const task = {
@@ -21,12 +19,12 @@ describe('chillastic full routes', () => {
           fromIndices: '*'
         }
       },
-      mutators: {
+      mutators:    {
         actions: [{id: 'doesNotExist'}]
       }
     };
 
-    const app = require('../index')('redis', 6379, 7001);
+    const app   = require('../index')(TestConfig.redis.host, TestConfig.redis.port, 7001);
     const agent = request(app);
     agent.post('/tasks/doesNotExist')
     .send(task)
@@ -54,7 +52,7 @@ describe('chillastic full routes', () => {
       }
     };
 
-    const app = require('../index')('redis', 6379, 7001);
+    const app   = require('../index')(TestConfig.redis.host, TestConfig.redis.port, 7001);
     const agent = request(app);
     agent.post('/tasks/doesNotExist')
     .send(task)

@@ -1,6 +1,6 @@
 module.exports = {
   'elasticsearch': {
-    'source':      {
+    'source': {
       'host': 'localhost',
       'port': 9200
     },
@@ -9,7 +9,7 @@ module.exports = {
       'port': 9201
     }
   },
-  'redis':         {
+  'redis': {
     'host': 'localhost',
     'port': 6379
   }
