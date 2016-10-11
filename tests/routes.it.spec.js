@@ -4,8 +4,8 @@ const expect     = chai.expect;
 const asPromised = require('chai-as-promised');
 chai.use(asPromised);
 const HTTPStatus = require('http-status');
-const TestConfig   = require('../config');
-const log = TestConfig.log;
+const TestConfig   = require('./config');
+const log = require('../config').log;
 
 describe('chillastic full routes', () => {
   log.level('debug');
@@ -36,7 +36,7 @@ describe('chillastic full routes', () => {
       done();
     })
     .catch((err) => done(err));
-  }).timeout(5000);
+  });
 
   it('returns 400 response code when filter src not found', (done) => {
     const task = {
@@ -64,6 +64,6 @@ describe('chillastic full routes', () => {
       done();
     })
     .catch((err) => done(err));
-  }).timeout(5000);
+  });
 
 });
