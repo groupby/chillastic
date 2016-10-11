@@ -36,7 +36,7 @@ describe('chillastic full routes', () => {
       done();
     })
     .catch((err) => done(err));
-  });
+  }).timeout(5000);
 
   it('returns 400 response code when filter src not found', (done) => {
     const task = {
@@ -64,6 +64,6 @@ describe('chillastic full routes', () => {
       done();
     })
     .catch((err) => done(err));
-  });
+  }).timeout(5000);
 
 });
