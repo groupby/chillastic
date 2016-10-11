@@ -10,6 +10,8 @@ const log = require('../config').log;
 describe('chillastic full routes', () => {
   log.level('debug');
 
+  log.info(`environment = ${process.env.environment}`);
+
   it('returns 400 response code when mutator src not found', (done) => {
     const task = {
       source:      TestConfig.elasticsearch.source,
