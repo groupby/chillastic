@@ -1,7 +1,9 @@
 /*eslint no-magic-numbers: "off"*/
 /*eslint no-invalid-this: "off"*/
 const _                 = require('lodash');
-const expect            = require('chai').expect;
+const chai              = require('chai');
+const expect            = chai.expect;
+const asPromised        = require('chai-as-promised');
 const Promise           = require('bluebird');
 const TestConfig        = require('../config');
 const Utils             = require('../utils');
@@ -9,6 +11,7 @@ const Mutators          = require('../../app/services/mutators');
 const ObjectId          = require('../../app/models/objectId');
 const createRedisClient = require('../../config/redis');
 const config            = require('../../config/index');
+chai.use(asPromised);
 
 const log = config.log;
 
@@ -46,97 +49,97 @@ describe('mutators service', function () {
   });
 
   after((done) => {
-    return redis.flushdb().finally(done);
+    redis.flushdb().finally(() => done());
   });
 
   beforeEach((done) => {
     objectId = new ObjectId({namespace: ns, id: id});
-    return redis.flushdb().finally(done);
+    redis.flushdb().finally(() => done());
   });
 
   it('invalid id', (done) => {
     objectId.id = '~badId';
     mutators.add(objectId, 'dummySrc')
+    .then(() => done('fail'))
+    .catch((e) => expect(e.message).equals("Id must be string of 1-40 alphanumeric characters, given '~badId'"))
+    .then(() => done());
+  });
+
+  it('invalid src type', (done) => {
+    mutators.add(objectId, {})
+    .then(() => done('fail'))
+    .catch((e) => expect(e.message).equals('mutatorSrc must be string'))
+    .then(() => done());
+  });
+
+  it('invalid javascript', (done) => {
+    mutators.add(objectId, utils.loadFile(`${__dirname}/invalidMutators/notAJsFile`))
+    .then(() => done('fail'))
+    .catch((e) => expect(e.message).equals("Unable to load external module due to 'SyntaxError - Unexpected identifier'"))
+    .then(() => done());
+  });
+
+  it('mutator missing type', (done) => {
+    mutators.add(objectId, utils.loadFile(`${__dirname}/invalidMutators/noType.js`))
         .then(() => done('fail'))
-        .catch((e) => expect(e.message).equals("Id must be string of 1-40 alphanumeric characters, given '~badId'"))
+        .catch((e) => expect(e.message).equals('Mutator type string not provided'))
         .then(() => done());
   }
   );
 
-  it('invalid src type', (done) =>
-      mutators.add(objectId, {})
-      .then(() => done('fail'))
-      .catch((e) => expect(e.message).equals('mutatorSrc must be string'))
-      .then(() => done())
-  );
+  it('mutator invalid type', (done) => {
+    mutators.add(objectId, utils.loadFile(`${__dirname}/invalidMutators/invalidType.js`))
+    .then(() => done('fail'))
+    .catch((e) => expect(e.message).equals(`Mutator type \'wrong\' not one of: [${Mutators.TYPES}]`))
+    .then(() => done());
+  });
 
-  it('invalid javascript', (done) =>
-      mutators.add(objectId, utils.loadFile(`${__dirname}/invalidMutators/notAJsFile`))
-      .then(() => done('fail'))
-      .catch((e) => expect(e.message).equals("Unable to load external module due to 'SyntaxError - Unexpected identifier'"))
-      .then(() => done())
-  );
+  it('mutator missing predicate', (done) => {
+    mutators.add(objectId, utils.loadFile(`${__dirname}/invalidMutators/noPredicate.js`))
+    .then(() => done('fail'))
+    .catch((e) => expect(e.message).equals('Mutator predicate() not provided'))
+    .then(() => done());
+  });
 
-  it('mutator missing type', (done) =>
-      mutators.add(objectId, utils.loadFile(`${__dirname}/invalidMutators/noType.js`))
-      .then(() => done('fail'))
-      .catch((e) => expect(e.message).equals('Mutator type string not provided'))
-      .then(() => done())
-  );
+  it('mutator missing mutate', (done) => {
+    mutators.add(objectId, utils.loadFile(`${__dirname}/invalidMutators/noMutate.js`))
+    .then(() => done('fail'))
+    .catch((e) => expect(e.message).equals('Mutator mutate() not provided'))
+    .then(() => done());
+  });
 
-  it('mutator invalid type', (done) =>
-      mutators.add(objectId, utils.loadFile(`${__dirname}/invalidMutators/invalidType.js`))
-      .then(() => done('fail'))
-      .catch((e) => expect(e.message).equals(`Mutator type \'wrong\' not one of: [${Mutators.TYPES}]`))
-      .then(() => done())
-  );
+  it('get ids in empty namespace', (done) => {
+    mutators.getIds(ns)
+    .then((ids) => expect(ids).to.be.empty)
+    .then(() => done());
+  });
 
-  it('mutator missing predicate', (done) =>
-      mutators.add(objectId, utils.loadFile(`${__dirname}/invalidMutators/noPredicate.js`))
-      .then(() => done('fail'))
-      .catch((e) => expect(e.message).equals('Mutator predicate() not provided'))
-      .then(() => done())
-  );
+  it('basic crud', (done) => {
+    mutators.add(objectId, utils.loadFile(`${__dirname}/validMutators/data.js`))
+    .then(() => mutators.exists(objectId))
+    .then((exists) => expect(exists).to.be.equals(1))
+    .then(() => mutators.getIds(ns)
+        .then((ids) => {
+          expect(ids).to.have.length(1);
+          expect(ids[0]).to.be.equals('id');
+        })
+    )
+    .then(() => mutators.remove(objectId))
+    .then(() => mutators.exists(objectId))
+    .then((exists) => expect(exists).to.be.equals(0))
+    .then(() => mutators.getIds(ns))
+    .then((ids) => expect(ids).to.be.empty)
+    .then(() => done());
+  });
 
-  it('mutator missing mutate', (done) =>
-      mutators.add(objectId, utils.loadFile(`${__dirname}/invalidMutators/noMutate.js`))
-      .then(() => done('fail'))
-      .catch((e) => expect(e.message).equals('Mutator mutate() not provided'))
-      .then(() => done())
-  );
-
-  it('get ids in empty namespace', (done) =>
-      mutators.getIds(ns)
-      .then((ids) => expect(ids).to.be.empty)
-      .then(() => done())
-  );
-
-  it('basic crud', (done) =>
-      mutators.add(objectId, utils.loadFile(`${__dirname}/validMutators/data.js`))
-      .then(() => mutators.exists(objectId))
-      .then((exists) => expect(exists).to.be.equals(1))
-      .then(() => mutators.getIds(ns)
-          .then((ids) => {
-            expect(ids).to.have.length(1);
-            expect(ids[0]).to.be.equals('id');
-          })
-      )
-      .then(() => mutators.remove(objectId))
-      .then(() => mutators.exists(objectId))
-      .then((exists) => expect(exists).to.be.equals(0))
-      .then(() => mutators.getIds(ns))
-      .then((ids) => expect(ids).to.be.empty)
-      .then(() => done())
-  );
-
-  it('add twice', (done) =>
-      mutators.add(objectId, utils.loadFile(`${__dirname}/validMutators/data.js`))
-      .then(() => mutators.exists(objectId))
-      .then((exists) => expect(exists).to.be.equals(1))
-      .then(() => mutators.add(objectId, utils.loadFile(`${__dirname}/validMutators/data.js`)))
-      .catch((e) => expect(e.message).to.be.equals('Mutator \'namespace/id\' exists, delete first.'))
-      .then(() => done())
-  );
+  it('add twice', (done) => {
+    mutators.add(objectId, utils.loadFile(`${__dirname}/validMutators/data.js`))
+    .then(() => mutators.exists(objectId))
+    .then((exists) => expect(exists).to.be.equals(1))
+    .then(() => mutators.add(objectId, utils.loadFile(`${__dirname}/validMutators/data.js`)))
+    .catch((e) => expect(e.message).to.be.equals('Mutator \'namespace/id\' exists, delete first.'))
+    .then(() => done());
+  });
 
   it('load a specific mutator with top-level args', (done) => {
     mutators.add(objectId, utils.loadFile(`${__dirname}/validMutators/data.js`))

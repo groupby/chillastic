@@ -43,12 +43,12 @@ describe('filters service', function () {
   });
 
   after((done) => {
-    return redis.flushdb().finally(done);
+    redis.flushdb().finally(() => done());
   });
 
   beforeEach((done) => {
     objectId = new ObjectId({namespace: ns, id});
-    return redis.flushdb().finally(done);
+    redis.flushdb().finally(() => done());
   });
 
   it('invalid id', (done) => {
@@ -60,73 +60,73 @@ describe('filters service', function () {
   }
   );
 
-  it('invalid src type', (done) =>
-      filters.add(objectId, {})
-      .then(() => done('fail'))
-      .catch((e) => expect(e.message).equals('filterSrc must be string'))
-      .then(() => done())
-  );
+  it('invalid src type', (done) => {
+    filters.add(objectId, {})
+    .then(() => done('fail'))
+    .catch((e) => expect(e.message).equals('filterSrc must be string'))
+    .then(() => done());
+  });
 
-  it('invalid javascript', (done) =>
-      filters.add(objectId, utils.loadFile(`${__dirname}/invalidFilters/notAJsFile`))
-      .then(() => done('fail'))
-      .catch((e) => expect(e.message).equals("Unable to load external module due to 'SyntaxError - Unexpected identifier'"))
-      .then(() => done())
-  );
+  it('invalid javascript', (done) => {
+    filters.add(objectId, utils.loadFile(`${__dirname}/invalidFilters/notAJsFile`))
+    .then(() => done('fail'))
+    .catch((e) => expect(e.message).equals("Unable to load external module due to 'SyntaxError - Unexpected identifier'"))
+    .then(() => done());
+  });
 
-  it('filter missing type', (done) =>
-      filters.add(objectId, utils.loadFile(`${__dirname}/invalidFilters/noType.js`))
-      .then(() => done('fail'))
-      .catch((e) => expect(e.message).equals('Filter type string not provided'))
-      .then(() => done())
-  );
+  it('filter missing type', (done) => {
+    filters.add(objectId, utils.loadFile(`${__dirname}/invalidFilters/noType.js`))
+    .then(() => done('fail'))
+    .catch((e) => expect(e.message).equals('Filter type string not provided'))
+    .then(() => done());
+  });
 
-  it('filter invalid type', (done) =>
-      filters.add(objectId, utils.loadFile(`${__dirname}/invalidFilters/invalidType.js`))
-      .then(() => done('fail'))
-      .catch((e) => expect(e.message).equals(`Filter type \'wrong\' not one of: [${Filters.TYPES}]`))
-      .then(() => done())
-  );
+  it('filter invalid type', (done) => {
+    filters.add(objectId, utils.loadFile(`${__dirname}/invalidFilters/invalidType.js`))
+    .then(() => done('fail'))
+    .catch((e) => expect(e.message).equals(`Filter type \'wrong\' not one of: [${Filters.TYPES}]`))
+    .then(() => done());
+  });
 
-  it('filter missing predicate', (done) =>
-      filters.add(objectId, utils.loadFile(`${__dirname}/invalidFilters/noPredicate.js`))
-      .then(() => done('fail'))
-      .catch((e) => expect(e.message).equals('Filter predicate() not provided'))
-      .then(() => done())
-  );
+  it('filter missing predicate', (done) => {
+    filters.add(objectId, utils.loadFile(`${__dirname}/invalidFilters/noPredicate.js`))
+    .then(() => done('fail'))
+    .catch((e) => expect(e.message).equals('Filter predicate() not provided'))
+    .then(() => done());
+  });
 
-  it('get ids in empty namespace', (done) =>
-      filters.getIds(ns)
-      .then((ids) => expect(ids).to.be.empty)
-      .then(() => done())
-  );
+  it('get ids in empty namespace', (done) => {
+    filters.getIds(ns)
+    .then((ids) => expect(ids).to.be.empty)
+    .then(() => done());
+  });
 
-  it('basic crud', (done) =>
-      filters.add(objectId, utils.loadFile(`${__dirname}/validFilters/index.js`))
-      .then(() => filters.exists(objectId))
-      .then((exists) => expect(exists).to.be.equals(1))
-      .then(() => filters.getIds(ns)
-          .then((ids) => {
-            expect(ids).to.have.length(1);
-            expect(ids[0]).to.be.equals('id');
-          })
-      )
-      .then(() => filters.remove(objectId))
-      .then(() => filters.exists(objectId))
-      .then((exists) => expect(exists).to.be.equals(0))
-      .then(() => filters.getIds(ns))
-      .then((ids) => expect(ids).to.be.empty)
-      .then(() => done())
-  );
+  it('basic crud', (done) => {
+    filters.add(objectId, utils.loadFile(`${__dirname}/validFilters/index.js`))
+    .then(() => filters.exists(objectId))
+    .then((exists) => expect(exists).to.be.equals(1))
+    .then(() => filters.getIds(ns)
+        .then((ids) => {
+          expect(ids).to.have.length(1);
+          expect(ids[0]).to.be.equals('id');
+        })
+    )
+    .then(() => filters.remove(objectId))
+    .then(() => filters.exists(objectId))
+    .then((exists) => expect(exists).to.be.equals(0))
+    .then(() => filters.getIds(ns))
+    .then((ids) => expect(ids).to.be.empty)
+    .then(() => done());
+  });
 
-  it('add twice', (done) =>
-      filters.add(objectId, utils.loadFile(`${__dirname}/validFilters/index.js`))
-      .then(() => filters.exists(objectId))
-      .then((exists) => expect(exists).to.be.equals(1))
-      .then(() => filters.add(objectId, utils.loadFile(`${__dirname}/validFilters/index.js`)))
-      .catch((e) => expect(e.message).to.be.equals('Filter \'namespace/id\' exists, delete first.'))
-      .then(() => done())
-  );
+  it('add twice', (done) => {
+    filters.add(objectId, utils.loadFile(`${__dirname}/validFilters/index.js`))
+    .then(() => filters.exists(objectId))
+    .then((exists) => expect(exists).to.be.equals(1))
+    .then(() => filters.add(objectId, utils.loadFile(`${__dirname}/validFilters/index.js`)))
+    .catch((e) => expect(e.message).to.be.equals('Filter \'namespace/id\' exists, delete first.'))
+    .then(() => done());
+  });
 
   it('load a specific filter with top-level args', (done) => {
     filters.add(objectId, utils.loadFile(`${__dirname}/validFilters/index.js`))

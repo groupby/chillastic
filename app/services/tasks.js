@@ -15,9 +15,11 @@ const Tasks    = function (redisClient) {
   const self               = this;
   const redis              = redisClient;
   const subtasks           = new Subtasks(redis);
+  const mutatorsService    = new Mutators(redis);
+  const filtersService     = new Filters(redis);
   const namespacedServices = [
-    new Mutators(redis),
-    new Filters(redis)
+    mutatorsService,
+    filtersService
   ];
 
   /**
@@ -42,6 +44,8 @@ const Tasks    = function (redisClient) {
           throw new Error(`flushSize must be ${Task.DEFAULT_FLUSH_SIZE} or less, given ${task.transfer.flushSize}`);
         }
       })
+      .then(() => mutatorsService.ensureMutatorsExist(taskId, task.mutators))
+      .then(() => filtersService.ensureFiltersExist(taskId, task.transfer.documents.filters))
       .then(() => redis.sadd(Tasks.NAME_KEY, taskId))
       .then(() => subtasks.buildBacklog(taskId, Task.coerce(task)));
 

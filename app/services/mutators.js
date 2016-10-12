@@ -7,7 +7,7 @@ const config   = require('../../config/index');
 const log      = config.log;
 const compiler = new Compiler();
 
-const Mutators    = function (redisClient) {
+const Mutators = function (redisClient) {
   const self  = this;
   const redis = redisClient;
 
@@ -95,25 +95,34 @@ const Mutators    = function (redisClient) {
    * @returns {*|{arity, flags, keyStart, keyStop, step}}
    */
   self.load = (taskName, mutators) =>
-      Promise.mapSeries(mutators.actions, (action) => {
-        const id     = new ObjectId({namespace: _.isString(action.namespace) ? action.namespace : taskName, id: action.id});
-        id.arguments = action.arguments || mutators.arguments;
-        return id;
-      })
-      .then((objectIds) => Promise.mapSeries(objectIds, (objectId) =>
-          objectId.validate()
-          .then(() => redis.hget(getNamespacedKey(objectId.namespace), objectId.id))
-          .then((src) => _.assign(compiler.compile(src), objectId))))
-      .then((modules) => Promise.reduce(modules, (loadedModules, module) => {
-        if (!_.isArray(loadedModules[module.type])) {
-          loadedModules[module.type] = [];
-        }
+      !_.isObject(mutators) || !_.isArray(mutators.actions) ? Promise.resolve({}) :
+          Promise.map(mutators.actions, (action) => {
+            const id     = new ObjectId({namespace: _.isString(action.namespace) ? action.namespace : taskName, id: action.id});
+            id.arguments = action.arguments || mutators.arguments;
+            return id.validate()
+            .then(() => redis.hget(getNamespacedKey(id.namespace), id.id))
+            .then((src) => _.assign(compiler.compile(src), id));
+          })
+          .then((modules) => Promise.reduce(modules, (loadedModules, module) => {
+            if (!_.isArray(loadedModules[module.type])) {
+              loadedModules[module.type] = [];
+            }
+            log.info(`adding mutator [${module.namespace}:${module.id}] [type ${module.type}]`);
+            loadedModules[module.type].push(module);
+            return loadedModules;
+          }, {}));
 
-        log.info(`adding mutator [${module.namespace}:${module.id}] [type ${module.type}]`);
-        loadedModules[module.type].push(module);
-        return loadedModules;
-      }, {}));
+  self.ensureMutatorsExist = (taskName, mutators) =>
+      !_.isObject(mutators) || !_.isArray(mutators.actions) ? Promise.resolve() :
+          Promise.map(mutators.actions, (action) => {
+            const id     = new ObjectId({namespace: _.isString(action.namespace) ? action.namespace : taskName, id: action.id});
+            id.arguments = action.arguments || mutators.arguments;
+            return self.exists(id)
+            .then((exists) => exists ? Promise.resolve() : Promise.reject(new Error(`Src for mutator id ${id.id} not found`)));
+          });
+
 };
+
 Mutators.NAME_KEY = 'mutators';
 Mutators.TYPES = [
   'data',
