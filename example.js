@@ -1,6 +1,6 @@
 const Chillastic = require('./index'); // Replace with 'require('chillastic')' if you're outside of this repo
 
-const REDIS_HOST = 'redis';
+const REDIS_HOST = 'localhost';
 const REDIS_PORT = 6379;
 const CHILL_PORT = 8080;
 

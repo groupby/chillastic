@@ -59,24 +59,54 @@ curl localhost:9605/health
 {"manager":"running","workers":{"Rapidskinner Grin":{"status":"waiting for task..."},"Windshift Fairy":{"status":"waiting for task..."}}}
 ```
 
-That's great, but it's time to do some work. A task definition looks something like this:
+That's great, but it's time to do some work.
+ 
+First we'll define a simple mutator like this: 
+```javascript
+const TARGET_INDICES_REGEX = /^log_data_v1/;
+const NEW_INDEX_NAME = 'log_data_v2';
+
+module.exports = {
+  type:      'data',
+  predicate: function (doc) {
+    return TARGET_INDICES_REGEX.test(doc._index);
+  },
+  mutate: function (doc) {
+    doc._index = doc._index.replace(TARGET_INDICES_REGEX, NEW_INDEX_NAME);
+
+    return doc;
+  }
+};
+```
+
+We'll save that to mutator.js, and then send that to the API:
+```bash
+curl localhost:9605/mutators/someNamespace/ourMutator -H 'Content-type: text/plain' --data-binary '@mutator.js'
+```
+
+Define the task to use the mutator we just sent:
 ```
 {
   "source": {
-    "host": "localhost:9200",
-    "apiVersion": "1.4"
+    "host": "localhost",
+    "port": 9200
   },
   "destination": {
     "host": "localhost:9201",
-    "apiVersion": "2.2"
+    "port": 9201
   },
   "transfer": {
     "documents": {
-      "fromIndices": "*"
+      "fromIndices": "log_data_v1*"
     }
   },
   "mutators": {
-    "path": "path/to/mutators"
+    "actions": [
+      {
+        "namespace": "someNamespace",
+        "id": "ourMutator"
+      }
+    ]
   }
 }
 ```
