@@ -31,27 +31,22 @@ module.exports = {
     }
   },
   sanitization: {
-    type:       'object',
     optional:   true,
     properties: {
       actions: {
-        type:  'array',
         items: {
-          type:       'object',
           properties: {
             namespace: {
               optional: true
             },
             id:        {},
             arguments: {
-              type:     'object',
               optional: true
             }
           }
         }
       },
       arguments: {
-        type:     'object',
         optional: true
       }
     }

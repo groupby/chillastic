@@ -1,6 +1,5 @@
 module.exports = {
   sanitization: {
-    type:       'object',
     properties: {
       host: {},
       port: {

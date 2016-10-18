@@ -31,24 +31,17 @@ module.exports = {
     }
   },
   sanitization: {
-    type:       'object',
     properties: {
       actions: {
-        type:  'array',
         items: {
-          type:       'object',
           properties: {
             namespace: {},
             id:        {},
-            arguments: {
-              type: 'object'
-            }
+            arguments: {}
           }
         }
       },
-      arguments: {
-        type: 'object'
-      }
+      arguments: {}
     }
   }
 };
