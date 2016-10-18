@@ -32,27 +32,22 @@ module.exports = {
   },
   sanitization: {
     type:       'object',
-    optional:   true,
     properties: {
       actions: {
         type:  'array',
         items: {
           type:       'object',
           properties: {
-            namespace: {
-              optional: true
-            },
+            namespace: {},
             id:        {},
             arguments: {
-              type:     'object',
-              optional: true
+              type: 'object'
             }
           }
         }
       },
       arguments: {
-        type:     'object',
-        optional: true
+        type: 'object'
       }
     }
   }

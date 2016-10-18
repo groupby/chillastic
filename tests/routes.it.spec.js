@@ -19,7 +19,7 @@ describe('chillastic full routes', () => {
           fromIndices: '*'
         }
       },
-      mutators:    {
+      mutators: {
         actions: [{id: 'doesNotExist'}]
       }
     };

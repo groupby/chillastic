@@ -17,25 +17,25 @@ const Task = function (params) {
   return self;
 };
 
-Task.validateId         = (id) => new ObjectId({id: id}).validate('taskId');
-Task.coerce             = (task) => task instanceof Task ? task : new Task(task);
-Task.errorKey           = (taskId) => `${taskId}_error`;
-Task.progressKey        = (taskId) => `${taskId}_progress`;
-Task.completedKey       = (taskId) => `${taskId}_completed`;
-Task.backlogQueueKey    = (taskId) => `${taskId}_backlog_queue`;
-Task.backlogHSetKey     = (taskId) => `${taskId}_backlog_hset`;
+Task.validateId = (id) => new ObjectId({id: id}).validate('taskId');
+Task.coerce = (task) => task instanceof Task ? task : new Task(task);
+Task.errorKey = (taskId) => `${taskId}_error`;
+Task.progressKey = (taskId) => `${taskId}_progress`;
+Task.completedKey = (taskId) => `${taskId}_completed`;
+Task.backlogQueueKey = (taskId) => `${taskId}_backlog_queue`;
+Task.backlogHSetKey = (taskId) => `${taskId}_backlog_hset`;
 Task.DEFAULT_FLUSH_SIZE = 25000;
 
 const SANITIZATION_SCHEMA = {
   type:       'object',
   properties: {
-    source:      {
-      $type: 'elasticsearch'
+    source: {
+      $type: 'elasticsearch_s'
     },
     destination: {
-      $type: 'elasticsearch'
+      $type: 'elasticsearch_s'
     },
-    transfer:    {
+    transfer: {
       type:       'object',
       properties: {
         flushSize: {
@@ -43,18 +43,12 @@ const SANITIZATION_SCHEMA = {
           optional: false,
           def:      Task.DEFAULT_FLUSH_SIZE
         },
-        indices:   {
+        indices: {
           type:       'object',
           optional:   true,
           properties: {
-            name:      {
-              type:     'string',
-              optional: true
-            },
-            templates: {
-              type:     'string',
-              optional: true
-            }
+            name:      {},
+            templates: {}
           }
         },
         documents: {
@@ -62,19 +56,18 @@ const SANITIZATION_SCHEMA = {
           optional:   true,
           properties: {
             fromIndices: {
-              type:      'string',
               minLength: 1
             },
-            filters:     {
-              $type:    'filters',
+            filters: {
+              $type:    'filters_s',
               optional: true
             }
           }
         }
       }
     },
-    mutators:    {
-      $type:    'mutators',
+    mutators: {
+      $type:    'mutators_s',
       optional: true
     }
   }
@@ -84,13 +77,13 @@ const VALIDATION_SCHEMA = {
   type:       'object',
   strict:     true,
   properties: {
-    source:      {
-      $type: 'elasticsearch'
+    source: {
+      $type: 'elasticsearch_v'
     },
     destination: {
-      $type: 'elasticsearch'
+      $type: 'elasticsearch_v'
     },
-    transfer:    {
+    transfer: {
       type:       'object',
       strict:     true,
       properties: {
@@ -99,12 +92,12 @@ const VALIDATION_SCHEMA = {
           optional: false,
           def:      Task.DEFAULT_FLUSH_SIZE
         },
-        indices:   {
+        indices: {
           type:       'object',
           strict:     true,
           optional:   true,
           properties: {
-            name:      {
+            name: {
               type:     'string',
               optional: true
             },
@@ -123,16 +116,16 @@ const VALIDATION_SCHEMA = {
               type:      'string',
               minLength: 1
             },
-            filters:     {
-              $type:    'filters',
+            filters: {
+              $type:    'filters_v',
               optional: true
             }
           }
         }
       }
     },
-    mutators:    {
-      $type:    'mutators',
+    mutators: {
+      $type:    'mutators_v',
       optional: true
     }
   }

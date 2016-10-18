@@ -1,24 +1,24 @@
 module.exports = {
   sanitization: {
-    type: 'object',
+    type:       'object',
     properties: {
       host: {},
       port: {
-        type: 'integer',
+        type:     'integer',
         optional: false,
-        def: 9200
+        def:      9200
       }
     }
   },
   validation: {
-    strict: true,
-    type: 'object',
+    strict:     true,
+    type:       'object',
     properties: {
       host: {
         type: 'string'
       },
       port: {
-        type: 'integer',
+        type:     'integer',
         optional: false
       }
     }
