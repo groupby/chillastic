@@ -1,10 +1,16 @@
-const _         = require('lodash');
-const inspector = require('schema-inspector');
+const _             = require('lodash');
+const inspector     = require('schema-inspector');
+const elasticsearch = require('./schemas/elasticsearch');
+const mutators      = require('./schemas/mutators');
+const filters       = require('./schemas/filters');
 
 const CUSTOM_TYPES = {
-  elasticsearch: require('./schemas/elasticsearch'),
-  mutators:      require('./schemas/mutators'),
-  filters:       require('./schemas/filters')
+  elasticsearch_s: elasticsearch.sanitization,
+  elasticsearch_v: elasticsearch.validation,
+  mutators_s:      mutators.sanitization,
+  mutators_v:      mutators.validation,
+  filters_s:       filters.sanitization,
+  filters_v:       filters.validation
 };
 
 const getCustomTypeFromSchema = (schema) => _.get(CUSTOM_TYPES, schema.$type, {type: schema.$type});

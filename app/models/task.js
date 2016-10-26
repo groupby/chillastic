@@ -2,11 +2,11 @@ const _         = require('lodash');
 const inspector = require('./inspector');
 const ObjectId  = require('./objectId');
 
-const Task              = function (params) {
+const Task = function (params) {
   const self = this;
 
-  inspector.sanitize(SCHEMA, params);
-  const result = inspector.validate(SCHEMA, params);
+  inspector.sanitize(SANITIZATION_SCHEMA, params);
+  const result = inspector.validate(VALIDATION_SCHEMA, params);
 
   if (!result.valid) {
     throw new Error(result.format());
@@ -16,6 +16,7 @@ const Task              = function (params) {
 
   return self;
 };
+
 Task.validateId = (id) => new ObjectId({id: id}).validate('taskId');
 Task.coerce = (task) => task instanceof Task ? task : new Task(task);
 Task.errorKey = (taskId) => `${taskId}_error`;
@@ -25,14 +26,14 @@ Task.backlogQueueKey = (taskId) => `${taskId}_backlog_queue`;
 Task.backlogHSetKey = (taskId) => `${taskId}_backlog_hset`;
 Task.DEFAULT_FLUSH_SIZE = 25000;
 
-const SCHEMA = {
+const SANITIZATION_SCHEMA = {
   type:       'object',
   properties: {
     source: {
-      $type: 'elasticsearch'
+      $type: 'elasticsearch_s'
     },
     destination: {
-      $type: 'elasticsearch'
+      $type: 'elasticsearch_s'
     },
     transfer: {
       type:       'object',
@@ -44,6 +45,56 @@ const SCHEMA = {
         },
         indices: {
           type:       'object',
+          optional:   true,
+          properties: {
+            name:      {},
+            templates: {}
+          }
+        },
+        documents: {
+          type:       'object',
+          optional:   true,
+          properties: {
+            fromIndices: {
+              minLength: 1
+            },
+            filters: {
+              $type:    'filters_s',
+              optional: true
+            }
+          }
+        }
+      }
+    },
+    mutators: {
+      $type:    'mutators_s',
+      optional: true
+    }
+  }
+};
+
+const VALIDATION_SCHEMA = {
+  type:       'object',
+  strict:     true,
+  properties: {
+    source: {
+      $type: 'elasticsearch_v'
+    },
+    destination: {
+      $type: 'elasticsearch_v'
+    },
+    transfer: {
+      type:       'object',
+      strict:     true,
+      properties: {
+        flushSize: {
+          type:     'integer',
+          optional: false,
+          def:      Task.DEFAULT_FLUSH_SIZE
+        },
+        indices: {
+          type:       'object',
+          strict:     true,
           optional:   true,
           properties: {
             name: {
@@ -58,6 +109,7 @@ const SCHEMA = {
         },
         documents: {
           type:       'object',
+          strict:     true,
           optional:   true,
           properties: {
             fromIndices: {
@@ -65,7 +117,7 @@ const SCHEMA = {
               minLength: 1
             },
             filters: {
-              $type:    'filters',
+              $type:    'filters_v',
               optional: true
             }
           }
@@ -73,7 +125,7 @@ const SCHEMA = {
       }
     },
     mutators: {
-      $type:    'mutators',
+      $type:    'mutators_v',
       optional: true
     }
   }
