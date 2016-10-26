@@ -2,8 +2,21 @@ const _         = require('lodash');
 const Promise   = require('bluebird');
 const inspector = require('./inspector');
 
-const SCHEMA = {
+const SANITIZATION_SCHEMA = {
+  properties: {
+    namespace: {
+      def:      'global',
+      optional: false
+    },
+    id: {
+      optional: false
+    }
+  }
+};
+
+const VALIDATION_SCHEMA = {
   type:       'object',
+  strict:     true,
   properties: {
     namespace: {
       type:     'string',
@@ -21,8 +34,8 @@ const ObjectId    = function (params) {
   const self       = this;
   const validateId = (id) => _.isString(id) && ObjectId.ID_REGEX.test(id);
 
-  inspector.sanitize(SCHEMA, params);
-  const result = inspector.validate(SCHEMA, params);
+  inspector.sanitize(SANITIZATION_SCHEMA, params);
+  const result = inspector.validate(VALIDATION_SCHEMA, params);
 
   if (!result.valid) {
     throw new Error(result.format());
