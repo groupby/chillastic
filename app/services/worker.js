@@ -58,7 +58,7 @@ const Worker = function (redisClient) {
    * Repeat as long as there are subtasks to complete.
    * @returns {Promise.<TResult>}
    */
-  const doSubtask = () =>manager.isRunning()
+  const doSubtask = () => manager.isRunning()
     .then((running) => {
       if (!running) {
         if (killNow) {
@@ -98,7 +98,7 @@ const Worker = function (redisClient) {
                 manager.workerHeartbeat(name, {
                   status: 'starting..',
                   task:   taskId,
-                          subtask
+                  subtask
                 });  // Not waiting for promise
 
                 log.info(`got subtask: ${subtask}`);
@@ -161,7 +161,7 @@ const Worker = function (redisClient) {
     manager.workerHeartbeat(name, {
       status:   'running',
       task:     taskId,
-                subtask,
+      subtask,
       progress: progress
     });  // Not waiting for promise
 
