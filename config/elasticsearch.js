@@ -42,20 +42,21 @@ const createEsClient = (hostConfig) => {
   const port = hostConfig.port || DEFAULT_ELASTICSEARCH_PORT;
 
   let uri = `${host}:${port}`;
-  if (!uri.startsWith('http')) {
+  if (!uri.startsWith('http://') && !uri.startsWith('https://')) {
     uri = `http://${uri}`;
   }
 
   let apiVersion = null;
-  for (let i = 10; i >= 0; i--) {
-    try {
-      const results = sr('GET', uri);
-      const version = JSON.parse(results.getBody('utf8')).version.number;
-      apiVersion = `${semver.major(version)}.${semver.minor(version)}`;
-      break;
-    } catch (e) {
-      config.log.warn(e);
-    }
+  try {
+    const results = sr('GET', uri, {
+      maxRetries: 5,
+      retry: true,
+      timeout: 100
+    });
+    const version = JSON.parse(results.getBody('utf8')).version.number;
+    apiVersion = `${semver.major(version)}.${semver.minor(version)}`;
+  } catch (e) {
+    config.log.debug(e);
   }
 
   if (!apiVersion) {
