@@ -1,13 +1,15 @@
-const _        = require('lodash');
-const moment   = require('moment');
-const Filters  = require('./filters');
-const Mutators = require('./mutators');
-const Subtasks = require('./subtasks');
-const ObjectId = require('../models/objectId');
-const Progress = require('../models/progress');
-const Subtask  = require('../models/subtask');
-const Task     = require('../models/task');
-const config   = require('../../config/index');
+const _             = require('lodash');
+const moment        = require('moment');
+const Promise       = require('bluebird');
+const Filters       = require('./filters');
+const Mutators      = require('./mutators');
+const Subtasks      = require('./subtasks');
+const ObjectId      = require('../models/objectId');
+const Progress      = require('../models/progress');
+const Subtask       = require('../models/subtask');
+const Task          = require('../models/task');
+const config        = require('../../config/index');
+const elasticsearch = require('../../config/elasticsearch');
 
 const log = config.log;
 
@@ -29,46 +31,77 @@ const Tasks    = function (redisClient) {
   self.getAll = () => redis.smembers(Tasks.NAME_KEY).then((tasks) => tasks || []);
 
   /**
+   * Check that source and destination configurations work
+   * @param source
+   * @param dest
+   * @returns {*}
+   */
+  self.ensureSourceAndDestExist = (source, dest) => {
+    if (!_.isObject(source)) {
+      return Promise.reject('source elasticsearch config must be an object');
+    }
+
+    if (!_.isObject(dest)) {
+      return Promise.reject('dest elasticsearch config must be an object');
+    }
+
+    try {
+      elasticsearch(source);
+    } catch (error) {
+      return Promise.reject(`Could not connect to source elasticsearch with configuration: ${JSON.stringify(source)}`);
+    }
+
+    try {
+      elasticsearch(dest);
+    } catch (error) {
+      return Promise.reject(`Could not connect to destination elasticsearch with configuration: ${JSON.stringify(dest)}`);
+    }
+
+    return Promise.resolve();
+  };
+
+  /**
    * Convert task into subtasks and queue them for execution
    *
    * @param taskId
    * @param task
    * @returns {*|Promise.<TResult>}
    */
-  self.add = (taskId, task) =>
-      self.exists(taskId)
-      .then((exists) => {
-        if (exists) {
-          throw new Error(`task: '${taskId}' exists. Delete first.`);
-        } else if (task.transfer.flushSize > Task.DEFAULT_FLUSH_SIZE) {
-          throw new Error(`flushSize must be ${Task.DEFAULT_FLUSH_SIZE} or less, given ${task.transfer.flushSize}`);
-        }
-      })
-      .then(() => mutatorsService.ensureMutatorsExist(taskId, task.mutators))
-      .then(() => filtersService.ensureFiltersExist(taskId, task.transfer.documents.filters))
-      .then(() => redis.sadd(Tasks.NAME_KEY, taskId))
-      .then(() => subtasks.buildBacklog(taskId, Task.coerce(task)));
+  self.add = (taskId, task) => self.exists(taskId)
+    .then((exists) => {
+      if (exists) {
+        throw new Error(`task: '${taskId}' exists. Delete first.`);
+      } else if (task.transfer.flushSize > Task.DEFAULT_FLUSH_SIZE) {
+        throw new Error(`flushSize must be ${Task.DEFAULT_FLUSH_SIZE} or less, given ${task.transfer.flushSize}`);
+      }
+    })
+    .then(() => self.ensureSourceAndDestExist(task.source, task.destination))
+    .then(() => mutatorsService.ensureMutatorsExist(taskId, task.mutators))
+    .then(() => filtersService.ensureFiltersExist(taskId, task.transfer.documents.filters))
+    .then(() => redis.sadd(Tasks.NAME_KEY, taskId))
+    .then(() => subtasks.buildBacklog(taskId, Task.coerce(task)));
 
   /**
    * Remove a task by name
    * @param taskId
    * @returns {Promise.<TResult>}
    */
-  self.remove = (taskId) =>
-      Task.validateId(taskId)
-      .then(() => subtasks.clearBacklog(taskId))
-      .then(() => subtasks.clearCompleted(taskId))
-      .then(() => _.map(namespacedServices, (service) => service.removeAllNamespacedBy(new ObjectId({namespace: taskId, id: 'dummy'}))))
-      .then(() => redis.srem(Tasks.NAME_KEY, taskId));
+  self.remove = (taskId) => Task.validateId(taskId)
+    .then(() => subtasks.clearBacklog(taskId))
+    .then(() => subtasks.clearCompleted(taskId))
+    .then(() => _.map(namespacedServices, (service) => service.removeAllNamespacedBy(new ObjectId({
+      namespace: taskId,
+      id:        'dummy'
+    }))))
+    .then(() => redis.srem(Tasks.NAME_KEY, taskId));
 
   /**
    * Return TRUE if a task exists in the system based on it's name
    * @param taskId
    * @returns {*|{arity, flags, keyStart, keyStop, step}}
    */
-  self.exists = (taskId) =>
-      Task.validateId(taskId)
-      .then(() => redis.sismember(Tasks.NAME_KEY, taskId));
+  self.exists = (taskId) => Task.validateId(taskId)
+    .then(() => redis.sismember(Tasks.NAME_KEY, taskId));
 
   /**
    * Record an error during a task, with timestamp
@@ -79,11 +112,14 @@ const Tasks    = function (redisClient) {
    */
   self.logError = (taskId, subtask, message) => {
     const time_ms = moment().valueOf();
-    const error   = JSON.stringify({message, subtask: Subtask.coerce(subtask)});
+    const error   = JSON.stringify({
+      message,
+      subtask: Subtask.coerce(subtask)
+    });
     log.error(error);
 
     return Task.validateId(taskId)
-    .then(() => redis.zadd(Task.errorKey(taskId), time_ms, error));
+      .then(() => redis.zadd(Task.errorKey(taskId), time_ms, error));
   };
 
   /**
@@ -91,21 +127,20 @@ const Tasks    = function (redisClient) {
    * @param taskId
    * @returns {*|Promise.<TResult>}
    */
-  self.errors = (taskId) =>
-      Task.validateId(taskId)
-      .then(() => redis.zrangebyscore(Task.errorKey(taskId), '-inf', '+inf', 'WITHSCORES'))
-      .then((rawErrors) => {
-        const skip   = 2;
-        const errors = [];
-        for (let i = 0; i < rawErrors.length; i += skip) {
-          const error = JSON.parse(rawErrors[i]);
-          errors.push(_.assign(error, {
-            subtask:   new Subtask(error.subtask),
-            timestamp: moment(rawErrors[i + 1], 'x').toISOString()
-          }));
-        }
-        return errors;
-      });
+  self.errors = (taskId) => Task.validateId(taskId)
+    .then(() => redis.zrangebyscore(Task.errorKey(taskId), '-inf', '+inf', 'WITHSCORES'))
+    .then((rawErrors) => {
+      const skip   = 2;
+      const errors = [];
+      for (let i = 0; i < rawErrors.length; i += skip) {
+        const error = JSON.parse(rawErrors[i]);
+        errors.push(_.assign(error, {
+          subtask:   new Subtask(error.subtask),
+          timestamp: moment(rawErrors[i + 1], 'x').toISOString()
+        }));
+      }
+      return errors;
+    });
 
   /**
    * Get all known subtask progress updates
@@ -113,15 +148,12 @@ const Tasks    = function (redisClient) {
    * @param taskId
    * @returns {*|Promise.<TResult>}
    */
-  self.getProgress = (taskId) =>
-      Task.validateId(taskId)
-      .then(() => redis.hgetall(Task.progressKey(taskId)))
-      .then((overallProgress) =>
-          _.reduce(overallProgress, (result, rawProgress, rawSubtask) => result.concat({
-            subtask:  new Subtask(JSON.parse(rawSubtask)),
-            progress: new Progress(JSON.parse(rawProgress))
-          }), [])
-      );
+  self.getProgress = (taskId) => Task.validateId(taskId)
+    .then(() => redis.hgetall(Task.progressKey(taskId)))
+    .then((overallProgress) => _.reduce(overallProgress, (result, rawProgress, rawSubtask) => result.concat({
+      subtask:  new Subtask(JSON.parse(rawSubtask)),
+      progress: new Progress(JSON.parse(rawProgress))
+    }), []));
 };
 Tasks.NAME_KEY = 'tasks';
 

@@ -37,16 +37,16 @@ describe('tasks service', function () {
     utils = new Utils();
 
     source.indices.deleteTemplate({name: '*'})
-    .finally(() => source.indices.delete({index: '*'}))
-    .finally(() => redis.flushdb())
-    .finally(() => done());
+      .finally(() => source.indices.delete({index: '*'}))
+      .finally(() => redis.flushdb())
+      .finally(() => done());
   });
 
   afterEach((done) => {
     source.indices.deleteTemplate({name: '*'})
-    .finally(() => source.indices.delete({index: '*'}))
-    .finally(() => redis.flushdb())
-    .finally(() => done());
+      .finally(() => source.indices.delete({index: '*'}))
+      .finally(() => redis.flushdb())
+      .finally(() => done());
   });
 
   it('invalid flushSize', (done) => {
@@ -61,13 +61,66 @@ describe('tasks service', function () {
       }
     };
     tasks.add(TASK_NAME, task)
-        .then(() => done('fail'))
-        .catch((e) => {
-          expect(e.message).equals(`flushSize must be ${Task.DEFAULT_FLUSH_SIZE} or less, given 1000000`);
-          done();
-        });
-  }
-  );
+      .then(() => done('fail'))
+      .catch((e) => {
+        expect(e.message).equals(`flushSize must be ${Task.DEFAULT_FLUSH_SIZE} or less, given 1000000`);
+        done();
+      });
+  });
+
+  it('should check that source and destination exist', (done) => {
+    const task = {
+      source:      TestConfig.elasticsearch.source,
+      destination: TestConfig.elasticsearch.destination,
+      transfer:    {
+        documents: {
+          fromIndices: '*'
+        }
+      }
+    };
+
+    tasks.ensureSourceAndDestExist(task.source, task.destination)
+      .then(() => done())
+      .catch((err) => err ? done(err) : done('fail'));
+  });
+
+  it('should fail if source doesnt exist and destination does', (done) => {
+    const task = {
+      source:      {host: 'badhost', port: 9200},
+      destination: TestConfig.elasticsearch.destination,
+      transfer:    {
+        documents: {
+          fromIndices: '*'
+        }
+      }
+    };
+
+    tasks.ensureSourceAndDestExist(task.source, task.destination)
+      .then(() => done('fail'))
+      .catch((err) => {
+        expect(err).to.match(/source elasticsearch/);
+        done();
+      });
+  });
+
+  it('should fail if destination doesnt exist and source does', (done) => {
+    const task = {
+      source:      TestConfig.elasticsearch.source,
+      destination: {host: 'badhost', port: 9200},
+      transfer:    {
+        documents: {
+          fromIndices: '*'
+        }
+      }
+    };
+
+    tasks.ensureSourceAndDestExist(task.source, task.destination)
+      .then(() => done('fail'))
+      .catch((err) => {
+        expect(err).to.match(/destination elasticsearch/);
+        done();
+      });
+  });
 
   it('should add task and create subtasks in backlog', (done) => {
     const task = {
@@ -81,16 +134,16 @@ describe('tasks service', function () {
     };
 
     utils.addData(source)
-    .then(() => tasks.add(TASK_NAME, task))
-    .then(() => subtasks.getBacklog(TASK_NAME))
-    .then((backlogSubtasks) => expect(backlogSubtasks.length).to.be.equals(5))
-    .then(() => tasks.getAll())
-    .then((allTasks) => {
-      expect(_.size(allTasks)).to.be.equals(1);
-      expect(allTasks[0]).to.be.equals(TASK_NAME);
-    })
-    .then(() => done())
-    .catch(done);
+      .then(() => tasks.add(TASK_NAME, task))
+      .then(() => subtasks.getBacklog(TASK_NAME))
+      .then((backlogSubtasks) => expect(backlogSubtasks.length).to.be.equals(5))
+      .then(() => tasks.getAll())
+      .then((allTasks) => {
+        expect(_.size(allTasks)).to.be.equals(1);
+        expect(allTasks[0]).to.be.equals(TASK_NAME);
+      })
+      .then(() => done())
+      .catch(done);
   });
 
   it('should return list of tasks', (done) => {
@@ -105,17 +158,17 @@ describe('tasks service', function () {
     };
 
     tasks.add(TASK_NAME, task)
-    .then(() => tasks.getAll())
-    .then((taskNames) => expect(taskNames).to.eql([TASK_NAME]))
-    .then(() => done())
-    .catch(done);
+      .then(() => tasks.getAll())
+      .then((taskNames) => expect(taskNames).to.eql([TASK_NAME]))
+      .then(() => done())
+      .catch(done);
   });
 
   it('should return empty list when there are no tasks', (done) => {
     tasks.getAll()
-    .then((taskNames) => expect(taskNames).to.be.empty)
-    .then(() => done())
-    .catch(done);
+      .then((taskNames) => expect(taskNames).to.be.empty)
+      .then(() => done())
+      .catch(done);
   });
 
   it('should log and return errors', (done) => {
@@ -132,26 +185,26 @@ describe('tasks service', function () {
     };
 
     tasks.logError(TASK_NAME, subtask, 'something broke').delay(5)
-    .then(() => tasks.logError(TASK_NAME, subtask, 'something else broke'))
-    .then(() => tasks.errors(TASK_NAME))
-    .then((errors) => {
-      expect(errors.length).to.be.equals(2);
-      expect(errors[0].subtask).to.be.an.instanceof(Subtask);
-      expect(errors[0].subtask.source).to.eql(subtask.source);
-      expect(errors[0].subtask.destination).to.eql(subtask.destination);
-      expect(errors[0].subtask.transfer).to.eql(subtask.transfer);
-      expect(errors[0].subtask.count).to.be.equals(subtask.count);
-      expect(errors[0].message).to.be.equals('something broke');
+      .then(() => tasks.logError(TASK_NAME, subtask, 'something else broke'))
+      .then(() => tasks.errors(TASK_NAME))
+      .then((errors) => {
+        expect(errors.length).to.be.equals(2);
+        expect(errors[0].subtask).to.be.an.instanceof(Subtask);
+        expect(errors[0].subtask.source).to.eql(subtask.source);
+        expect(errors[0].subtask.destination).to.eql(subtask.destination);
+        expect(errors[0].subtask.transfer).to.eql(subtask.transfer);
+        expect(errors[0].subtask.count).to.be.equals(subtask.count);
+        expect(errors[0].message).to.be.equals('something broke');
 
-      expect(errors[1].subtask).to.be.an.instanceof(Subtask);
-      expect(errors[1].subtask.source).to.eql(subtask.source);
-      expect(errors[1].subtask.destination).to.eql(subtask.destination);
-      expect(errors[1].subtask.transfer).to.eql(subtask.transfer);
-      expect(errors[1].subtask.count).to.be.equals(subtask.count);
-      expect(errors[1].message).to.be.equals('something else broke');
-    })
-    .then(() => done())
-    .catch(done);
+        expect(errors[1].subtask).to.be.an.instanceof(Subtask);
+        expect(errors[1].subtask.source).to.eql(subtask.source);
+        expect(errors[1].subtask.destination).to.eql(subtask.destination);
+        expect(errors[1].subtask.transfer).to.eql(subtask.transfer);
+        expect(errors[1].subtask.count).to.be.equals(subtask.count);
+        expect(errors[1].message).to.be.equals('something else broke');
+      })
+      .then(() => done())
+      .catch(done);
   });
 
 });

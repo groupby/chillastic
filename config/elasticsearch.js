@@ -57,6 +57,7 @@ const createEsClient = (hostConfig) => {
       config.log.warn(e);
     }
   }
+
   if (!apiVersion) {
     throw new Error(`unable to connect to '${uri}' to get es version`);
   }
