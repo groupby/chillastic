@@ -46,12 +46,18 @@ const createEsClient = (hostConfig) => {
     uri = `http://${uri}`;
   }
 
+  /**
+   *  NOTE: The below section should be removed and replaced with an async implementation.
+   *        This is blocking the main thread while it waits for the result of the API check, meaning nothing else
+   *        can run.
+   */
+
   let apiVersion = null;
   try {
     const results = sr('GET', uri, {
       maxRetries: 5,
-      retry: true,
-      timeout: 100
+      retry:      true,
+      timeout:    100
     });
     const version = JSON.parse(results.getBody('utf8')).version.number;
     apiVersion = `${semver.major(version)}.${semver.minor(version)}`;
