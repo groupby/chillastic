@@ -1,3 +1,4 @@
+/*eslint no-unused-vars: "off" */
 // The libraries for 'moment' and 'lodash' are available inside the mutator definition
 const moment = require('moment');
 

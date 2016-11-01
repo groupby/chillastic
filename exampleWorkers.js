@@ -9,35 +9,3 @@ const chillastic = Chillastic(REDIS_HOST, REDIS_PORT, CHILL_PORT);
 
 // Start it up!
 chillastic.run();
-
-var thing = {
-  "source":      {
-    "host": "localhost",
-    "port": 9200
-  },
-  "destination": {
-    "host": "localhost",
-    "port": 9201
-  },
-  "transfer":    {
-    "documents": {
-      "fromIndices": "*",
-      "filters":     {
-        "actions": [
-          {
-            "namespace": "someNamespace",
-            "id":        "indexFilter"
-          }
-        ]
-      }
-    }
-  },
-  "mutators":    {
-    "actions": [
-      {
-        "namespace": "someNamespace",
-        "id":        "indexMutator"
-      }
-    ]
-  }
-};
