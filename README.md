@@ -206,7 +206,7 @@ module.exports = {
 ```
 
 ### Filters
-Filters are used prior to document transfer to exclude specific types or indicies prior to the task starting. While a mutator could be used for this by returning null on specific documents, a filter has the advantage of removing entire indicies and types prior to processing.
+Filters are used prior to document transfer to only include specific types or indicies prior to the task starting. While a mutator could be used for this by returning null on specific documents, a filter has the advantage of removing entire indicies and types prior to processing.
 
 Filters are also javascript modules.
 
@@ -214,7 +214,7 @@ Filters are also javascript modules.
 module.exports = {
   type: 'index',
   /**
-   * Any indicies that trigger this predicate will be excluded from transfer
+   * Only indicies that trigger this predicate will be included in transfer
    * @param index - Full index configuration
    * @param arguments - The task-specific arguments object
    */
