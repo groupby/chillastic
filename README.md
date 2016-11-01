@@ -85,7 +85,7 @@ curl localhost:9605/mutators/someNamespace/ourMutator -H 'Content-type: text/pla
 ```
 
 Define the task to use the mutator we just sent:
-```
+```json
 {
   "source": {
     "host": "localhost",
@@ -112,10 +112,115 @@ Define the task to use the mutator we just sent:
 ```
 
 You can push a task into the system using the API:
-```
-curl -XPOST localhost:9605/tasks/newtask -d '{"source":{"host":"localhost:9200","apiVersion":"1.4"},"destination":{"host":"localhost:9201","apiVersion":"2.2"},"transfer":{"documents":{"fromIndices":"*"}},"mutators":{"path":"path/to/mutators"}}'
+```bash
+curl -XPOST localhost:9605/tasks/newtask -d '{"source":{"host":"localhost","port":9200},"destination":{"host":"localhost:9201","port":9201},"transfer":{"documents":{"fromIndices":"log_data_v1*"}},"mutators":{"actions":[{"namespace":"someNamespace","id":"ourMutator"}]}}'
 ```
 
 This task will be split into subtasks, one for each combination of index and type. The workers will then transfer all the documents associated with a specific subtask from one elasticsearch to the other.
+
+### Tasks
+A task defines the work to be done during reindexing and has the following possible fields:
+
+```javascript
+{
+  "source": {
+    "host": "localhost",
+    "port": 9200
+  },
+  "destination": {
+    "host": "localhost:9201",
+    "port": 9201
+  },
+  "transfer": {
+    "documents": {
+      "flushSize": 25000,               // Max number of docs in a bulk operation
+      "fromIndices": "log_data_v1*",    // Any index names that match this will have their docs transferred
+      "filters": {
+        "actions": [
+          {
+            "namespace": "someNamespace",
+            "id": "ourFilter",
+            "arguments": {}
+          }
+        ],
+        "arguments": {}
+      }
+    },
+    "indices": {
+      "name": "*log_data*",     // Any index names that match this will have their settings, mappings, aliases copied
+      "templates": "*log_data*" // Any template names that match this will be copied
+    }
+  },
+  "mutators": {
+    "actions": [
+      {
+        "namespace": "someNamespace",
+        "id": "ourMutator"
+      }
+    ],
+    "arguments": {}
+  }
+}
+```
+
+### Mutators
+Mutators can be of type 'data', 'index', or 'template' and apply to documents, index configurations, and templates respectively.
+
+They are defined as javascript modules and loaded by POSTing them to the mutators/ API endpoint.
+
+```javascript
+// The libraries for 'moment' and 'lodash' are available inside the mutator definition
+const moment = require('moment');
+
+const OLD_DATE_FORMAT = 'YYYY-MM-DD';
+const OLD_DATE_REGEX  = /[0-9]{4}-[0-9]{2}-[0-9]{2}/;
+const NEW_DATE_FORMAT = 'YYYY-MM';
+
+module.exports = {
+  /**
+   * Type of mutator
+   */
+  type:      'data',
+  /**
+   * The predicate function is called for every target document
+   * @param doc - The document to be checked against the predicate
+   * @param arguments - The task-specific arguments object
+   * @returns {boolean}
+   */
+  predicate: function (doc, arguments) {
+    return OLD_DATE_REGEX.test(doc._index);
+  },
+  /**
+   * The mutate function is only called on documents that satisfy the predicate
+   * @param doc - The document that satisfied the predicate
+   * @param arguments - The task-specific arguments object
+   * @returns {*}
+   */
+  mutate: function (doc, arguments) {
+    const date = moment(doc._index.match(OLD_DATE_REGEX), OLD_DATE_FORMAT);
+    doc._index = doc._index.replace(OLD_DATE_REGEX, date.format(NEW_DATE_FORMAT));
+
+    return doc;
+  }
+};
+```
+
+### Filters
+Filters are used prior to document transfer to exclude specific types or indicies prior to the task starting. While a mutator could be used for this by returning null on specific documents, a filter has the advantage of removing entire indicies and types prior to processing.
+
+Filters are also javascript modules.
+
+```javascript
+module.exports = {
+  type: 'index',
+  /**
+   * Any indicies that trigger this predicate will be excluded from transfer
+   * @param index - Full index configuration
+   * @param arguments - The task-specific arguments object
+   */
+  predicate: (index, arguments) => index.name === arguments.targetName
+};
+```
+
 
 ### More docs to come
