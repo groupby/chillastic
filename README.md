@@ -216,9 +216,8 @@ module.exports = {
   /**
    * Only indicies that trigger this predicate will be included in transfer
    * @param index - Full index configuration
-   * @param arguments - The task-specific arguments object
    */
-  predicate: (index, arguments) => index.name === arguments.targetName
+  predicate: (index) => index.name === 'log_data_v1_include_this'
 };
 ```
 
