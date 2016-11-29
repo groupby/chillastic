@@ -3,7 +3,11 @@ env:
   node: true
   mocha: true
 extends: 'eslint:recommended'
+plugins:
+  - no-only-tests
 rules:
+  no-only-tests/no-only-tests:
+    - error
   key-spacing:
     - warn
     - {align: value}
