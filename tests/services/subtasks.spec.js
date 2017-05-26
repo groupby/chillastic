@@ -107,15 +107,15 @@ describe('subtasks service', function () {
     subtasks = new Subtasks(redis);
     utils = new Utils();
 
-    source.indices.deleteTemplate({name: '*'})
-    .finally(() => source.indices.delete({index: '*'}))
+    utils.deleteAllTemplates(source)
+    .finally(() => utils.deleteAllIndices(source))
     .finally(() => redis.flushdb())
     .finally(() => done());
   });
 
   afterEach((done) => {
-    source.indices.deleteTemplate({name: '*'})
-    .finally(() => source.indices.delete({index: '*'}))
+    utils.deleteAllTemplates(source)
+    .finally(() => utils.deleteAllIndices(source))
     .finally(() => redis.flushdb())
     .finally(() => done());
   });

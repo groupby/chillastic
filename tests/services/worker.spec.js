@@ -4,6 +4,7 @@ const _                 = require('lodash');
 const expect            = require('chai').expect;
 const Promise           = require('bluebird');
 const TestConfig        = require('../config');
+const Utils             = require('../utils');
 const Manager           = require('../../app/services/manager');
 const Subtasks          = require('../../app/services/subtasks');
 const Tasks             = require('../../app/services/tasks');
@@ -12,7 +13,8 @@ const createEsClient    = require('../../config/elasticsearch.js');
 const createRedisClient = require('../../config/redis');
 const config            = require('../../config/index');
 
-const log = config.log;
+const log   = config.log;
+const utils = new Utils();
 
 Promise.longStackTraces();
 Promise.onPossiblyUnhandledRejection((error) => log.error('Likely error: ', error.stack));
@@ -40,10 +42,10 @@ describe('worker', function () {
     subtasks = new Subtasks(redis);
     worker = new Worker(redis);
 
-    source.indices.deleteTemplate({name: '*'})
-    .finally(() => dest.indices.deleteTemplate({name: '*'}))
-    .finally(() => source.indices.delete({index: '*'}))
-    .finally(() => dest.indices.delete({index: '*'}))
+    utils.deleteAllTemplates(source)
+    .finally(() => utils.deleteAllTemplates(dest))
+    .finally(() => utils.deleteAllIndices(source))
+    .finally(() => utils.deleteAllIndices(dest))
     .finally(() => redis.flushdb())
     .finally(() => done());
   });

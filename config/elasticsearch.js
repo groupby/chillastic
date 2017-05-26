@@ -1,3 +1,4 @@
+const _             = require('lodash');
 const Promise       = require('bluebird');
 const elasticsearch = require('elasticsearch');
 const sr            = require('sync-request');
@@ -36,6 +37,7 @@ const LogToBunyan = function () {
 };
 
 const DEFAULT_ELASTICSEARCH_PORT = 9200;
+const SUPPORTED_API_VERSION      = _.keys(elasticsearch.Client.apis);
 
 const createEsClient = (hostConfig) => {
   const host = hostConfig.host || 'localhost';
@@ -54,13 +56,24 @@ const createEsClient = (hostConfig) => {
 
   let apiVersion = null;
   try {
-    const results = sr('GET', uri, {
+    const results      = sr('GET', uri, {
       maxRetries: 5,
       retry:      true,
       timeout:    100
     });
-    const version = JSON.parse(results.getBody('utf8')).version.number;
-    apiVersion = `${semver.major(version)}.${semver.minor(version)}`;
+    const version      = JSON.parse(results.getBody('utf8')).version.number;
+    const majorVersion = semver.major(version);
+    let minorVersion   = semver.minor(version);
+    while (true) { // eslint-disable-line no-constant-condition
+      apiVersion = `${majorVersion}.${minorVersion}`;
+      if (SUPPORTED_API_VERSION.includes(apiVersion)) {
+        config.log.info(`${apiVersion} supported`);
+        break;
+      } else {
+        config.log.info(`${apiVersion} is not supported version for this ES client, incrementing minor version`);
+        minorVersion++;
+      }
+    }
   } catch (e) {
     config.log.debug(e);
   }
