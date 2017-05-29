@@ -4,6 +4,7 @@ const _                 = require('lodash');
 const expect            = require('chai').expect;
 const Promise           = require('bluebird');
 const TestConfig        = require('../config');
+const Utils             = require('../utils');
 const Manager           = require('../../app/services/manager');
 const createEsClient    = require('../../config/elasticsearch');
 const createRedisClient = require('../../config/redis');
@@ -20,21 +21,23 @@ describe('job manager', function () {
   let source  = null;
   let redis   = null;
   let manager = null;
+  let utils   = null;
 
   before((done) => {
     source = createEsClient(TestConfig.elasticsearch.source);
     redis = createRedisClient(TestConfig.redis.host, TestConfig.redis.port);
     manager = new Manager(redis);
+    utils = new Utils();
 
-    source.indices.deleteTemplate({name: '*'})
-    .finally(() => source.indices.delete({index: '*'}))
+    utils.deleteAllTemplates(source)
+    .finally(() => utils.deleteAllIndices(source))
     .finally(() => redis.flushdb())
     .finally(() => done());
   });
 
   afterEach((done) => {
-    source.indices.deleteTemplate({name: '*'})
-    .finally(() => source.indices.delete({index: '*'}))
+    utils.deleteAllTemplates(source)
+    .finally(() => utils.deleteAllIndices(source))
     .finally(() => redis.flushdb())
     .finally(() => done());
   });

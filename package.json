@@ -50,7 +50,7 @@
     "cookie-parser": "^1.4.1",
     "cors": "^2.7.1",
     "decache": "^4.1.0",
-    "elasticsearch": "^11.0.1",
+    "elasticsearch": "^13.0.1",
     "errorhandler": "^1.4.3",
     "express": "^4.13.4",
     "express-bunyan-logger": "^1.2.0",
