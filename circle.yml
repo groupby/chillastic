@@ -18,15 +18,13 @@ test:
     - environment=circle gulp test
     - npm run coverage:codacy
 deployment:
-  hub:
-    branch: master
-    commands:
-      - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
-      - cd docker && docker build -t groupbyinc/chillastic .
-      - docker push groupbyinc/chillastic
   npm:
     tag: /v[0-9]+(\.[0-9]+)*/
     owner: groupby
     commands:
       - echo "//registry.npmjs.org/:_authToken=${NPM_API_KEY}" > ~/.npmrc
       - npm publish
+      - sleep 10
+      - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
+      - cd docker && docker build -t groupbyinc/chillastic .
+      - docker push groupbyinc/chillastic
