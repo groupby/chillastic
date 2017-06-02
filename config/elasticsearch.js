@@ -100,7 +100,11 @@ const createEsClient = (hostConfig) => {
         reject:  reject,
         promise: promise
       };
-    }
+    },
+    maxRetries:     3,
+    requestTimeout: 60000,
+    deadTimeout:    120000,
+    pingTimeout:    60000
   });
 };
 
