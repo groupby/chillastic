@@ -738,6 +738,8 @@ describe('subtasks service', function () {
       }
     };
 
+    const fetchedSubtasks = [];
+
     source.indices.create({index: 'myindex1'})
     .then(() => source.bulk({
       refresh: true,
@@ -761,13 +763,19 @@ describe('subtasks service', function () {
     .then(() => subtasks.buildBacklog(TASK_NAME, taskParams))
     .then(() => subtasks.fetch(TASK_NAME))
     .then((subtask) => {
-      expect(subtask.transfer.documents.index).to.be.equals('myindex1');
-      expect(subtask.transfer.documents.type).to.be.equals('mytype2');
+      fetchedSubtasks.push(subtask);
     })
     .then(() => subtasks.fetch(TASK_NAME))
     .then((subtask) => {
-      expect(subtask.transfer.documents.index).to.be.equals('myindex1');
-      expect(subtask.transfer.documents.type).to.be.equals('mytype1');
+      fetchedSubtasks.push(subtask);
+
+      const indices = fetchedSubtasks.map((s) => s.transfer.documents.index).sort();
+      expect(indices[0]).to.be.equals('myindex1');
+      expect(indices[1]).to.be.equals('myindex1');
+
+      const types = fetchedSubtasks.map((s) => s.transfer.documents.type).sort();
+      expect(types[0]).to.be.equals('mytype1');
+      expect(types[1]).to.be.equals('mytype2');
     })
     .then(() => subtasks.fetch(TASK_NAME))
     .then((subtask) => expect(subtask).to.be.null)
