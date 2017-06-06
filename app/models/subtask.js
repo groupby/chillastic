@@ -64,10 +64,10 @@ const SANITIZATION_SCHEMA = {
   type:       'object',
   properties: {
     source: {
-      $type: 'elasticsearch_S'
+      $type: 'elasticsearch_s'
     },
     destination: {
-      $type: 'elasticsearch_S'
+      $type: 'elasticsearch_s'
     },
     transfer: {
       type:       'object',

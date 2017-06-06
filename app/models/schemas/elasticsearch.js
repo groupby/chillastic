@@ -6,6 +6,11 @@ module.exports = {
         type:     'integer',
         optional: false,
         def:      9200
+      },
+      path: {
+        type:     'string',
+        optional: true,
+        def:      '/'
       }
     }
   },
@@ -19,6 +24,9 @@ module.exports = {
       port: {
         type:     'integer',
         optional: false
+      },
+      path: {
+        type: 'string'
       }
     }
   }

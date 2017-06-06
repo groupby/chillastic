@@ -762,12 +762,12 @@ describe('subtasks service', function () {
     .then(() => subtasks.fetch(TASK_NAME))
     .then((subtask) => {
       expect(subtask.transfer.documents.index).to.be.equals('myindex1');
-      expect(subtask.transfer.documents.type).to.be.equals('mytype1');
+      expect(subtask.transfer.documents.type).to.be.equals('mytype2');
     })
     .then(() => subtasks.fetch(TASK_NAME))
     .then((subtask) => {
       expect(subtask.transfer.documents.index).to.be.equals('myindex1');
-      expect(subtask.transfer.documents.type).to.be.equals('mytype2');
+      expect(subtask.transfer.documents.type).to.be.equals('mytype1');
     })
     .then(() => subtasks.fetch(TASK_NAME))
     .then((subtask) => expect(subtask).to.be.null)

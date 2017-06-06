@@ -43,7 +43,12 @@ const createEsClient = (hostConfig) => {
   const host = hostConfig.host || 'localhost';
   const port = hostConfig.port || DEFAULT_ELASTICSEARCH_PORT;
 
-  let uri = `${host}:${port}`;
+  let route = hostConfig.route || '/';
+  if (!route.startsWith('/')) {
+    route = `/${route}`;
+  }
+
+  let uri = `${host}:${port}${route}`;
   if (!uri.startsWith('http://') && !uri.startsWith('https://')) {
     uri = `http://${uri}`;
   }

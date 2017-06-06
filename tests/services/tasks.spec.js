@@ -84,6 +84,25 @@ describe('tasks service', function () {
     .catch((err) => err ? done(err) : done('fail'));
   });
 
+  it('can pass path', (done) => {
+    const task = {
+      source:      {host: 'es', port: 9200, path: '/'},
+      destination: TestConfig.elasticsearch.destination,
+      transfer:    {
+        documents: {
+          fromIndices: '*'
+        }
+      }
+    };
+
+    tasks.ensureSourceAndDestExist(task.source, task.destination)
+    .then(() => done())
+    .catch((err) => {
+      expect(err).to.match(/source elasticsearch/);
+      done();
+    });
+  });
+
   it('should fail if source doesnt exist and destination does', (done) => {
     const task = {
       source:      {host: 'badhost', port: 9200},
