@@ -40,17 +40,15 @@ const DEFAULT_ELASTICSEARCH_PORT = 9200;
 const SUPPORTED_API_VERSION      = _.keys(elasticsearch.Client.apis);
 
 const createEsClient = (hostConfig) => {
-  const host = hostConfig.host || 'localhost';
+  let host = hostConfig.host || 'localhost';
   const port = hostConfig.port || DEFAULT_ELASTICSEARCH_PORT;
+
+  const protocol = (host.startsWith('https') || port === 443) ? 'https' : 'http';
+  host = host.replace('https://', '').replace('http://', '');
 
   let path = hostConfig.path || '/';
   if (!path.startsWith('/')) {
     path = `/${path}`;
-  }
-
-  let uri = `${host}:${port}${path}`;
-  if (!uri.startsWith('http://') && !uri.startsWith('https://')) {
-    uri = `http://${uri}`;
   }
 
   /**
@@ -58,7 +56,7 @@ const createEsClient = (hostConfig) => {
    *        This is blocking the main thread while it waits for the result of the API check, meaning nothing else
    *        can run.
    */
-
+  const uri        = `${protocol}://${host}:${port}${path}`;
   let apiVersion = null;
   try {
     const results      = sr('GET', uri, {
@@ -88,7 +86,7 @@ const createEsClient = (hostConfig) => {
   }
 
   return new elasticsearch.Client({
-    host:               {host, port},
+    host:               {host, port, protocol, path},
     apiVersion:         apiVersion,
     suggestCompression: true,
     log:                LogToBunyan,
