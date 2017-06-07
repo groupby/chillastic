@@ -40,7 +40,7 @@ const DEFAULT_ELASTICSEARCH_PORT = 9200;
 const SUPPORTED_API_VERSION      = _.keys(elasticsearch.Client.apis);
 
 const createEsClient = (hostConfig) => {
-  let host = hostConfig.host || 'localhost';
+  let host   = hostConfig.host || 'localhost';
   const port = hostConfig.port || DEFAULT_ELASTICSEARCH_PORT;
 
   const protocol = (host.startsWith('https') || port === 443) ? 'https' : 'http';
@@ -56,7 +56,7 @@ const createEsClient = (hostConfig) => {
    *        This is blocking the main thread while it waits for the result of the API check, meaning nothing else
    *        can run.
    */
-  const uri        = `${protocol}://${host}:${port}${path}`;
+  const uri      = `${protocol}://${host}:${port}${path}`;
   let apiVersion = null;
   try {
     const results      = sr('GET', uri, {
@@ -105,9 +105,10 @@ const createEsClient = (hostConfig) => {
       };
     },
     maxRetries:     3,
-    requestTimeout: 60000,
-    deadTimeout:    120000,
-    pingTimeout:    60000
+    requestTimeout: 240000,
+    pingTimeout:    240000,
+    deadTimeout:    240000,
+    keepAlive:      false
   });
 };
 
