@@ -132,7 +132,7 @@ const Transfer = function (sourceEs, destEs) {
       index:  targetIndex,
       type:   targetType,
       scroll: '1m',
-      size:   40
+      size:   1
     })
     .then(scrollAndGetData)
     .catch((error) => {
