@@ -131,7 +131,7 @@ const Transfer = function (sourceEs, destEs) {
     return self.source.search({
       index:  targetIndex,
       type:   targetType,
-      scroll: '1m',
+      scroll: '5m',
       size:   1
     })
     .then(scrollAndGetData)
