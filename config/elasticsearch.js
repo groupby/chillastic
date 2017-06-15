@@ -62,7 +62,7 @@ const createEsClient = (hostConfig) => {
     const results      = sr('GET', uri, {
       maxRetries: 5,
       retry:      true,
-      timeout:    100
+      timeout:    5000
     });
     const version      = JSON.parse(results.getBody('utf8')).version.number;
     const majorVersion = semver.major(version);
