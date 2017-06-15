@@ -78,7 +78,7 @@ const createEsClient = (hostConfig) => {
       }
     }
   } catch (e) {
-    config.log.debug(e);
+    config.log.error(e);
   }
 
   if (!apiVersion) {
