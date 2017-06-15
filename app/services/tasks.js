@@ -48,12 +48,14 @@ const Tasks    = function (redisClient) {
     try {
       elasticsearch(source);
     } catch (error) {
+      log.error(error);
       return Promise.reject(`Could not connect to source elasticsearch with configuration: ${JSON.stringify(source)}`);
     }
 
     try {
       elasticsearch(dest);
     } catch (error) {
+      log.error(error);
       return Promise.reject(`Could not connect to destination elasticsearch with configuration: ${JSON.stringify(dest)}`);
     }
 
