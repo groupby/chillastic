@@ -2,6 +2,8 @@ FROM node:6.3
 
 ENV REDIS_HOST localhost
 ENV REDIS_PORT 6379
+ENV NODE_ENV production
+ENV UV_THREADPOOL_SIZE 10
 
 RUN mkdir /app
 WORKDIR /app
