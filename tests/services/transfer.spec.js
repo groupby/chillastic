@@ -339,7 +339,7 @@ describe('transfer', function () {
       refresh: true,
       body:    require('./lotsOfData.json')
     }))
-    .then(() => transfer.transferData(index, type, {}))
+    .then(() => transfer.transferData(index, type, 10))
     .then(() => transfer.dest.indices.refresh({index: '*'}))
     .then(() => transfer.dest.search({size: 100}))
     .then((response) => expect(response.hits.hits).to.be.length(20))

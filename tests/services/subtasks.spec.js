@@ -157,7 +157,7 @@ describe('subtasks service', function () {
       }
     ];
 
-    Promise.each(expected, (subtask) => subtasks.queue(TASK_NAME, subtask))
+    subtasks.queue(TASK_NAME, expected)
     .then(() => subtasks.fetch(TASK_NAME))
     .then((subtask) => {
       expect(subtask.transfer.documents.index).to.be.equals(expected[0].transfer.documents.index);
@@ -208,7 +208,7 @@ describe('subtasks service', function () {
       }
     ];
 
-    Promise.each(expected, (subtask) => subtasks.queue(TASK_NAME, subtask))
+    subtasks.queue(TASK_NAME, expected)
     .then(() => subtasks.fetch(TASK_NAME))
     .then((subtask) => {
       expect(subtask.transfer.documents.index).to.be.equals(expected[0].transfer.documents.index);
@@ -420,7 +420,7 @@ describe('subtasks service', function () {
       }
     ];
 
-    Promise.each(expected, (substask) => subtasks.queue(TASK_NAME, substask))
+    subtasks.queue(TASK_NAME, expected)
     .then(() => subtasks.getBacklog(TASK_NAME))
     .then((backlogSubtasks) => {
       let target = _.find(backlogSubtasks, {count: expected[0].count});
@@ -479,7 +479,7 @@ describe('subtasks service', function () {
       }
     ];
 
-    Promise.each(expected, (subtask) => subtasks.queue(TASK_NAME, subtask))
+    subtasks.queue(TASK_NAME, expected)
     .then(() => subtasks.clearBacklog(TASK_NAME))
     .then(() => subtasks.getBacklog(TASK_NAME))
     .then((backlogSubtasks) => expect(backlogSubtasks).to.be.empty)
@@ -538,7 +538,7 @@ describe('subtasks service', function () {
       }
     ];
 
-    Promise.each(expected, (subtask) => subtasks.queue(TASK_NAME, subtask))
+    subtasks.queue(TASK_NAME, expected)
     .then(() => subtasks.countBacklog(TASK_NAME))
     .then((backlogTotal) => expect(backlogTotal).to.be.equals(expected.reduce((total, subtask) => total + subtask.count, 0)))
     .then(() => done())
