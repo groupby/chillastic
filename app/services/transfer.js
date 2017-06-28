@@ -72,6 +72,17 @@ const Transfer = function (sourceEs, destEs) {
     }
   };
 
+  self.scroll = (response, retries = 0) => 
+    self.source.scroll({
+      scroll_id: response._scroll_id,
+      scroll:    '1h'
+    }).catch(() => retries > 3 ? Promise.reject(new Error(`can't scroll: ${response._scroll_id}`)) : self.scroll(response, retries + 1));
+
+  self.search = (request, retries = 0) =>
+    self.source.search(request)
+      .catch(() => retries > 3 ? Promise.reject(new Error(`can't search: ${request}`)) : self.search(request, retries + 1));
+
+
   /**
    * Scan and scroll to get data from specific index and type in source ES.
    *
@@ -110,10 +121,7 @@ const Transfer = function (sourceEs, destEs) {
       return putData(self.mutate(documents, 'data'), flushSize)
       .then(() => {
         if (response.hits.total !== queueSummary.scrolled) {
-          return self.source.scroll({
-            scroll_id: response._scroll_id,
-            scroll:    '1h'
-          })
+          return self.scroll(response)
           .then((inner_response) => {
             log.debug('scrolling: ', queueSummary);
             return scrollAndGetData(inner_response);
@@ -127,7 +135,7 @@ const Transfer = function (sourceEs, destEs) {
         }
       });
     };
-    return self.source.search({
+    return self.search({
       index:  targetIndex,
       type:   targetType,
       scroll: '5m',
