@@ -19,11 +19,11 @@ const LogToBunyan = function () {
     stream: prettyStdOut
   });
 
-  self.error   = bun.error.bind(bun);
+  self.error = bun.error.bind(bun);
   self.warning = bun.warn.bind(bun);
-  self.info    = bun.info.bind(bun);
-  self.debug   = bun.debug.bind(bun);
-  self.trace   = (method, requestUrl, body, responseBody, responseStatus) => {
+  self.info = bun.info.bind(bun);
+  self.debug = bun.debug.bind(bun);
+  self.trace = (method, requestUrl, body, responseBody, responseStatus) => {
     bun.trace({
       method:         method,
       requestUrl:     requestUrl,
@@ -32,7 +32,7 @@ const LogToBunyan = function () {
       responseStatus: responseStatus
     });
   };
-  self.close   = () => {
+  self.close = () => {
   };
 };
 
@@ -44,7 +44,7 @@ const createEsClient = (hostConfig) => {
   const port = hostConfig.port || DEFAULT_ELASTICSEARCH_PORT;
 
   const protocol = (host.startsWith('https') || port === 443) ? 'https' : 'http';
-  host           = host.replace('https://', '').replace('http://', '');
+  host = host.replace('https://', '').replace('http://', '');
 
   let path = hostConfig.path || '/';
   if (!path.startsWith('/')) {
@@ -102,7 +102,7 @@ const createEsClient = (hostConfig) => {
 
       const promise = new Promise((res, rej) => {
         resolve = res;
-        reject  = rej;
+        reject = rej;
       });
       return {
         resolve: resolve,
@@ -110,11 +110,11 @@ const createEsClient = (hostConfig) => {
         promise: promise
       };
     },
-    maxRetries:         3,
-    requestTimeout:     240000,
-    pingTimeout:        240000,
-    deadTimeout:        240000,
-    keepAlive:          false
+    maxRetries:     3,
+    requestTimeout: 240000,
+    pingTimeout:    240000,
+    deadTimeout:    240000,
+    keepAlive:      false
   });
 };
 
