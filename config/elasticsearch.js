@@ -19,11 +19,11 @@ const LogToBunyan = function () {
     stream: prettyStdOut
   });
 
-  self.error = bun.error.bind(bun);
+  self.error   = bun.error.bind(bun);
   self.warning = bun.warn.bind(bun);
-  self.info = bun.info.bind(bun);
-  self.debug = bun.debug.bind(bun);
-  self.trace = (method, requestUrl, body, responseBody, responseStatus) => {
+  self.info    = bun.info.bind(bun);
+  self.debug   = bun.debug.bind(bun);
+  self.trace   = (method, requestUrl, body, responseBody, responseStatus) => {
     bun.trace({
       method:         method,
       requestUrl:     requestUrl,
@@ -32,7 +32,7 @@ const LogToBunyan = function () {
       responseStatus: responseStatus
     });
   };
-  self.close = () => {
+  self.close   = () => {
   };
 };
 
@@ -44,11 +44,16 @@ const createEsClient = (hostConfig) => {
   const port = hostConfig.port || DEFAULT_ELASTICSEARCH_PORT;
 
   const protocol = (host.startsWith('https') || port === 443) ? 'https' : 'http';
-  host = host.replace('https://', '').replace('http://', '');
+  host           = host.replace('https://', '').replace('http://', '');
 
   let path = hostConfig.path || '/';
   if (!path.startsWith('/')) {
     path = `/${path}`;
+  }
+  
+  const headers = {};
+  if (process.env.AUTH_TOKEN) {
+    headers['Authorization'] = process.env.AUTH_TOKEN;
   }
 
   /**
@@ -62,7 +67,8 @@ const createEsClient = (hostConfig) => {
     const results      = sr('GET', uri, {
       maxRetries: 5,
       retry:      true,
-      timeout:    5000
+      timeout:    5000,
+      headers
     });
     const version      = JSON.parse(results.getBody('utf8')).version.number;
     const majorVersion = semver.major(version);
@@ -85,11 +91,6 @@ const createEsClient = (hostConfig) => {
     throw new Error(`unable to connect to '${uri}' to get es version`);
   }
 
-  const headers = {};
-  if (process.env.AUTH_TOKEN) {
-    headers['Authorization'] = process.env.AUTH_TOKEN;
-  }
-
   return new elasticsearch.Client({
     host:               {host, port, protocol, path, headers},
     apiVersion:         apiVersion,
@@ -101,7 +102,7 @@ const createEsClient = (hostConfig) => {
 
       const promise = new Promise((res, rej) => {
         resolve = res;
-        reject = rej;
+        reject  = rej;
       });
       return {
         resolve: resolve,
@@ -109,11 +110,11 @@ const createEsClient = (hostConfig) => {
         promise: promise
       };
     },
-    maxRetries:     3,
-    requestTimeout: 240000,
-    pingTimeout:    240000,
-    deadTimeout:    240000,
-    keepAlive:      false
+    maxRetries:         3,
+    requestTimeout:     240000,
+    pingTimeout:        240000,
+    deadTimeout:        240000,
+    keepAlive:          false
   });
 };
 
