@@ -43,7 +43,7 @@ rules:
   no-undef:
     - error
   no-process-env:
-    - error
+    - warn
   array-bracket-spacing:
     - error
   block-spacing:
