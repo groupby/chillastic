@@ -1,0 +1,73 @@
+version: 2
+
+default: &defaults
+  docker:
+    - image: groupbyinc/circleci-java-node
+    
+    - image: elasticsearch:1.7
+      name: source_es
+    
+    - image: elasticsearch:2.4
+      name: dest_es
+    
+    - image: groupbyinc/redis:4.0.1
+      name: redis
+      auth:
+        username: ${DOCKERHUB_USER}
+        password: ${DOCKERHUB_PASS}
+      environment:
+        MAX_MEM_BYTES: "100MB"
+
+main_branch_only: &main_branch_only
+  filters:
+    branches:
+      only:
+      - master
+
+cache_key: &cache_key
+  key: v1-dependencies-{{ .Branch }}-{{ .Revision }}
+
+setup_builder: &setup_builder
+  run:
+    name: Initialize Build Agent
+    command: /scripts/setup.sh
+
+jobs:
+  test:
+    <<: *defaults
+    steps:
+      - checkout
+      - restore_cache: *cache_key
+      - *setup_builder
+      - run: sudo npm install --global gulp-cli
+      - run: npm install && npm install gulp-cli
+      - save_cache:
+          <<: *cache_key
+          paths:
+          - node_modules
+      - run: environment=circle gulp test 
+      - run: npm run coverage:codacy
+  deploy:
+    <<: *defaults
+    steps:
+      - setup_remote_docker
+      - checkout
+      - restore_cache: *cache_key
+      - *setup_builder
+      - run: npm publish 
+      - run: 
+          name: Build Image
+          command: cd docker && docker build -t groupbyinc/chillastic .
+      - run: docker push groupbyinc/chillastic 
+
+workflows:
+  version: 2
+  build-and-push:
+    jobs:
+      - test:
+          context: org-global
+      - deploy:
+          <<: *main_branch_only
+          context: org-global
+          requires:
+          - test
