@@ -57,7 +57,7 @@
     "gulp-cli": "^2.0.1",
     "gulp-exit": "0.0.2",
     "gulp-if": "^2.0.1",
-    "http-status": "^0.2.3",
+    "http-status": "^1.2.0",
     "ioredis": "^2.4.0",
     "lodash": "^4.16.4",
     "method-override": "^2.3.5",
