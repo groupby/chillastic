@@ -24,7 +24,7 @@
   "license": "MIT",
   "devDependencies": {
     "chai": "^3.5.0",
-    "codacy-coverage": "^2.0.0",
+    "codacy-coverage": "^3.0.0",
     "coveralls": "^2.11.11",
     "eslint-plugin-no-only-tests": "^1.1.0",
     "gb-license-check": "^1.0.1",
