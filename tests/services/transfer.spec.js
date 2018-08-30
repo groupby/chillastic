@@ -160,7 +160,7 @@ describe('transfer', function () {
             },
             properties: {
               host_name: {
-                type: 'keyword'
+                type: 'string'
               },
               created_at: {
                 type:   'date',
@@ -184,7 +184,7 @@ describe('transfer', function () {
             },
             properties: {
               host_name: {
-                type: 'keyword'
+                type: 'string'
               },
               created_at: {
                 type:   'date',
@@ -205,7 +205,8 @@ describe('transfer', function () {
       expect(destTemplates).to.have.property('test_template_2');
       expect(destTemplates.test_template_2.template).to.be.equals('te2*');
       done();
-    });
+    })
+    .catch(done);
   });
 
   it('should get indices', (done) => {

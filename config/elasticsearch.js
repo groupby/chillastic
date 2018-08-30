@@ -50,37 +50,56 @@ const createEsClient = (hostConfig) => {
   if (!path.startsWith('/')) {
     path = `/${path}`;
   }
-  
+
   const headers = {};
   if (process.env.AUTH_TOKEN) {
     headers['Authorization'] = process.env.AUTH_TOKEN;
   }
 
-  /**
-   *  NOTE: The below section should be removed and replaced with an async implementation.
-   *        This is blocking the main thread while it waits for the result of the API check, meaning nothing else
-   *        can run.
-   */
   const uri      = `${protocol}://${host}:${port}${path}`;
   let apiVersion = null;
+
+  let currentLatestMajorVersion = 0;
   try {
-    const results      = sr('GET', uri, {
+    for (const v of SUPPORTED_API_VERSION) {
+      try {
+        const majorVersion = semver.major(`${v}.0`);
+        if (_.isNumber(majorVersion) && majorVersion > currentLatestMajorVersion) {
+          currentLatestMajorVersion = majorVersion;
+        }
+      } catch (e) {
+        config.log.error(`${e}`);
+      }
+    }
+
+    /**
+     *  NOTE: The below section should be removed and replaced with an async implementation.
+     *        This is blocking the main thread while it waits for the result of the API check, meaning nothing else
+     *        can run.
+     */
+    const results = sr('GET', uri, {
       maxRetries: 5,
       retry:      true,
       timeout:    5000,
       headers
     });
-    const version      = JSON.parse(results.getBody('utf8')).version.number;
+
+    const version = JSON.parse(results.getBody('utf8')).version.number;
     const majorVersion = semver.major(version);
-    let minorVersion   = semver.minor(version);
+    let minorVersion = semver.minor(version);
+
     while (true) { // eslint-disable-line no-constant-condition
       apiVersion = `${majorVersion}.${minorVersion}`;
       if (SUPPORTED_API_VERSION.includes(apiVersion)) {
         config.log.info(`${apiVersion} supported`);
         break;
       } else {
-        config.log.info(`${apiVersion} is not supported version for this ES client, incrementing minor version`);
-        minorVersion++;
+        if (majorVersion === currentLatestMajorVersion) {
+          minorVersion = 'x';
+        } else {
+          config.log.info(`${apiVersion} is not supported version for this ES client, incrementing minor version`);
+          minorVersion++;
+        }
       }
     }
   } catch (e) {
