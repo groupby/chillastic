@@ -65,7 +65,7 @@
     "mocha-lcov-reporter": "^1.2.0",
     "moment": "^2.15.2",
     "moment-duration-format": "^1.3.0",
-    "require-from-string": "^1.2.1",
+    "require-from-string": "^2.0.2",
     "schema-inspector": "^1.6.4",
     "semver": "^5.0.0",
     "sillyname": "^0.1.0",
