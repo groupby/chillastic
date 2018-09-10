@@ -61,7 +61,7 @@
     "ioredis": "^2.4.0",
     "lodash": "^4.16.4",
     "method-override": "^2.3.5",
-    "mocha": "^3.1.2",
+    "mocha": "^5.2.0",
     "mocha-lcov-reporter": "^1.2.0",
     "moment": "^2.15.2",
     "moment-duration-format": "^2.2.2",
