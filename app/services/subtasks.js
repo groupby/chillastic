@@ -272,7 +272,13 @@ const Subtasks = function (redisClient) {
           }
         })
         .then((buckets) => {
-          _.reduce(buckets, (result, value) => log.info(`count${`${value.count}`.padStart(10)} | flush${`${value.flushSize}`.padStart(10)} | chunks${`${value.chunks}`.padStart(10)} | minSize${prettyBytes(value.minSize).padStart(10)} | maxSize${prettyBytes(value.maxSize).padStart(10)}`), null);
+          _.reduce(buckets, (result, value) => {
+            try {
+              log.info(`count${`${value.count}`.padStart(10)} | flush${`${value.flushSize}`.padStart(10)} | chunks${`${value.chunks}`.padStart(10)} | minSize${`${prettyBytes(value.minSize)}`.padStart(10)} | maxSize${`${prettyBytes(value.maxSize)}`.padStart(10)}`);
+            } catch (e) {
+              log.error(`Unable to log: ${e}`);
+            }
+          }, null);
           if (buckets) {
             const bucket1 = buckets.bucket1;
             const bucket2 = buckets.bucket2;
