@@ -1,10 +1,10 @@
 /*eslint no-process-env: "off" */
 /*eslint no-console: "off" */
-const gulp      = require('gulp');
-const mocha     = require('gulp-mocha');
-const eslint    = require('gulp-eslint');
-const istanbul  = require('gulp-istanbul');
-const gulpExit  = require('gulp-exit');
+const gulp     = require('gulp');
+const mocha    = require('gulp-mocha');
+const eslint   = require('gulp-eslint');
+const istanbul = require('gulp-istanbul');
+const gulpExit = require('gulp-exit');
 const gulpIf   = require('gulp-if');
 
 const isFixed = (file) => {
@@ -14,8 +14,8 @@ const isFixed = (file) => {
 
 gulp.task('test:dirty', () => {
   return gulp.src('tests/**/*.spec.js')
-    .pipe(mocha({reporter: 'spec'}))
-    .pipe(gulpExit());
+  .pipe(mocha({reporter: 'spec'}))
+  .pipe(gulpExit());
 });
 
 const lint = () => {
@@ -25,19 +25,20 @@ const lint = () => {
     '!coverage/**',
     '!docker/**'
   ])
-    .pipe(eslint({
-      fix: true
-    }))
-    .pipe(eslint.format())
-    .pipe(eslint.failAfterError())
-    .once('error', () => {
-      console.error('lint failed');
-      process.exit(1);
-    })
-    .pipe(gulpIf(isFixed, gulp.dest('.')))
-    .once('end', () => {
-      process.exit();
-    });
+  .pipe(eslint({
+    fix:     true,
+    verbose: true
+  }))
+  .pipe(eslint.format())
+  .pipe(eslint.failAfterError())
+  .once('error', () => {
+    console.error('lint failed');
+    process.exit(1);
+  })
+  .pipe(gulpIf(isFixed, gulp.dest('.')))
+  .once('end', () => {
+    process.exit();
+  });
 };
 
 gulp.task('lint', () => {
@@ -46,32 +47,32 @@ gulp.task('lint', () => {
 
 gulp.task('pre-test', () => {
   return gulp.src('app/**/*.js')
-    .pipe(istanbul())
-    .pipe(istanbul.hookRequire());
+  .pipe(istanbul())
+  .pipe(istanbul.hookRequire());
 });
 
 gulp.task('test:coverage', ['pre-test'], () => {
   return gulp.src(['tests/**/*.spec.js'])
-    .pipe(mocha({reporter: 'spec'}))
-    .pipe(istanbul.writeReports({
-      reporters: [
-        'text',
-        'html',
-        'lcov'
-      ]
-    }))
-    .pipe(istanbul.enforceThresholds({
-      thresholds: {
-        lines:      80,
-        branches:   65,
-        functions:  80,
-        statements: 80
-      }
-    }))
-    .once('error', () => {
-      console.error('coverage failed');
-      process.exit(1);
-    });
+  .pipe(mocha({reporter: 'spec'}))
+  .pipe(istanbul.writeReports({
+    reporters: [
+      'text',
+      'html',
+      'lcov'
+    ]
+  }))
+  .pipe(istanbul.enforceThresholds({
+    thresholds: {
+      lines:      80,
+      branches:   65,
+      functions:  80,
+      statements: 80
+    }
+  }))
+  .once('error', () => {
+    console.error('coverage failed');
+    process.exit(1);
+  });
 });
 
 gulp.task('test:lint', ['test:coverage'], () => {

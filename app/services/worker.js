@@ -41,14 +41,14 @@ const Worker = function (redisClient) {
    */
   const taskIds     = [];
   const getTaskName = () => taskIds.length !== 0 ? Promise.resolve(taskIds.pop()) : tasks.getAll()
-      .then((allTasks) => {
-        if (allTasks.length === 0) {
-          return null;
-        } else {
-          allTasks.forEach((task) => taskIds.push(task));
-          return taskIds.pop();
-        }
-      });
+  .then((allTasks) => {
+    if (allTasks.length === 0) {
+      return null;
+    } else {
+      allTasks.forEach((task) => taskIds.push(task));
+      return taskIds.pop();
+    }
+  });
 
   const timeoutPromise = (timeout) => new Promise((resolve) => setTimeout(resolve, timeout));
 
@@ -133,7 +133,7 @@ const Worker = function (redisClient) {
     transfer.setUpdateCallback((update) => updateProgress(taskId, subtask, update));
 
     if (subtask.transfer.documents) {
-      return transfer.transferData(subtask.transfer.documents.index, subtask.transfer.documents.type, subtask.transfer.flushSize);
+      return transfer.transferData(subtask.transfer.documents.index, subtask.transfer.documents.type, subtask.transfer.flushSize, subtask.transfer.minSize, subtask.transfer.maxSize);
     } else if (subtask.transfer.index) {
       return transfer.transferIndices(subtask.transfer.index);
     } else if (subtask.transfer.template) {

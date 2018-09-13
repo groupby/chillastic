@@ -1,6 +1,7 @@
 const _          = require('lodash');
 const path       = require('path');
 const HttpStatus = require('http-status');
+const bytes      = require('byte-converter').converterBase2;
 
 const parsePath = (input) => {
   if (path.isAbsolute(input)) {
@@ -39,8 +40,11 @@ const processError = function (error, res) {
   res.status(code).json({error: message});
 };
 
+const to_bytes = (value, unit) => bytes(value, unit, 'B');
+
 module.exports = {
   parsePath:       parsePath,
   isNonZeroString: isNonZeroString,
-  processError:    processError
+  processError:    processError,
+  to_bytes:        to_bytes,
 };

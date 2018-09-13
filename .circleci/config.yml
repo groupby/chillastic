@@ -4,11 +4,17 @@ default: &defaults
   docker:
     - image: groupbyinc/circleci-java-node
     
-    - image: elasticsearch:1.7
+    - image: groupbyinc/elasticsearch-local:6.0.0-rc1
       name: source_es
+      auth:
+        username: ${DOCKERHUB_USER}
+        password: ${DOCKERHUB_PASS}
     
-    - image: elasticsearch:2.4
+    - image: groupbyinc/elasticsearch-local:6.4.0
       name: dest_es
+      auth:
+        username: ${DOCKERHUB_USER}
+        password: ${DOCKERHUB_PASS}
     
     - image: groupbyinc/redis:4.0.1
       name: redis

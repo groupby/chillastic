@@ -24,7 +24,6 @@ Task.progressKey = (taskId) => `${taskId}_progress`;
 Task.completedKey = (taskId) => `${taskId}_completed`;
 Task.backlogQueueKey = (taskId) => `${taskId}_backlog_queue`;
 Task.backlogHSetKey = (taskId) => `${taskId}_backlog_hset`;
-Task.DEFAULT_FLUSH_SIZE = 10000;
 
 const SANITIZATION_SCHEMA = {
   type:       'object',
@@ -38,11 +37,6 @@ const SANITIZATION_SCHEMA = {
     transfer: {
       type:       'object',
       properties: {
-        flushSize: {
-          type:     'integer',
-          optional: false,
-          def:      Task.DEFAULT_FLUSH_SIZE
-        },
         indices: {
           type:       'object',
           optional:   true,
@@ -87,11 +81,6 @@ const VALIDATION_SCHEMA = {
       type:       'object',
       strict:     true,
       properties: {
-        flushSize: {
-          type:     'integer',
-          optional: false,
-          def:      Task.DEFAULT_FLUSH_SIZE
-        },
         indices: {
           type:       'object',
           strict:     true,

@@ -4,79 +4,79 @@ env:
   mocha: true
 extends: 'eslint:recommended'
 plugins:
-  - no-only-tests
+- no-only-tests
 rules:
   no-only-tests/no-only-tests:
-    - error
+  - error
   key-spacing:
-    - warn
-    - {align: value}
+  - warn
+  - {align: value}
   indent:
-    - error
-    - 2
+  - error
+  - 2
   linebreak-style:
-    - error
-    - unix
+  - error
+  - unix
   quotes:
-    - error
-    - single
-    - {avoidEscape: true}
+  - error
+  - single
+  - {avoidEscape: true}
   semi:
-    - error
-    - always
+  - error
+  - always
   no-invalid-this:
-    - error
+  - error
   no-magic-numbers:
-    - off
+  - off
   no-multi-spaces:
-    - error
-    - {exceptions: {VariableDeclarator: true, ImportDeclaration: true}}
+  - error
+  - {exceptions: {VariableDeclarator: true, ImportDeclaration: true, AssignmentPattern: true}}
   no-sequences:
-    - error
+  - error
   no-warning-comments:
-    - warn
+  - warn
   init-declarations:
-    - error
-    - always
+  - error
+  - always
   no-shadow:
-    - error
+  - error
   no-undef:
-    - error
+  - error
   no-process-env:
-    - warn
+  - warn
   array-bracket-spacing:
-    - error
+  - error
   block-spacing:
-    - error
+  - error
   brace-style:
-    - error
+  - error
   comma-style:
-    - error
+  - error
   consistent-this:
-    - error
-    - self
+  - error
+  - self
   keyword-spacing:
-    - error
+  - error
   no-mixed-spaces-and-tabs:
-    - error
+  - error
   no-unneeded-ternary:
-    - error
+  - error
   no-whitespace-before-property:
-    - error
+  - error
   object-curly-spacing:
-    - error
+  - error
   space-infix-ops:
-    - error
+  - error
   arrow-parens:
-    - error
-    - always
+  - error
+  - always
   arrow-spacing:
-    - error
+  - error
   no-var:
-    - error
+  - error
   prefer-arrow-callback:
-    - error
+  - error
   prefer-const:
-    - warn
+  - warn
   prefer-template:
-    - error
+  - error

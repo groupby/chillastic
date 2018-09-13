@@ -72,16 +72,15 @@ const Transfer = function (sourceEs, destEs) {
     }
   };
 
-  self.scroll = (response, retries = 0) => 
-    self.source.scroll({
-      scroll_id: response._scroll_id,
-      scroll:    '1h'
-    }).catch(() => retries > 3 ? Promise.reject(new Error(`can't scroll: ${response._scroll_id}`)) : self.scroll(response, retries + 1));
+  self.scroll = (response, retries = 0) =>
+      self.source.scroll({
+        scroll_id: response._scroll_id,
+        scroll:    '1h'
+      }).catch(() => retries > 3 ? Promise.reject(new Error(`can't scroll: ${response._scroll_id}`)) : self.scroll(response, retries + 1));
 
   self.search = (request, retries = 0) =>
-    self.source.search(request)
-      .catch(() => retries > 3 ? Promise.reject(new Error(`can't search: ${request}`)) : self.search(request, retries + 1));
-
+      self.source.search(request)
+      .catch(() => retries > 3 ? Promise.reject(new Error(`can't search: ${JSON.stringify(request)}`)) : self.search(request, retries + 1));
 
   /**
    * Scan and scroll to get data from specific index and type in source ES.
@@ -94,8 +93,10 @@ const Transfer = function (sourceEs, destEs) {
    * @param targetIndex
    * @param targetType
    * @param flushSize
+   * @param minSize
+   * @param maxSize
    */
-  self.transferData = (targetIndex, targetType, flushSize) => {
+  self.transferData = (targetIndex, targetType, flushSize, minSize, maxSize) => {
     queueSummary = {
       tick:        0,
       transferred: 0,
@@ -135,12 +136,27 @@ const Transfer = function (sourceEs, destEs) {
         }
       });
     };
-    return self.search({
+
+    const request = {
       index:  targetIndex,
       type:   targetType,
       scroll: '5m',
-      size:   flushSize
-    })
+      size:   flushSize,
+    };
+
+    const finalMinSize = minSize || -1;
+    const finalMaxSize = maxSize || -1;
+    if (finalMinSize >= 0 && finalMaxSize >= 0) {
+      request.query = {
+        range: {
+          _size: {
+            gte: minSize,
+            lt:  maxSize
+          }
+        }
+      };
+    }
+    return self.search(request)
     .then(scrollAndGetData)
     .catch((error) => {
       log.error('Error during search: ', error);
@@ -227,8 +243,18 @@ const Transfer = function (sourceEs, destEs) {
     return Promise.map(indices, (index) => {
       const name = index.name;
       delete index.name;
-
       log.info('creating index: ', name);
+
+      // clean settings
+      if (index.settings && index.settings.index) {
+        const indexSettings = index.settings.index;
+        delete indexSettings.uuid;
+        delete indexSettings.creation_date;
+        delete indexSettings.provided_name;
+        if (indexSettings.version) {
+          delete indexSettings.version.created;
+        }
+      }
 
       if (!_.isString(name)) {
         log.error('bad index object: ', JSON.stringify(index, null, config.jsonIndent));
@@ -353,10 +379,7 @@ Transfer.getIndices = (client, targetIndices) =>
     !_.isString(targetIndices) || targetIndices.length === 0 ?
         Promise.reject(new Error('targetIndices must be string with length')) :
         client.indices.get({index: targetIndices, allowNoIndices: true})
-        .then((response) => _.reduce(response, (result, index, name) => {
-          log.info('got index: ', name);
-          return result.concat(_.assign(index, {name}));
-        }, []))
+        .then((response) => _.reduce(response, (result, index, name) => result.concat(_.assign(index, {name})), []))
         .catch((e) => {
           log.error('Error during index get: %s', JSON.stringify(e));
           return Promise.reject(e);
@@ -375,7 +398,18 @@ Transfer.getTemplates = (client, targetTemplates) =>
     !_.isString(targetTemplates) || targetTemplates.length === 0 ?
         Promise.reject(new Error('targetTemplates must be string with length')) :
         client.indices.getTemplate({name: targetTemplates})
-        .then((templates) => _.reduce(templates, (result, template, name) => result.concat(_.assign(template, {name})), []))
+        .then((templates) =>
+            _.reduce(templates, (result, template, name) =>
+                    _.size(template.index_patterns.filter((p) => p.startsWith('.'))) === 0 ? result.concat(_.assign(template, {name})) : result,
+                []))
+        .then((templates) => {
+          if (_.size(templates) === 0) {
+            log.warn('Templates asked to be copied, but none found');
+            return Promise.reject('Templates asked to be copied, but none found');
+          } else {
+            return templates;
+          }
+        })
         .catch((error) => {
           if (error.status === HttpStatus.NOT_FOUND) {
             log.warn('Templates asked to be copied, but none found');
