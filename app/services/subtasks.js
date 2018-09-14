@@ -79,6 +79,7 @@ const Subtasks = function (redisClient) {
 
   const incrementCount = (subtask, increment) => {
     subtask.count = parseInt(increment);
+    log.info(`subtask count incremented to ${subtask.count}`);
     return new Subtask(subtask);
   };
 
@@ -90,7 +91,7 @@ const Subtasks = function (redisClient) {
    * @returns {*}
    */
   self.addCount = (client, subtask) => subtask.transfer.documents
-      ? client.search(_.assign(Subtask.createQuery(subtask.transfer.documents.index, subtask.transfer.documents.type, subtask.transfer.flushSize, subtask.transfer.documents.minSize, subtask.transfer.documents.maxSize), {size: 0}))
+      ? client.search(Subtask.createQuery(subtask.transfer.documents.index, subtask.transfer.documents.type, 0, subtask.transfer.documents.minSize, subtask.transfer.documents.maxSize))
       .then((result) => incrementCount(subtask, result.hits.total))
       : incrementCount(subtask, 1);
 
