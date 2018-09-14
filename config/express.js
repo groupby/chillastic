@@ -49,7 +49,7 @@ module.exports = function (app) {
       } else if (meta['status-code'] >= HttpStatus.BAD_REQUEST) {
         return 'warn';
       } else {
-        return 'info';
+        return 'debug';
       }
     }
   }));
