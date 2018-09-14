@@ -1,4 +1,4 @@
-FROM node:6.3
+FROM node:8
 
 ENV REDIS_HOST localhost
 ENV REDIS_PORT 6379
