@@ -36,7 +36,7 @@ module.exports = function (app) {
     format:  ':status-code - :method :url - response-time: :response-time',
     streams: [
       {
-        level:  'info',
+        level:  'debug',
         stream: prettyStdOut
       }
     ],

@@ -73,14 +73,14 @@ const Worker = function (redisClient) {
     return getTaskName()
     .then((taskId) => {
       if (taskId === null) {
-        log.info('No tasks found, waiting...');
+        log.trace('No tasks found, waiting...');
         manager.workerHeartbeat(name, {status: 'waiting for task...'});  // Not waiting for promise
         return timeoutPromise(RUN_CHECK_INTERVAL_MS);
       }
 
       return subtasks.countBacklog(taskId).then((backlogCount) => {
         if (backlogCount === 0) {
-          log.info('No tasks found, waiting...');
+          log.trace('No tasks found, waiting...');
           manager.workerHeartbeat(name, {status: 'waiting for task...'});  // Not waiting for promise
           return timeoutPromise(RUN_CHECK_INTERVAL_MS);
         }
@@ -90,7 +90,7 @@ const Worker = function (redisClient) {
         return subtasks.fetch(taskId)
         .then((subtask) => {
           if (!subtask) {
-            log.info('No subtask to execute, waiting...');
+            log.trace('No subtask to execute, waiting...');
             manager.workerHeartbeat(name, {status: 'waiting for subtask...'});  // Not waiting for promise
             return timeoutPromise(RUN_CHECK_INTERVAL_MS);
           }
