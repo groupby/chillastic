@@ -147,11 +147,13 @@ const Transfer = function (sourceEs, destEs) {
     const finalMinSize = minSize || -1;
     const finalMaxSize = maxSize || -1;
     if (finalMinSize >= 0 && finalMaxSize >= 0) {
-      request.query = {
-        range: {
-          _size: {
-            gte: minSize,
-            lt:  maxSize
+      request.body = {
+        query: {
+          range: {
+            _size: {
+              gte: minSize,
+              lt:  maxSize
+            }
           }
         }
       };
