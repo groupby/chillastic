@@ -158,6 +158,8 @@ const Transfer = function (sourceEs, destEs) {
         }
       };
     }
+    log.info(`Run query: ${JSON.stringify(request, null, 2)}`);
+    
     return self.search(request)
     .then(scrollAndGetData)
     .catch((error) => {
