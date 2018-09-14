@@ -1,6 +1,7 @@
 const _          = require('lodash');
 const Promise    = require('bluebird');
 const HttpStatus = require('http-status');
+const Subtask    = require('../models/subtask');
 const config     = require('../../config/index');
 
 const log = config.log;
@@ -137,30 +138,7 @@ const Transfer = function (sourceEs, destEs) {
       });
     };
 
-    const request = {
-      index:  targetIndex,
-      type:   targetType,
-      scroll: '5m',
-      size:   flushSize,
-    };
-
-    const finalMinSize = minSize || -1;
-    const finalMaxSize = maxSize || -1;
-    if (finalMinSize >= 0 && finalMaxSize >= 0) {
-      request.body = {
-        query: {
-          range: {
-            _size: {
-              gte: minSize,
-              lt:  maxSize
-            }
-          }
-        }
-      };
-    }
-    log.info(`Run query: ${JSON.stringify(request, null, 2)}`);
-    
-    return self.search(request)
+    return self.search(Subtask.createQuery(targetIndex, targetType, flushSize, minSize, maxSize))
     .then(scrollAndGetData)
     .catch((error) => {
       log.error('Error during search: ', error);

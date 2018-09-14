@@ -89,11 +89,10 @@ const Subtasks = function (redisClient) {
    * @param subtask
    * @returns {*}
    */
-  self.addCount = (client, subtask) => subtask.transfer.documents ? client.count({
-    index: subtask.transfer.documents.index,
-    type:  subtask.transfer.documents.type
-  })
-  .then((result) => incrementCount(subtask, result.count)) : incrementCount(subtask, 1);
+  self.addCount = (client, subtask) => subtask.transfer.documents
+      ? client.search(_.assign(Subtask.createQuery(subtask.transfer.documents.index, subtask.transfer.documents.type, subtask.transfer.flushSize, subtask.transfer.documents.minSize, subtask.transfer.documents.maxSize), {size: 0}))
+      .then((result) => incrementCount(subtask, result.hits.total))
+      : incrementCount(subtask, 1);
 
   /**
    * Given a task, create a list of index configuration transfer subtasks

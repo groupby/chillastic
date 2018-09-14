@@ -1,6 +1,6 @@
 {
   "name": "chillastic",
-  "version": "2.11.1",
+  "version": "2.11.2",
   "description": "Efficient re-index multiple elasticsearch indices, save your progress, mutate your data in-flight.",
   "main": "index.js",
   "repository": {

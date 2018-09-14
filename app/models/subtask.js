@@ -1,6 +1,9 @@
 const _         = require('lodash');
 const inspector = require('./inspector');
 const utils     = require('../../config/utils');
+const config    = require('../../config/index');
+
+const log = config.log;
 
 const Subtask              = function (params) {
   const self = this;
@@ -42,6 +45,32 @@ Subtask.createFromID = (id, count) => {
   params.count = count;
 
   return new Subtask(params);
+};
+
+Subtask.createQuery = (index, type, flushSize, minSize, maxSize) => {
+  const request = {
+    index:  index,
+    type:   type,
+    scroll: '5m',
+    size:   flushSize,
+  };
+
+  const finalMinSize = minSize || -1;
+  const finalMaxSize = maxSize || -1;
+  if (finalMinSize >= 0 && finalMaxSize >= 0) {
+    request.body = {
+      query: {
+        range: {
+          _size: {
+            gte: minSize,
+            lt:  maxSize
+          }
+        }
+      }
+    };
+  }
+  log.info(`Generated Query: ${JSON.stringify(request, null, 2)}`);
+  return request;
 };
 
 const VALIDATION_SCHEMA = {
