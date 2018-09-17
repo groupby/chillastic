@@ -36,7 +36,7 @@ module.exports = function (app) {
     format:  ':status-code - :method :url - response-time: :response-time',
     streams: [
       {
-        level:  'info',
+        level:  'debug',
         stream: prettyStdOut
       }
     ],
@@ -49,7 +49,7 @@ module.exports = function (app) {
       } else if (meta['status-code'] >= HttpStatus.BAD_REQUEST) {
         return 'warn';
       } else {
-        return 'info';
+        return 'debug';
       }
     }
   }));

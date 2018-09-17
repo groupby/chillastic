@@ -21,11 +21,11 @@ const Utils = function () {
         body:    [
           {index: {_index: 'myindex1', _type: 'mytype1'}},
           {someField1: 'somedata1'},
-          {index: {_index: 'myindex1', _type: 'mytype2'}},
+          {index: {_index: 'myindex1', _type: 'mytype1'}},
           {someField2: 'somedata2'},
           {index: {_index: 'myindex2', _type: 'mytype1'}},
           {someField1: 'somedata1'},
-          {index: {_index: 'myindex3', _type: 'mytype2'}},
+          {index: {_index: 'myindex3', _type: 'mytype3'}},
           {someField2: 'somedata2'},
           {index: {_index: 'myindex3', _type: 'mytype3'}},
           {someField2: 'somedata3'},

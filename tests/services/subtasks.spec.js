@@ -576,17 +576,17 @@ describe('subtasks service', function () {
 
       let filter = {transfer: {documents: {index: 'myindex1'}}};
       let target = _.find(subtasksWithCount, filter);
-      expect(target.count).to.be.equals(1);
+      expect(target.count).to.be.equals(2);
 
       filter = {transfer: {documents: {index: 'myindex3'}}};
       target = _.find(subtasksWithCount, filter);
-      expect(target.count).to.be.equals(2);
+      expect(target.count).to.be.equals(3);
     })
     .then(() => done())
     .catch(done);
   });
 
-  it('should filter out documents by index regex', () => {
+  it('should filter out documents by index regex', (done) => {
     const fakeTask = {
       source:      TestConfig.elasticsearch.source,
       destination: TestConfig.elasticsearch.destination,
@@ -601,40 +601,44 @@ describe('subtasks service', function () {
       ]
     };
 
-    const actual = subtasks.filterDocumentSubtasks(fakeTask, MOCK_ALL_INDICES, filterFunctions);
-    expect(actual.length).to.be.equals(3);
-    expect(actual[0].source).to.be.equals(fakeTask.source);
-    expect(actual[0].destination).to.be.equals(fakeTask.destination);
-    expect(actual[0].mutators).to.be.equals(fakeTask.mutators);
-    expect(actual[0].transfer.documents.index).to.be.equals('index_number_1');
-    expect(actual[0].transfer.documents.type).to.be.oneOf([
-      'newtype',
-      'oldtype',
-      'newtype_2'
-    ]);
+    subtasks.filterDocumentSubtasks(fakeTask, MOCK_ALL_INDICES, filterFunctions)
+    .then((actual) => {
+      expect(actual.length).to.be.equals(3);
+      expect(actual[0].source).to.be.equals(fakeTask.source);
+      expect(actual[0].destination).to.be.equals(fakeTask.destination);
+      expect(actual[0].mutators).to.be.equals(fakeTask.mutators);
+      expect(actual[0].transfer.documents.index).to.be.equals('index_number_1');
+      expect(actual[0].transfer.documents.type).to.be.oneOf([
+        'newtype',
+        'oldtype',
+        'newtype_2'
+      ]);
 
-    expect(actual[1].source).to.be.equals(fakeTask.source);
-    expect(actual[1].destination).to.be.equals(fakeTask.destination);
-    expect(actual[1].mutators).to.be.equals(fakeTask.mutators);
-    expect(actual[1].transfer.documents.index).to.be.equals('index_number_1');
-    expect(actual[1].transfer.documents.type).to.be.oneOf([
-      'newtype',
-      'oldtype',
-      'newtype_2'
-    ]);
+      expect(actual[1].source).to.be.equals(fakeTask.source);
+      expect(actual[1].destination).to.be.equals(fakeTask.destination);
+      expect(actual[1].mutators).to.be.equals(fakeTask.mutators);
+      expect(actual[1].transfer.documents.index).to.be.equals('index_number_1');
+      expect(actual[1].transfer.documents.type).to.be.oneOf([
+        'newtype',
+        'oldtype',
+        'newtype_2'
+      ]);
 
-    expect(actual[2].source).to.be.equals(fakeTask.source);
-    expect(actual[2].destination).to.be.equals(fakeTask.destination);
-    expect(actual[2].mutators).to.be.equals(fakeTask.mutators);
-    expect(actual[2].transfer.documents.index).to.be.equals('index_number_1');
-    expect(actual[2].transfer.documents.type).to.be.oneOf([
-      'newtype',
-      'oldtype',
-      'newtype_2'
-    ]);
+      expect(actual[2].source).to.be.equals(fakeTask.source);
+      expect(actual[2].destination).to.be.equals(fakeTask.destination);
+      expect(actual[2].mutators).to.be.equals(fakeTask.mutators);
+      expect(actual[2].transfer.documents.index).to.be.equals('index_number_1');
+      expect(actual[2].transfer.documents.type).to.be.oneOf([
+        'newtype',
+        'oldtype',
+        'newtype_2'
+      ]);
+    })
+    .then(() => done())
+    .catch(done);
   });
 
-  it('should filter out documents by type regex', () => {
+  it('should filter out documents by type regex', (done) => {
     const fakeTask = {
       source:      TestConfig.elasticsearch.source,
       destination: TestConfig.elasticsearch.destination,
@@ -649,26 +653,29 @@ describe('subtasks service', function () {
       ]
     };
 
-    const actual = subtasks.filterDocumentSubtasks(fakeTask, MOCK_ALL_INDICES, filterFunctions);
+    subtasks.filterDocumentSubtasks(fakeTask, MOCK_ALL_INDICES, filterFunctions)
+    .then((actual) => {
+      expect(actual.length).to.be.equals(2);
+      expect(actual[0].source).to.be.equals(fakeTask.source);
+      expect(actual[0].destination).to.be.equals(fakeTask.destination);
+      expect(actual[0].mutators).to.be.equals(fakeTask.mutators);
+      expect(actual[0].transfer.documents.index).to.be.oneOf([
+        'index_number_1',
+        'index_number_2'
+      ]);
+      expect(actual[0].transfer.documents.type).to.be.equals('newtype');
 
-    expect(actual.length).to.be.equals(2);
-    expect(actual[0].source).to.be.equals(fakeTask.source);
-    expect(actual[0].destination).to.be.equals(fakeTask.destination);
-    expect(actual[0].mutators).to.be.equals(fakeTask.mutators);
-    expect(actual[0].transfer.documents.index).to.be.oneOf([
-      'index_number_1',
-      'index_number_2'
-    ]);
-    expect(actual[0].transfer.documents.type).to.be.equals('newtype');
-
-    expect(actual[1].source).to.be.equals(fakeTask.source);
-    expect(actual[1].destination).to.be.equals(fakeTask.destination);
-    expect(actual[1].mutators).to.be.equals(fakeTask.mutators);
-    expect(actual[1].transfer.documents.index).to.be.oneOf([
-      'index_number_1',
-      'index_number_2'
-    ]);
-    expect(actual[1].transfer.documents.type).to.be.equals('newtype');
+      expect(actual[1].source).to.be.equals(fakeTask.source);
+      expect(actual[1].destination).to.be.equals(fakeTask.destination);
+      expect(actual[1].mutators).to.be.equals(fakeTask.mutators);
+      expect(actual[1].transfer.documents.index).to.be.oneOf([
+        'index_number_1',
+        'index_number_2'
+      ]);
+      expect(actual[1].transfer.documents.type).to.be.equals('newtype');
+    })
+    .then(() => done())
+    .catch(done);
   });
 
   it('should prep subtasks backlog considering completed jobs', (done) => {
@@ -708,7 +715,7 @@ describe('subtasks service', function () {
         {
           index: {
             _index: 'myindex1',
-            _type:  'mytype2'
+            _type:  'mytype1'
           }
         },
         {someField1: 'somedata3'}
@@ -716,11 +723,6 @@ describe('subtasks service', function () {
     }))
     .then(() => subtasks.complete(TASK_NAME, completedSubtask))
     .then(() => subtasks.buildBacklog(TASK_NAME, taskParams))
-    .then(() => subtasks.fetch(TASK_NAME))
-    .then((subtask) => {
-      expect(subtask.transfer.documents.index).to.be.equals('myindex1');
-      expect(subtask.transfer.documents.type).to.be.equals('mytype2');
-    })
     .then(() => subtasks.fetch(TASK_NAME))
     .then((subtask) => expect(subtask).to.be.null)
     .then(() => done())
@@ -738,8 +740,6 @@ describe('subtasks service', function () {
       }
     };
 
-    const fetchedSubtasks = [];
-
     source.indices.create({index: 'myindex1'})
     .then(() => source.bulk({
       refresh: true,
@@ -754,7 +754,7 @@ describe('subtasks service', function () {
         {
           index: {
             _index: 'myindex1',
-            _type:  'mytype2'
+            _type:  'mytype1'
           }
         },
         {someField1: 'somedata3'}
@@ -763,19 +763,8 @@ describe('subtasks service', function () {
     .then(() => subtasks.buildBacklog(TASK_NAME, taskParams))
     .then(() => subtasks.fetch(TASK_NAME))
     .then((subtask) => {
-      fetchedSubtasks.push(subtask);
-    })
-    .then(() => subtasks.fetch(TASK_NAME))
-    .then((subtask) => {
-      fetchedSubtasks.push(subtask);
-
-      const indices = fetchedSubtasks.map((s) => s.transfer.documents.index).sort();
-      expect(indices[0]).to.be.equals('myindex1');
-      expect(indices[1]).to.be.equals('myindex1');
-
-      const types = fetchedSubtasks.map((s) => s.transfer.documents.type).sort();
-      expect(types[0]).to.be.equals('mytype1');
-      expect(types[1]).to.be.equals('mytype2');
+      expect(subtask.transfer.documents.index).to.be.equals('myindex1');
+      expect(subtask.transfer.documents.type).to.be.equals('mytype1');
     })
     .then(() => subtasks.fetch(TASK_NAME))
     .then((subtask) => expect(subtask).to.be.null)

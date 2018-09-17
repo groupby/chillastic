@@ -6,7 +6,6 @@ const Promise           = require('bluebird');
 const TestConfig        = require('../config');
 const Utils             = require('../utils');
 const Subtask           = require('../../app/models/subtask');
-const Task              = require('../../app/models/task');
 const Subtasks          = require('../../app/services/subtasks');
 const Tasks             = require('../../app/services/tasks');
 const createEsClient    = require('../../config/elasticsearch');
@@ -47,25 +46,6 @@ describe('tasks service', function () {
     .finally(() => utils.deleteAllIndices(source))
     .finally(() => redis.flushdb())
     .finally(() => done());
-  });
-
-  it('invalid flushSize', (done) => {
-    const task = {
-      source:      TestConfig.elasticsearch.source,
-      destination: TestConfig.elasticsearch.destination,
-      transfer:    {
-        flushSize: 1000000,
-        documents: {
-          fromIndices: '*'
-        }
-      }
-    };
-    tasks.add(TASK_NAME, task)
-    .then(() => done('fail'))
-    .catch((e) => {
-      expect(e.message).equals(`flushSize must be ${Task.DEFAULT_FLUSH_SIZE} or less, given 1000000`);
-      done();
-    });
   });
 
   it('should check that source and destination exist', (done) => {
@@ -155,7 +135,7 @@ describe('tasks service', function () {
     utils.addData(source)
     .then(() => tasks.add(TASK_NAME, task))
     .then(() => subtasks.getBacklog(TASK_NAME))
-    .then((backlogSubtasks) => expect(backlogSubtasks.length).to.be.equals(5))
+    .then((backlogSubtasks) => expect(backlogSubtasks.length).to.be.equals(3))
     .then(() => tasks.getAll())
     .then((allTasks) => {
       expect(_.size(allTasks)).to.be.equals(1);
@@ -196,8 +176,10 @@ describe('tasks service', function () {
       destination: TestConfig.elasticsearch.destination,
       transfer:    {
         documents: {
-          index: 'myindex1',
-          type:  'mytype1'
+          index:   'myindex1',
+          type:    'mytype1',
+          minSize: 10,
+          maxSize: 100,
         }
       },
       count: 10

@@ -2,6 +2,6 @@ const _ = require('lodash');
 
 module.exports = {
   type:      'template',
-  predicate: (template) => template.template === 'template_this*',
-  mutate:    (template) => _.assign(template, {template: 'template_that*'})
+  predicate: (template) => template.index_patterns[0] === 'template_this*',
+  mutate:    (template) => _.assign(template, {index_patterns: ['template_that*']})
 };

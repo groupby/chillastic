@@ -41,14 +41,14 @@ const Worker = function (redisClient) {
    */
   const taskIds     = [];
   const getTaskName = () => taskIds.length !== 0 ? Promise.resolve(taskIds.pop()) : tasks.getAll()
-      .then((allTasks) => {
-        if (allTasks.length === 0) {
-          return null;
-        } else {
-          allTasks.forEach((task) => taskIds.push(task));
-          return taskIds.pop();
-        }
-      });
+  .then((allTasks) => {
+    if (allTasks.length === 0) {
+      return null;
+    } else {
+      allTasks.forEach((task) => taskIds.push(task));
+      return taskIds.pop();
+    }
+  });
 
   const timeoutPromise = (timeout) => new Promise((resolve) => setTimeout(resolve, timeout));
 
@@ -73,14 +73,14 @@ const Worker = function (redisClient) {
     return getTaskName()
     .then((taskId) => {
       if (taskId === null) {
-        log.info('No tasks found, waiting...');
+        log.trace('No tasks found, waiting...');
         manager.workerHeartbeat(name, {status: 'waiting for task...'});  // Not waiting for promise
         return timeoutPromise(RUN_CHECK_INTERVAL_MS);
       }
 
       return subtasks.countBacklog(taskId).then((backlogCount) => {
         if (backlogCount === 0) {
-          log.info('No tasks found, waiting...');
+          log.trace('No tasks found, waiting...');
           manager.workerHeartbeat(name, {status: 'waiting for task...'});  // Not waiting for promise
           return timeoutPromise(RUN_CHECK_INTERVAL_MS);
         }
@@ -90,7 +90,7 @@ const Worker = function (redisClient) {
         return subtasks.fetch(taskId)
         .then((subtask) => {
           if (!subtask) {
-            log.info('No subtask to execute, waiting...');
+            log.trace('No subtask to execute, waiting...');
             manager.workerHeartbeat(name, {status: 'waiting for subtask...'});  // Not waiting for promise
             return timeoutPromise(RUN_CHECK_INTERVAL_MS);
           }
@@ -133,7 +133,7 @@ const Worker = function (redisClient) {
     transfer.setUpdateCallback((update) => updateProgress(taskId, subtask, update));
 
     if (subtask.transfer.documents) {
-      return transfer.transferData(subtask.transfer.documents.index, subtask.transfer.documents.type, subtask.transfer.flushSize);
+      return transfer.transferData(subtask.transfer.documents.index, subtask.transfer.documents.type, subtask.transfer.flushSize, subtask.transfer.documents.minSize, subtask.transfer.documents.maxSize);
     } else if (subtask.transfer.index) {
       return transfer.transferIndices(subtask.transfer.index);
     } else if (subtask.transfer.template) {

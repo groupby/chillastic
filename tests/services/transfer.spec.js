@@ -85,21 +85,21 @@ describe('transfer', function () {
       expect(_.size(indices)).to.be.equals(3);
 
       const myindex1 = _.find(indices, {name: 'myindex1'});
-      expect(myindex1).to.be.defined;
-      expect(_.size(myindex1.mappings)).to.be.equals(2);
-      expect(myindex1.mappings.mytype1).to.be.defined;
-      expect(myindex1.mappings.mytype2).to.be.defined;
+      expect(myindex1).to.not.be.undefined;
+      expect(_.size(myindex1.mappings)).to.be.equals(1);
+      expect(myindex1.mappings.mytype1).to.not.be.undefined;
+      expect(myindex1.mappings.mytype2).to.be.undefined;
 
       const myindex2 = _.find(indices, {name: 'myindex2'});
-      expect(myindex2).to.be.defined;
+      expect(myindex2).to.not.be.undefined;
       expect(_.size(myindex2.mappings)).to.be.equals(1);
-      expect(myindex2.mappings.mytype1).to.be.defined;
+      expect(myindex2.mappings.mytype1).to.not.be.undefined;
 
       const myindex3 = _.find(indices, {name: 'myindex3'});
-      expect(myindex3).to.be.defined;
-      expect(_.size(myindex1.mappings)).to.be.equals(2);
-      expect(myindex3.mappings.mytype2).to.be.defined;
-      expect(myindex3.mappings.mytype3).to.be.defined;
+      expect(myindex3).to.not.be.undefined;
+      expect(_.size(myindex1.mappings)).to.be.equals(1);
+      expect(myindex3.mappings.mytype2).to.be.undefined;
+      expect(myindex3.mappings.mytype3).to.not.be.undefined;
     })
     .then(() => done())
     .catch(done);
@@ -138,7 +138,7 @@ describe('transfer', function () {
       expect(templates).to.be.an.instanceof(Array);
       expect(_.size(templates)).to.be.equals(1);
       expect(templates[0].name).to.be.equals('test_template');
-      expect(templates[0].template).to.be.equals('te*');
+      expect(templates[0].index_patterns[0]).to.be.equals('te*');
       done();
     })
     .catch(done);
@@ -160,7 +160,7 @@ describe('transfer', function () {
             },
             properties: {
               host_name: {
-                type: 'string'
+                type: 'text'
               },
               created_at: {
                 type:   'date',
@@ -184,7 +184,7 @@ describe('transfer', function () {
             },
             properties: {
               host_name: {
-                type: 'string'
+                type: 'text'
               },
               created_at: {
                 type:   'date',
@@ -197,13 +197,12 @@ describe('transfer', function () {
     ];
 
     transfer.putTemplates(sourceTemplates)
-    .then(() => transfer.dest.indices.getTemplate({name: '*'}))
+    .then(() => transfer.dest.indices.getTemplate())
     .then((destTemplates) => {
-      expect(_.size(destTemplates)).to.be.equals(2);
       expect(destTemplates).to.have.property('test_template');
-      expect(destTemplates.test_template.template).to.be.equals('te*');
+      expect(destTemplates.test_template.index_patterns[0]).to.be.equals('te*');
       expect(destTemplates).to.have.property('test_template_2');
-      expect(destTemplates.test_template_2.template).to.be.equals('te2*');
+      expect(destTemplates.test_template_2.index_patterns[0]).to.be.equals('te2*');
       done();
     })
     .catch(done);
@@ -218,7 +217,7 @@ describe('transfer', function () {
       mappings: {
         type1: {
           properties: {
-            field1: {type: 'string'}
+            field1: {type: 'text'}
           }
         }
       },
@@ -277,7 +276,7 @@ describe('transfer', function () {
       }
     };
 
-    transfer.dest.indices.delete({index: '*'})
+    utils.deleteAllIndices(transfer.dest)
     .then(() => transfer.source.indices.create({
       index: 'twitter1',
       body:  index
@@ -292,12 +291,12 @@ describe('transfer', function () {
     .then((response) => {
       expect(_.size(response)).to.be.equals(2);
 
-      expect(response.twitter1).to.be.defined;
+      expect(response.twitter1).to.not.be.undefined;
       expect(response.twitter1.settings.index.number_of_shards).to.be.equals('1');
       expect(response.twitter1.settings.index.number_of_replicas).to.be.equals('2');
       expect(response.twitter1.mappings.type1.properties.field1.type).to.be.equals('long');
 
-      expect(response.twitter2).to.be.defined;
+      expect(response.twitter2).to.not.be.undefined;
       expect(response.twitter2.settings.index.number_of_shards).to.be.equals('1');
       expect(response.twitter2.settings.index.number_of_replicas).to.be.equals('2');
       expect(response.twitter2.mappings.type1.properties.field1.type).to.be.equals('long');
@@ -316,7 +315,7 @@ describe('transfer', function () {
         mappings: {
           type1: {
             properties: {
-              field1: {type: 'string'}
+              field1: {type: 'text'}
             }
           }
         },
@@ -480,7 +479,7 @@ describe('transfer', function () {
     })
     .then(() => transfer.transferTemplates('test_template'))
     .then(() => dest.indices.getTemplate({name: 'test_template'}))
-    .then((template) => expect(template.test_template.template).to.be.equals('template_that*'))
+    .then((template) => expect(template.test_template.index_patterns[0]).to.be.equals('template_that*'))
     .then(() => done())
     .catch(done);
   });

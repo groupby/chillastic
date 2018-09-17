@@ -1,6 +1,7 @@
 const _              = require('lodash');
 const moment         = require('moment');
 const Promise        = require('bluebird');
+const prettyBytes    = require('prettysize');
 const Filters        = require('./filters');
 const Transfer       = require('./transfer');
 const Progress       = require('../models/progress');
@@ -8,6 +9,7 @@ const Subtask        = require('../models/subtask');
 const Task           = require('../models/task');
 const createEsClient = require('../../config/elasticsearch');
 const config         = require('../../config/index');
+const to_bytes       = require('../../config/utils').to_bytes;
 
 const log = config.log;
 
@@ -29,8 +31,8 @@ const Subtasks = function (redisClient) {
       return subtaskID;
     })
     .then((subtaskID) => _.isNull(subtaskID) ? null : redis.hget(Task.backlogHSetKey(taskId), subtaskID)
-        .then((count) => Subtask.createFromID(subtaskID, count))
-        .then((subtask) => redis.hdel(Task.backlogHSetKey(taskId), subtask.getID()).return(subtask)));
+    .then((count) => Subtask.createFromID(subtaskID, count))
+    .then((subtask) => redis.hdel(Task.backlogHSetKey(taskId), subtask.getID()).return(subtask)));
   };
 
   /**
@@ -77,6 +79,7 @@ const Subtasks = function (redisClient) {
 
   const incrementCount = (subtask, increment) => {
     subtask.count = parseInt(increment);
+    log.info(`subtask count incremented to ${subtask.count}`);
     return new Subtask(subtask);
   };
 
@@ -87,11 +90,10 @@ const Subtasks = function (redisClient) {
    * @param subtask
    * @returns {*}
    */
-  self.addCount = (client, subtask) => subtask.transfer.documents ? client.count({
-    index: subtask.transfer.documents.index,
-    type:  subtask.transfer.documents.type
-  })
-      .then((result) => incrementCount(subtask, result.count)) : incrementCount(subtask, 1);
+  self.addCount = (client, subtask) => subtask.transfer.documents
+      ? client.search(Subtask.createQuery(subtask.transfer.documents.index, subtask.transfer.documents.type, 0, subtask.transfer.documents.minSize, subtask.transfer.documents.maxSize))
+      .then((result) => incrementCount(subtask, result.hits.total))
+      : incrementCount(subtask, 1);
 
   /**
    * Given a task, create a list of index configuration transfer subtasks
@@ -153,30 +155,205 @@ const Subtasks = function (redisClient) {
    * @param loadedFilters
    * @returns {*}
    */
-  self.filterDocumentSubtasks = (task, allIndices, loadedFilters) => {
-    const predicate                = (allFilters) => (input) => allFilters.reduce((result, filter) => result || filter.predicate(input), false);
-    const getTypesFromMappings     = (mappings) => _.reduce(mappings, (result, type, name) => result.concat(_.assign(type, {name})), []);
-    const generatePotentialSubtask = (indexName, typeName) => _.omitBy({
+  self.filterDocumentSubtasks = (task, allIndices, loadedFilters, boundsField) => {
+    const esBoundsField        = boundsField || '_size';
+    const predicate            = (allFilters) => (input) => allFilters.reduce((result, filter) => result || filter.predicate(input), false);
+    const getTypesFromMappings = (mappings) => _.reduce(mappings, (result, type, name) => result.concat(_.assign(type, {name})), []);
+    const newSubtask           = (indexName, typeName, minSize, maxSize, flushSize) => _.omitBy({
       source:      task.source,
       destination: task.destination,
       transfer:    {
-        flushSize: task.transfer && task.transfer.flushSize ? task.transfer.flushSize : Task.DEFAULT_FLUSH_SIZE,
+        flushSize: flushSize || Subtask.DEFAULT_FLUSH_SIZE,
         documents: {
           index: indexName,
-          type:  typeName
+          type:  typeName,
+          minSize,
+          maxSize,
         }
       },
       mutators: task.mutators
     }, _.isUndefined);
 
-    const filteredIndices = _.isArray(loadedFilters.index) ? allIndices.filter(predicate(loadedFilters.index)) : allIndices;
-    return filteredIndices.reduce((result, index) => {
-      const allTypes      = getTypesFromMappings(index.mappings);
-      const filteredTypes = _.isArray(loadedFilters.type) ? allTypes.filter(predicate(loadedFilters.type)) : allTypes;
+    const esClient        = createEsClient(task.source);
+    const filtered        = (items, predicates) => items.filter(_.isArray(predicates) ? predicate(predicates) : () => true);
+    const newTypeInfo     = (index, type) => {
+      return {index: index.name, type: type.name};
+    };
+    const newBound        = (minSize, maxSize, flushSize) => {
+      return {minSize, maxSize, flushSize: flushSize || Subtask.DEFAULT_FLUSH_SIZE};
+    };
+    const makeBounds      = (bucket1, bucket2, bucket3) =>
+        [bucket1, bucket2, bucket3].filter((b) => b.count > 0).map((b) => newBound(b.minSize, b.maxSize, b.flushSize));
+    const closeEnough     = (lhs, rhs) => Math.abs(lhs.chunks - rhs.chunks) < 100;
+    const increase        = (value, multiplier) => Math.ceil(value * multiplier);
+    const decrease        = (value, multiplier) => Math.floor(value / multiplier);
+    const multiplier      = (lhs, rhs) => {
+      const delta = Math.abs(lhs.chunks - rhs.chunks);
+      if (delta < 200) {
+        return 1.1;
+      } else if (delta < 500) {
+        return 2;
+      } else if (delta < 1000) {
+        return 3;
+      } else if (delta < 4000) {
+        return 5;
+      } else if (delta < 10000) {
+        return 8;
+      } else {
+        return 10;
+      }
+    };
+    const initialBounds   = (index, type) =>
+        esClient.search({
+          index, type,
+          ignoreUnavailable: true,
+          allowNoIndices:    true,
+          body:              {size: 0, aggregations: {stats: {stats: {field: esBoundsField}}}}
+        })
+        .then((response) => {
+          const count      = _.get(response, 'aggregations.stats.count', 0);
+          const lowerBound = _.get(response, 'aggregations.stats.min', 0);
+          const upperBound = _.get(response, 'aggregations.stats.max', 0) + 1;
+          if (count === 0) {
+            return [0, 0, 0];
+          } else if (lowerBound + 1 === upperBound) {
+            return [upperBound, upperBound, upperBound];
+          } else {
+            const piece   = Math.max(1, Math.floor((upperBound - lowerBound) / 10));
+            let boundary1 = (6 * piece) + lowerBound;
+            let boundary2 = (9 * piece) + lowerBound;
+            if (upperBound > to_bytes(1, 'MB')) {
+              boundary2 = to_bytes(1, 'MB');
+            }
+            if (boundary1 > boundary2) {
+              boundary1 = decrease(boundary2, 2);
+            }
+            return [boundary1, boundary2, upperBound];
+          }
+        });
+    const calculateBounds = (i, maxIterations, index, type, bounds) =>
+        esClient.search({
+          index, type,
+          ignoreUnavailable: true,
+          allowNoIndices:    true,
+          body:              {
+            size:         0,
+            aggregations: {
+              sizes: {
+                range: {
+                  field:  esBoundsField,
+                  ranges: [
+                    {key: 'bucket1', from: 0, to: bounds[0]},
+                    {key: 'bucket2', from: bounds[0], to: bounds[1]},
+                    {key: 'bucket3', from: bounds[1], to: bounds[2]},
+                  ]
+                }
+              }
+            }
+          }
+        })
+        .then((response) => {
+          const buckets = _.get(response, 'aggregations.sizes.buckets', []);
+          const shards  = _.get(response, '_shards.total', 1);
+          if (response.hits.total > buckets.reduce((result, count) => result + count.doc_count, 0)) {
+            return null;
+          } else {
+            return _.reduce(buckets, (result, bucket) => {
+              const count        = bucket.doc_count;
+              const flushSize    = Math.max(1, decrease(to_bytes(50, 'MB'), (bucket.to - 1) * shards));
+              result[bucket.key] = {
+                count, flushSize,
+                chunks:  Math.ceil(count / flushSize),
+                minSize: bucket.from,
+                maxSize: bucket.to,
+              };
+              return result;
+            }, {});
+          }
+        })
+        .then((buckets) => {
+          const prettyLog = (value, padding) => String(value).padStart(padding || 10);
+          _.reduce(buckets, (result, value) => {
+            try {
+              log.info(`count${prettyLog(value.count)} | flush${prettyLog(value.flushSize)} | chunks${prettyLog(value.chunks)} | minSize${prettyLog(prettyBytes(value.minSize))} | maxSize${prettyLog(prettyBytes(value.maxSize))}`);
+            } catch (e) {
+              log.error(`Unable to log: ${e}`);
+            }
+          }, null);
+          if (buckets) {
+            const bucket1 = buckets.bucket1;
+            const bucket2 = buckets.bucket2;
+            const bucket3 = buckets.bucket3;
+            if (bucket1.maxSize === bucket2.maxSize && bucket2.maxSize === bucket3.maxSize) {
+              return [newBound(-1, -1, bucket1.maxSize === 0 ? Subtask.DEFAULT_FLUSH_SIZE : bucket1.flushSize)];
+            } else if (i >= maxIterations) {
+              return makeBounds(bucket1, bucket2, bucket3);
+            } else {
+              const minBound2 = Math.min(to_bytes(1, 'MB'), bucket3.maxSize / 2);
+              let bound1      = bucket1.maxSize;
+              let bound2      = bucket2.maxSize;
+              if (closeEnough(bucket1, bucket2) && closeEnough(bucket2, bucket3)) {
+                return makeBounds(bucket1, bucket2, bucket3);
+              } else if (closeEnough(bucket1, bucket2)) {
+                const m = multiplier(bucket2, bucket3);
+                const f = bucket2.chunks > bucket3.chunks ? decrease : increase;
+                bound1 = f(bucket1.maxSize, m);
+                bound2 = f(bucket2.maxSize, m);
+              } else if (closeEnough(bucket2, bucket3)) {
+                if (bound2 === minBound2) {
+                  return makeBounds(bucket1, bucket2, bucket3);
+                } else {
+                  const m = multiplier(bucket1, bucket2);
+                  const f = bucket1.chunks > bucket2.chunks ? decrease : increase;
+                  bound1 = f(bucket1.maxSize, m);
+                  bound2 = f(bucket2.maxSize, m);
+                }
+              } else {
+                const m1 = multiplier(bucket1, bucket2);
+                const m2 = multiplier(bucket2, bucket3);
+                if (bound2 === minBound2) {
+                  if (bucket1.chunks < bucket2.chunks * 10) {
+                    bound1 = increase(bucket1.maxSize, m1);
+                  } else {
+                    return makeBounds(bucket1, bucket2, bucket3);
+                  }
+                } else if (bucket1.chunks < bucket2.chunks && bucket2.chunks < bucket3.chunks) {
+                  bound1 = increase(bucket1.maxSize, m1);
+                  bound2 = increase(bucket2.maxSize, m2);
+                } else if (bucket1.chunks > bucket2.chunks && bucket2.chunks > bucket3.chunks) {
+                  bound1 = decrease(bucket1.maxSize, m1);
+                  bound2 = decrease(bucket2.maxSize, m2);
+                } else if (bucket1.chunks < bucket2.chunks && bucket2.chunks > bucket3.chunks) {
+                  bound1 = increase(bucket1.maxSize, m1);
+                  bound2 = decrease(bucket2.maxSize, m2);
+                } else if (bucket1.chunks > bucket2.chunks && bucket2.chunks < bucket3.chunks) {
+                  bound1 = decrease(bucket1.maxSize, m1);
+                  bound2 = increase(bucket2.maxSize, m2);
+                }
+              }
+              bound2 = Math.max(minBound2, bound2);
 
-      filteredTypes.forEach((filteredType) => result.push(generatePotentialSubtask(index.name, filteredType.name)));
-      return result;
-    }, []);
+              if (bound1 > bound2) {
+                bound1 = bound2 / 2;
+              }
+              return calculateBounds(i + 1, maxIterations, index, type, [bound1, bound2, bucket3.maxSize]);
+            }
+          }
+          return [newBound(-1, -1, Subtask.DEFAULT_FLUSH_SIZE)];
+        })
+        .catch((e) => {
+          log.error(e);
+          return [newBound(-1, -1, Subtask.DEFAULT_FLUSH_SIZE)];
+        });
+
+    return Promise.reduce(
+        filtered(allIndices, loadedFilters.index)
+        .reduce((result, filteredIndex) => result.concat(filtered(getTypesFromMappings(filteredIndex.mappings), loadedFilters.type).map((filteredType) => newTypeInfo(filteredIndex, filteredType))), [])
+        .map((typeInfo) =>
+            initialBounds(typeInfo.index, typeInfo.type)
+            .then((bounds) => calculateBounds(0, 10, typeInfo.index, typeInfo.type, bounds))
+            .then((bounds) => bounds.map((bound) => newSubtask(typeInfo.index, typeInfo.type, bound.minSize, bound.maxSize, bound.flushSize)))),
+        (result, subtasks) => result.concat(subtasks), []);
   };
 
   /**
@@ -197,7 +374,9 @@ const Subtasks = function (redisClient) {
       generateDocumentSubtasks(taskSource, taskId, task)
     ], (allSubtasks, stepSubtasks) => allSubtasks.concat(stepSubtasks), []))
     .then((potentialSubtasks) => {
-      log.info(`${potentialSubtasks.length} potential subtasks found`);
+      log.info(
+          `${potentialSubtasks.length} potential subtasks found`
+      );
 
       return self.getCompleted(taskId)
       .then((completedSubtasks) => {
@@ -218,7 +397,9 @@ const Subtasks = function (redisClient) {
    * @returns {Promise.<TResult>}
    */
   self.clearBacklog = (taskId) => Task.validateId(taskId)
-  .then(() => log.info(`clearing existing backlog for task: '${taskId}'`))
+  .then(() => log.info(
+      `clearing existing backlog for task: '${taskId}'`
+  ))
   .then(() => redis.del(Task.backlogQueueKey(taskId)))
   .then(() => redis.del(Task.backlogHSetKey(taskId)));
 

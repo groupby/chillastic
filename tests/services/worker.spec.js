@@ -63,7 +63,6 @@ describe('worker', function () {
 
     const indexConfigs = [
       {index: 'first', type: 'type1'},
-      {index: 'first', type: 'type2'},
       {index: 'second', type: 'mytype1'}
     ];
 
@@ -73,13 +72,8 @@ describe('worker', function () {
       data.push({something: `data${n}`});
     });
 
-    _.times(15, (n) => {
-      data.push({index: {_index: indexConfigs[1].index, _type: indexConfigs[1].type}});
-      data.push({something: `data${n}`});
-    });
-
     _.times(5, (n) => {
-      data.push({index: {_index: indexConfigs[2].index, _type: indexConfigs[2].type}});
+      data.push({index: {_index: indexConfigs[1].index, _type: indexConfigs[1].type}});
       data.push({something: `data${n}`});
     });
 
@@ -91,8 +85,8 @@ describe('worker', function () {
       expect(taskName).to.be.equals(TASK1_NAME);
       completedSubtasks.push(subtask);
 
-      if (completedSubtasks.length >= 3) {
-        expect(totalTransferred).to.be.equals(30);
+      if (completedSubtasks.length >= 2) {
+        expect(totalTransferred).to.be.equals(15);
         manager.setRunning(false);
         worker.killStopped();
         done();
@@ -114,25 +108,20 @@ describe('worker', function () {
         return source.indices.refresh();
       }
     })
-    .then(() => dest.indices.delete({index: '*', refresh: true}))
-    .then(() => dest.search('*'))
+    .then(() => utils.deleteAllIndices(dest))
+    .then(() => dest.search())
     .then((results) => expect(results.hits.total).to.be.equals(0))
     .then(() => dest.indices.create({index: 'first'}))
     .then(() => dest.indices.create({index: 'second'}))
     .then(() => tasks.add(TASK1_NAME, taskParams))
     .then(() => subtasks.getBacklog(TASK1_NAME))
     .then((backlogJobs) => {
-      expect(backlogJobs.length).to.be.equals(3);
+      expect(backlogJobs.length).to.be.equals(2);
 
       let target = _.find(backlogJobs, {
         transfer: {documents: {index: 'first', type: 'type1'}}
       });
       expect(target.count).to.be.equals(10);
-
-      target = _.find(backlogJobs, {
-        transfer: {documents: {index: 'first', type: 'type2'}}
-      });
-      expect(target.count).to.be.equals(15);
 
       target = _.find(backlogJobs, {
         transfer: {documents: {index: 'second', type: 'mytype1'}}

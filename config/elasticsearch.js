@@ -68,7 +68,7 @@ const createEsClient = (hostConfig) => {
           currentLatestMajorVersion = majorVersion;
         }
       } catch (e) {
-        config.log.error(`${e}`);
+        config.log.trace(`${e}`);
       }
     }
 
