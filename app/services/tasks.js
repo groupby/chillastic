@@ -89,6 +89,7 @@ const Tasks    = function (redisClient) {
   self.remove = (taskId) => Task.validateId(taskId)
   .then(() => subtasks.clearBacklog(taskId))
   .then(() => subtasks.clearCompleted(taskId))
+  .then(() => subtasks.clearTotal(taskId))
   .then(() => _.map(namespacedServices, (service) => service.removeAllNamespacedBy(new ObjectId({
     namespace: taskId,
     id:        'dummy'

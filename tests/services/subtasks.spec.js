@@ -158,6 +158,8 @@ describe('subtasks service', function () {
     ];
 
     subtasks.queue(TASK_NAME, expected)
+    .then(() => subtasks.getTotal(TASK_NAME))
+    .then((total) => expect(total).to.be.equals(31))
     .then(() => subtasks.fetch(TASK_NAME))
     .then((subtask) => {
       expect(subtask.transfer.documents.index).to.be.equals(expected[0].transfer.documents.index);
@@ -209,6 +211,8 @@ describe('subtasks service', function () {
     ];
 
     subtasks.queue(TASK_NAME, expected)
+    .then(() => subtasks.getTotal(TASK_NAME))
+    .then((total) => expect(total).to.be.equals(22))
     .then(() => subtasks.fetch(TASK_NAME))
     .then((subtask) => {
       expect(subtask.transfer.documents.index).to.be.equals(expected[0].transfer.documents.index);
@@ -421,6 +425,8 @@ describe('subtasks service', function () {
     ];
 
     subtasks.queue(TASK_NAME, expected)
+    .then(() => subtasks.getTotal(TASK_NAME))
+    .then((total) => expect(total).to.be.equals(31))
     .then(() => subtasks.getBacklog(TASK_NAME))
     .then((backlogSubtasks) => {
       let target = _.find(backlogSubtasks, {count: expected[0].count});
@@ -480,6 +486,8 @@ describe('subtasks service', function () {
     ];
 
     subtasks.queue(TASK_NAME, expected)
+    .then(() => subtasks.getTotal(TASK_NAME))
+    .then((total) => expect(total).to.be.equals(31))
     .then(() => subtasks.clearBacklog(TASK_NAME))
     .then(() => subtasks.getBacklog(TASK_NAME))
     .then((backlogSubtasks) => expect(backlogSubtasks).to.be.empty)
@@ -539,6 +547,8 @@ describe('subtasks service', function () {
     ];
 
     subtasks.queue(TASK_NAME, expected)
+    .then(() => subtasks.getTotal(TASK_NAME))
+    .then((total) => expect(total).to.be.equals(31))
     .then(() => subtasks.countBacklog(TASK_NAME))
     .then((backlogTotal) => expect(backlogTotal).to.be.equals(expected.reduce((total, subtask) => total + subtask.count, 0)))
     .then(() => done())
@@ -766,6 +776,8 @@ describe('subtasks service', function () {
       expect(subtask.transfer.documents.index).to.be.equals('myindex1');
       expect(subtask.transfer.documents.type).to.be.equals('mytype1');
     })
+    .then(() => subtasks.getTotal(TASK_NAME))
+    .then((total) => expect(total).to.equal(2))
     .then(() => subtasks.fetch(TASK_NAME))
     .then((subtask) => expect(subtask).to.be.null)
     .then(() => done())
@@ -947,7 +959,7 @@ describe('subtasks service', function () {
     .then((overallProgress) => {
       expect(overallProgress.length).to.be.equals(2);
 
-      let target      = _.find(overallProgress, {
+      let target = _.find(overallProgress, {
         subtask: {
           transfer: {
             documents: {

@@ -12,23 +12,17 @@ const PERCENTAGE = 100;
  * @returns {Promise.<TResult>}
  */
 const getTaskStatus = (taskId) => {
-  const taskStatus = {};
-
-  return services.subtasks.countBacklog(taskId)
-  .then((count) => taskStatus.backlog = count)
-  .then(() => services.subtasks.countCompleted(taskId))
-  .then((count) => taskStatus.completed = count)
-  .then(() => services.tasks.getProgress(taskId))
-  .then((overallProgress) => {
-    const inWork = overallProgress.reduce((inner_result, progress) => {
-      inner_result += progress.progress.total;
-      return inner_result;
-    }, 0);
-
-    taskStatus.inProgress = overallProgress;
-    taskStatus.total = taskStatus.backlog + taskStatus.completed + inWork;
-    taskStatus.percentComplete = ((taskStatus.completed / taskStatus.total) * PERCENTAGE).toFixed(config.numDigits);
-    return taskStatus;
+  return Promise.all(services.tasks.getTotal(taskId), services.subtasks.countBacklog(taskId), services.subtasks.countCompleted(taskId), services.tasks.getProgress(taskId))
+  .then((results) => {
+    const total     = results[0];
+    const completed = results[2];
+    return {
+      percentComplete: ((completed / total) * PERCENTAGE).toFixed(config.numDigits),
+      total:           total,
+      completed:       completed,
+      backlog:         results[1],
+      inProgress:      results[3],
+    };
   });
 };
 

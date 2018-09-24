@@ -42,6 +42,7 @@ const Subtasks = function (redisClient) {
    * @returns {*|Promise.<TResult>}
    */
   self.queue = (taskId, subtasks) => {
+    let total = 0;
     subtasks = _.map(subtasks, (s) => Subtask.coerce(s));
 
     return Task.validateId(taskId)
@@ -57,11 +58,13 @@ const Subtasks = function (redisClient) {
         if (results[i][1] === 0) {
           log.warn(`subtask: ${subtask} already in queue`);
         } else {
+          total += subtask.count;
           transaction.rpush(Task.backlogQueueKey(taskId), subtask.getID());
         }
       }
       return transaction.exec();
-    });
+    })
+    .then(() => redis.incrby(Task.totalKey(taskId), total));
   };
 
   /**
@@ -403,6 +406,51 @@ const Subtasks = function (redisClient) {
   .then(() => redis.del(Task.backlogQueueKey(taskId)))
   .then(() => redis.del(Task.backlogHSetKey(taskId)));
 
+  const tallyCounts = (counts) => counts.reduce((total, count) => total + parseInt(count), 0);
+
+  /**
+   * Get total docs in backlog
+   *
+   * @returns {Promise.<TResult>}
+   */
+  self.countBacklog = (taskId) => Task.validateId(taskId)
+  .then(() => redis.hvals(Task.backlogHSetKey(taskId)))
+  .then(tallyCounts);
+
+  /**
+   * Get total docs completed
+   *
+   * @returns {Promise.<TResult>}
+   */
+  self.countCompleted = (taskId) => Task.validateId(taskId)
+  .then(() => redis.hvals(Task.completedKey(taskId)))
+  .then(tallyCounts);
+
+  /**
+   * Clear any completed subtasks
+   *
+   * @returns {Promise.<TResult>}
+   */
+  self.clearCompleted = (taskId) => Task.validateId(taskId)
+  .then(() => redis.del(Task.completedKey(taskId)));
+
+  /**
+   * Clear total
+   *
+   * @returns {Promise.<TResult>}
+   */
+  self.clearTotal = (taskId) => Task.validateId(taskId)
+  .then(() => redis.del(Task.totalKey(taskId)));
+
+  /**
+   * Returns total count for a task
+   *
+   * @returns {Promise.<TResult>}
+   */
+  self.getTotal = (taskId) => Task.validateId(taskId)
+  .then(() => redis.get(Task.totalKey(taskId)))
+  .then((count) => parseInt(count));
+
   /**
    * Returns all backlog jobs and their counts
    *
@@ -414,23 +462,6 @@ const Subtasks = function (redisClient) {
       _.map(jobsAndCounts, (count, subtaskID) => Subtask.createFromID(subtaskID, count)));
 
   /**
-   * Get total docs in backlog
-   *
-   * @returns {Promise.<TResult>}
-   */
-  self.countBacklog = (taskId) => Task.validateId(taskId)
-  .then(() => redis.hvals(Task.backlogHSetKey(taskId)))
-  .then((counts) => counts.reduce((total, count) => total + parseInt(count), 0));
-
-  /**
-   * Clear any completed subtasks
-   *
-   * @returns {Promise.<TResult>}
-   */
-  self.clearCompleted = (taskId) => Task.validateId(taskId)
-  .then(() => redis.del(Task.completedKey(taskId)));
-
-  /**
    * Returns all completed jobs and their counts
    *
    * @returns {Promise.<TResult>}
@@ -439,15 +470,6 @@ const Subtasks = function (redisClient) {
   .then(() => redis.hgetall(Task.completedKey(taskId)))
   .then((jobsAndCounts) =>// ioredis returns an object where the keys are the hash fields and the values are the hash values
       _.map(jobsAndCounts, (count, subtaskID) => Subtask.createFromID(subtaskID, count)));
-
-  /**
-   * Get total docs completed
-   *
-   * @returns {Promise.<TResult>}
-   */
-  self.countCompleted = (taskId) => Task.validateId(taskId)
-  .then(() => redis.hvals(Task.completedKey(taskId)))
-  .then((counts) => counts.reduce((total, count) => total + parseInt(count), 0));
 
   /**
    * Clear the progress of a given subtask within a task

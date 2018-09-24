@@ -20,6 +20,7 @@ const Task = function (params) {
 Task.validateId = (id) => new ObjectId({id: id}).validate('taskId');
 Task.coerce = (task) => task instanceof Task ? task : new Task(task);
 Task.errorKey = (taskId) => `${taskId}_error`;
+Task.totalKey = (taskId) => `${taskId}_total`;
 Task.progressKey = (taskId) => `${taskId}_progress`;
 Task.completedKey = (taskId) => `${taskId}_completed`;
 Task.backlogQueueKey = (taskId) => `${taskId}_backlog_queue`;
