@@ -70,16 +70,16 @@ const Tasks    = function (redisClient) {
    * @returns {*|Promise.<TResult>}
    */
   self.add = (taskId, task) => self.exists(taskId)
-    .then((exists) => {
-      if (exists) {
-        throw new Error(`task: '${taskId}' exists. Delete first.`);
-      }
-    })
-    .then(() => self.ensureSourceAndDestExist(task.source, task.destination))
-    .then(() => mutatorsService.ensureMutatorsExist(taskId, task.mutators))
-    .then(() => filtersService.ensureFiltersExist(taskId, task.transfer.documents.filters))
-    .then(() => redis.sadd(Tasks.NAME_KEY, taskId))
-    .then(() => subtasks.buildBacklog(taskId, Task.coerce(task)));
+  .then((exists) => {
+    if (exists) {
+      throw new Error(`task: '${taskId}' exists. Delete first.`);
+    }
+  })
+  .then(() => self.ensureSourceAndDestExist(task.source, task.destination))
+  .then(() => mutatorsService.ensureMutatorsExist(taskId, task.mutators))
+  .then(() => filtersService.ensureFiltersExist(taskId, task.transfer.documents.filters))
+  .then(() => redis.sadd(Tasks.NAME_KEY, taskId))
+  .then(() => subtasks.buildBacklog(taskId, Task.coerce(task)));
 
   /**
    * Remove a task by name
@@ -87,13 +87,13 @@ const Tasks    = function (redisClient) {
    * @returns {Promise.<TResult>}
    */
   self.remove = (taskId) => Task.validateId(taskId)
-    .then(() => subtasks.clearBacklog(taskId))
-    .then(() => subtasks.clearCompleted(taskId))
-    .then(() => _.map(namespacedServices, (service) => service.removeAllNamespacedBy(new ObjectId({
-      namespace: taskId,
-      id:        'dummy'
-    }))))
-    .then(() => redis.srem(Tasks.NAME_KEY, taskId));
+  .then(() => subtasks.clearBacklog(taskId))
+  .then(() => subtasks.clearCompleted(taskId))
+  .then(() => _.map(namespacedServices, (service) => service.removeAllNamespacedBy(new ObjectId({
+    namespace: taskId,
+    id:        'dummy'
+  }))))
+  .then(() => redis.srem(Tasks.NAME_KEY, taskId));
 
   /**
    * Return TRUE if a task exists in the system based on it's name
@@ -101,7 +101,7 @@ const Tasks    = function (redisClient) {
    * @returns {*|{arity, flags, keyStart, keyStop, step}}
    */
   self.exists = (taskId) => Task.validateId(taskId)
-    .then(() => redis.sismember(Tasks.NAME_KEY, taskId));
+  .then(() => redis.sismember(Tasks.NAME_KEY, taskId));
 
   /**
    * Record an error during a task, with timestamp
@@ -119,7 +119,7 @@ const Tasks    = function (redisClient) {
     log.error(error);
 
     return Task.validateId(taskId)
-      .then(() => redis.zadd(Task.errorKey(taskId), time_ms, error));
+    .then(() => redis.zadd(Task.errorKey(taskId), time_ms, error));
   };
 
   /**
@@ -128,19 +128,19 @@ const Tasks    = function (redisClient) {
    * @returns {*|Promise.<TResult>}
    */
   self.errors = (taskId) => Task.validateId(taskId)
-    .then(() => redis.zrangebyscore(Task.errorKey(taskId), '-inf', '+inf', 'WITHSCORES'))
-    .then((rawErrors) => {
-      const skip   = 2;
-      const errors = [];
-      for (let i = 0; i < rawErrors.length; i += skip) {
-        const error = JSON.parse(rawErrors[i]);
-        errors.push(_.assign(error, {
-          subtask:   new Subtask(error.subtask),
-          timestamp: moment(rawErrors[i + 1], 'x').toISOString()
-        }));
-      }
-      return errors;
-    });
+  .then(() => redis.zrangebyscore(Task.errorKey(taskId), '-inf', '+inf', 'WITHSCORES'))
+  .then((rawErrors) => {
+    const skip   = 2;
+    const errors = [];
+    for (let i = 0; i < rawErrors.length; i += skip) {
+      const error = JSON.parse(rawErrors[i]);
+      errors.push(_.assign(error, {
+        subtask:   new Subtask(error.subtask),
+        timestamp: moment(rawErrors[i + 1], 'x').toISOString()
+      }));
+    }
+    return errors;
+  });
 
   /**
    * Get all known subtask progress updates
@@ -149,11 +149,11 @@ const Tasks    = function (redisClient) {
    * @returns {*|Promise.<TResult>}
    */
   self.getProgress = (taskId) => Task.validateId(taskId)
-    .then(() => redis.hgetall(Task.progressKey(taskId)))
-    .then((overallProgress) => _.reduce(overallProgress, (result, rawProgress, rawSubtask) => result.concat({
-      subtask:  new Subtask(JSON.parse(rawSubtask)),
-      progress: new Progress(JSON.parse(rawProgress))
-    }), []));
+  .then(() => redis.hgetall(Task.progressKey(taskId)))
+  .then((overallProgress) => _.reduce(overallProgress, (result, rawProgress, rawSubtask) => result.concat({
+    subtask:  Subtask.coerce(_.assign(JSON.parse(rawSubtask), {count: 1})),
+    progress: new Progress(JSON.parse(rawProgress))
+  }), []));
 };
 Tasks.NAME_KEY = 'tasks';
 

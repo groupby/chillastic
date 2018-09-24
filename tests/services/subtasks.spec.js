@@ -889,6 +889,96 @@ describe('subtasks service', function () {
     .catch(done);
   });
 
+  it('should keep track of progress for multiple bucketed tasks', (done) => {
+    const subtask1 = {
+      source:      TestConfig.elasticsearch.source,
+      destination: TestConfig.elasticsearch.destination,
+      transfer:    {
+        documents: {
+          index:   'myindex1',
+          type:    'mytype1',
+          minSize: 0,
+          maxSize: 200,
+        }
+      },
+      count: 10
+    };
+
+    const subtask2 = {
+      source:      TestConfig.elasticsearch.source,
+      destination: TestConfig.elasticsearch.destination,
+      transfer:    {
+        documents: {
+          index:   'myindex1',
+          type:    'mytype1',
+          minSize: 200,
+          maxSize: 1000000,
+        }
+      },
+      count: 25
+    };
+
+    const progressUpdate = {
+      tick:        10,
+      total:       20,
+      transferred: 10
+    };
+
+    subtasks.updateProgress(TASK_NAME, subtask1, progressUpdate)
+    .then(() => subtasks.getProgress(TASK_NAME, subtask1))
+    .then((progress) => {
+      expect(progress.tick).to.be.equals(10);
+      expect(progress.total).to.be.equals(20);
+      expect(progress.transferred).to.be.equals(10);
+      expect(progress.lastModified).to.not.be.undefined;
+
+      progressUpdate.tick = 5;
+      progressUpdate.transferred = 15;
+    })
+    .then(() => subtasks.updateProgress(TASK_NAME, subtask2, progressUpdate))
+    .then(() => subtasks.getProgress(TASK_NAME, subtask2))
+    .then((progress) => {
+      expect(progress.tick).to.be.equals(5);
+      expect(progress.total).to.be.equals(20);
+      expect(progress.transferred).to.be.equals(15);
+      expect(progress.lastModified).to.not.be.undefined;
+    })
+    .then(() => tasks.getProgress(TASK_NAME))
+    .then((overallProgress) => {
+      expect(overallProgress.length).to.be.equals(2);
+
+      let target      = _.find(overallProgress, {
+        subtask: {
+          transfer: {
+            documents: {
+              index:   'myindex1',
+              type:    'mytype1',
+              minSize: 0,
+              maxSize: 200,
+            }
+          }
+        }
+      });
+      expect(target.progress.tick).to.be.equals(10);
+
+      target = _.find(overallProgress, {
+        subtask: {
+          transfer: {
+            documents: {
+              index:   'myindex1',
+              type:    'mytype1',
+              minSize: 200,
+              maxSize: 1000000,
+            }
+          }
+        }
+      });
+      expect(target.progress.tick).to.be.equals(5);
+    })
+    .then(() => done())
+    .catch(done);
+  });
+
   it('should delete progress of specific subtask', (done) => {
     const subtask1 = {
       source:      TestConfig.elasticsearch.source,

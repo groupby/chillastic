@@ -9,6 +9,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "chillastic": "2.8.0"
+    "chillastic": "*"
   }
 }

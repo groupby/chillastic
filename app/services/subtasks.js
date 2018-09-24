@@ -456,7 +456,7 @@ const Subtasks = function (redisClient) {
    * @returns {*|{arity, flags, keyStart, keyStop, step}}
    */
   self.removeProgress = (taskId, subtask) => Task.validateId(taskId)
-  .then(() => redis.hdel(Task.progressKey(taskId), JSON.stringify(subtask)));
+  .then(() => redis.hdel(Task.progressKey(taskId), Subtask.coerce(subtask).getID()));
 
   /**
    * Update the progress of a given subtask within a task
@@ -470,7 +470,7 @@ const Subtasks = function (redisClient) {
     progress.lastModified = moment().toISOString();
 
     return Task.validateId(taskId)
-    .then(() => redis.hset(Task.progressKey(taskId), JSON.stringify(Subtask.coerce(subtask)), JSON.stringify(progress)));
+    .then(() => redis.hset(Task.progressKey(taskId), Subtask.coerce(subtask).getID(), JSON.stringify(progress)));
   };
 
   /**
@@ -480,7 +480,7 @@ const Subtasks = function (redisClient) {
    * @returns {Promise.<TResult>|*}
    */
   self.getProgress = (taskId, subtask) => Task.validateId(taskId)
-  .then(() => redis.hget(Task.progressKey(taskId), JSON.stringify(Subtask.coerce(subtask))))
+  .then(() => redis.hget(Task.progressKey(taskId), Subtask.coerce(subtask).getID()))
   .then((progress) => JSON.parse(progress));
 };
 
