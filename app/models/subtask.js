@@ -51,7 +51,7 @@ Subtask.createQuery = (index, type, flushSize, minSize, maxSize) => {
   const request = {
     index:  index,
     type:   type,
-    scroll: '5m',
+    scroll: '30m',
     size:   flushSize,
   };
 
