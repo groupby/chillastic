@@ -12,7 +12,7 @@ const PERCENTAGE = 100;
  * @returns {Promise.<TResult>}
  */
 const getTaskStatus = (taskId) => {
-  return Promise.all(services.subtasks.getTotal(taskId), services.subtasks.countBacklog(taskId), services.subtasks.countCompleted(taskId), services.tasks.getProgress(taskId))
+  return Promise.all([services.subtasks.getTotal(taskId), services.subtasks.countBacklog(taskId), services.subtasks.countCompleted(taskId), services.tasks.getProgress(taskId)])
     .then((results) => {
       const total     = results[0];
       const completed = results[2];
