@@ -84,9 +84,9 @@ const createEsClient = (hostConfig) => {
       headers
     });
 
-    const version = JSON.parse(results.getBody('utf8')).version.number;
+    const version      = JSON.parse(results.getBody('utf8')).version.number;
     const majorVersion = semver.major(version);
-    let minorVersion = semver.minor(version);
+    let minorVersion   = semver.minor(version);
 
     while (true) { // eslint-disable-line no-constant-condition
       apiVersion = `${majorVersion}.${minorVersion}`;
