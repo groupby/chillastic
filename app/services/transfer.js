@@ -116,25 +116,25 @@ const Transfer = function (sourceEs, destEs) {
     flushRetryCount = 0;
 
     const scrollAndGetData = (response) => {
-      log.info(`got ${response.hits.total} documents`);
       const documents = [];
       response.hits.hits.forEach((hit) => {
         documents.push(hit);
         queueSummary.scrolled++;
       });
+      log.info(` docs received: ${_.size(documents)}`);
 
       return putData(self.mutate(documents, 'data'), flushSize)
         .then(() => {
           if (response.hits.total !== queueSummary.scrolled) {
             return self.scroll(response)
               .then((inner_response) => {
-                log.info('scrolling: ', queueSummary);
+                log.info('      scrolled: ', queueSummary);
                 return scrollAndGetData(inner_response);
               });
           } else {
             return flushQueue()
               .then(() => {
-                log.info('transfer complete: ', queueSummary);
+                log.info(' transfer done: ', queueSummary);
                 return queueSummary.transferred;
               });
           }
