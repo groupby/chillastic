@@ -52,7 +52,9 @@ const Transfer = function (sourceEs, destEs) {
 
       return self.dest.bulk({refresh: true, body: bulkBody, requestTimeout: BULK_REQUEST_TIMEOUT_MS})
         .then((results) => {
-          log.trace('response: %s', JSON.stringify(results, null, config.jsonIndent));
+          if (log.trace()) {
+            log.trace('response: %s', JSON.stringify(results, null, config.jsonIndent));
+          }
 
           if (results.errors && results.errors > 0) {
             return self.handleBulkErrors(results, bulkBody);
@@ -64,7 +66,7 @@ const Transfer = function (sourceEs, destEs) {
               updateCallback(queueSummary);
             }
 
-            log.debug('flush complete: ', queueSummary);
+            log.info('flush complete: ', queueSummary);
             return Promise.resolve();
           }
         });
@@ -114,7 +116,7 @@ const Transfer = function (sourceEs, destEs) {
     flushRetryCount = 0;
 
     const scrollAndGetData = (response) => {
-      log.debug(`got ${response.hits.total} documents`);
+      log.info(`got ${response.hits.total} documents`);
       const documents = [];
       response.hits.hits.forEach((hit) => {
         documents.push(hit);
@@ -126,13 +128,13 @@ const Transfer = function (sourceEs, destEs) {
           if (response.hits.total !== queueSummary.scrolled) {
             return self.scroll(response)
               .then((inner_response) => {
-                log.debug('scrolling: ', queueSummary);
+                log.info('scrolling: ', queueSummary);
                 return scrollAndGetData(inner_response);
               });
           } else {
             return flushQueue()
               .then(() => {
-                log.debug('transfer complete: ', queueSummary);
+                log.info('transfer complete: ', queueSummary);
                 return queueSummary.transferred;
               });
           }
