@@ -151,10 +151,11 @@ const Tasks    = function (redisClient) {
    */
   self.getProgress = (taskId) => Task.validateId(taskId)
   .then(() => redis.hgetall(Task.progressKey(taskId)))
-  .then((overallProgress) => _.reduce(overallProgress, (result, rawProgress, rawSubtask) => result.concat({
-    subtask:  Subtask.coerce(_.assign(JSON.parse(rawSubtask), {count: 1})),
-    progress: new Progress(JSON.parse(rawProgress))
-  }), []));
+  .then((overallProgress) => _.reduce(overallProgress, (result, rawProgress, rawSubtask) => {
+    const progress = Progress.coerce(JSON.parse(rawProgress));
+    const subtask  = Subtask.coerce(_.assign(JSON.parse(rawSubtask), {count: progress.total}));
+    return result.concat({subtask, progress});
+  }, []));
 };
 Tasks.NAME_KEY = 'tasks';
 
