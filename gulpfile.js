@@ -83,10 +83,3 @@ gulp.task('test', ['test:lint'], () => {
   return gulp.src(['*.js']);
 });
 
-gulp.on('stop', () => {
-  process.exit(0);
-});
-
-gulp.on('err', () => {
-  process.exit(1);
-});

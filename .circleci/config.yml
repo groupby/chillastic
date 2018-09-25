@@ -52,7 +52,6 @@ jobs:
           paths:
           - node_modules
       - run: environment=circle gulp test 
-      - run: npm run coverage:codacy
   deploy:
     <<: *defaults
     steps:
