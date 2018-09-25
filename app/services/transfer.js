@@ -50,6 +50,7 @@ const Transfer = function (sourceEs, destEs) {
 
       queueSummary.tick = 0;
 
+      log.info('flush  started: ', queueSummary);
       return self.dest.bulk({refresh: true, body: bulkBody, requestTimeout: BULK_REQUEST_TIMEOUT_MS})
         .then((results) => {
           if (log.trace()) {
