@@ -69,6 +69,6 @@
     "semver": "^5.0.0",
     "sillyname": "^0.1.0",
     "stdio": "^0.2.7",
-    "sync-request": "^3.0.1"
+    "sync-request": "^6.0.0"
   }
 }
