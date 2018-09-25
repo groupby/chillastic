@@ -49,12 +49,13 @@ describe('mutators service', function () {
   });
 
   after((done) => {
-    redis.flushdb().finally(() => done());
+    redis.quit().finally(() => done());
   });
 
   beforeEach((done) => {
     objectId = new ObjectId({namespace: ns, id: id});
-    redis.flushdb().finally(() => done());
+    redis.flushdb()
+      .finally(() => done());
   });
 
   it('invalid id', (done) => {

@@ -29,13 +29,13 @@ describe('chillastic full routes', () => {
     agent.post('/tasks/doesNotExist')
       .send(task)
       .expect(HTTPStatus.BAD_REQUEST)
-      .then((res) => {
-        expect(res.body.error).to.equal('Src for mutator id doesNotExist not found');
+      .then((res) => expect(res.body.error).to.equal('Src for mutator id doesNotExist not found'))
+      .then(() => done())
+      .catch((err) => done(err))
+      .finally(() => {
         app.services.manager.setRunning(false);
         app.services.worker.killStopped();
-        done();
-      })
-      .catch((err) => done(err));
+      });
   });
 
   it('returns 400 response code when filter src not found', (done) => {
@@ -57,13 +57,14 @@ describe('chillastic full routes', () => {
     agent.post('/tasks/doesNotExist')
       .send(task)
       .expect(HTTPStatus.BAD_REQUEST)
-      .then((res) => {
-        expect(res.body.error).to.equal('Src for filter id doesNotExist not found');
+      .then((res) => expect(res.body.error).to.equal('Src for filter id doesNotExist not found'))
+      .then(() => done())
+      .catch((err) => done(err))
+      .finally(() => {
         app.services.manager.setRunning(false);
         app.services.worker.killStopped();
-        done();
-      })
-      .catch((err) => done(err));
+        app.services.redis.quit();
+      });
   });
 
 });

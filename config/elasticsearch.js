@@ -103,7 +103,7 @@ const createEsClient = (hostConfig) => {
       }
     }
   } catch (e) {
-    config.log.error(e);
+    config.log.debug(`unable to connect to '${uri}' to get es version: ${e.message}`);
   }
 
   if (!apiVersion) {

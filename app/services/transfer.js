@@ -328,9 +328,9 @@ const Transfer = function (sourceEs, destEs) {
     });
 
     if (unrecoverableErrors.length > 0) {
-      return Promise.reject(JSON.stringify(unrecoverableErrors, null, config.jsonIndent));
+      return Promise.reject(new Error(JSON.stringify(unrecoverableErrors, null, config.jsonIndent)));
     } else if (flushRetryCount > MAX_FLUSH_RETRY) {
-      return Promise.reject('Exceeded max flush retries');
+      return Promise.reject(new Error('Exceeded max flush retries'));
     } else {
       flushRetryCount++;
 
@@ -387,7 +387,7 @@ Transfer.getTemplates = (client, targetTemplates) =>
       .then((templates) => {
         if (_.size(templates) === 0) {
           log.warn('Templates asked to be copied, but none found');
-          return Promise.reject('Templates asked to be copied, but none found');
+          return Promise.reject(new Error('Templates asked to be copied, but none found'));
         } else {
           return templates;
         }
@@ -395,7 +395,7 @@ Transfer.getTemplates = (client, targetTemplates) =>
       .catch((error) => {
         if (error.status === HttpStatus.NOT_FOUND) {
           log.warn('Templates asked to be copied, but none found');
-          return Promise.reject('Templates asked to be copied, but none found');
+          return Promise.reject(new Error('Templates asked to be copied, but none found'));
         } else {
           return Promise.reject(error);
         }

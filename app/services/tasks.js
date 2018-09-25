@@ -38,25 +38,25 @@ const Tasks    = function (redisClient) {
    */
   self.ensureSourceAndDestExist = (source, dest) => {
     if (!_.isObject(source)) {
-      return Promise.reject('source elasticsearch config must be an object');
+      return Promise.reject(new Error('source elasticsearch config must be an object'));
     }
 
     if (!_.isObject(dest)) {
-      return Promise.reject('dest elasticsearch config must be an object');
+      return Promise.reject(new Error('dest elasticsearch config must be an object'));
     }
 
     try {
       elasticsearch(source);
     } catch (error) {
       log.error(error);
-      return Promise.reject(`Could not connect to source elasticsearch with configuration: ${JSON.stringify(source)}`);
+      return Promise.reject(new Error(`Could not connect to source elasticsearch with configuration: ${JSON.stringify(source)}`));
     }
 
     try {
       elasticsearch(dest);
     } catch (error) {
       log.error(error);
-      return Promise.reject(`Could not connect to destination elasticsearch with configuration: ${JSON.stringify(dest)}`);
+      return Promise.reject(new Error(`Could not connect to destination elasticsearch with configuration: ${JSON.stringify(dest)}`));
     }
 
     return Promise.resolve();

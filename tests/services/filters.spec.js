@@ -43,7 +43,7 @@ describe('filters service', function () {
   });
 
   after((done) => {
-    redis.flushdb().finally(() => done());
+    redis.quit().finally(() => done());
   });
 
   beforeEach((done) => {

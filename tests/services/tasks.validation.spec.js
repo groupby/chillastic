@@ -10,7 +10,6 @@ describe('tasks service', function () {
   this.timeout(5000);
 
   it('does not add a task if a mutator cannot be found in redis', (done) => {
-
     const task = new Task({
       source:      TestConfig.elasticsearch.source,
       destination: TestConfig.elasticsearch.destination,
@@ -37,7 +36,6 @@ describe('tasks service', function () {
   });
 
   it('does not add a task if a filter cannot be found in redis', (done) => {
-
     const task = new Task({
       source:      TestConfig.elasticsearch.source,
       destination: TestConfig.elasticsearch.destination,

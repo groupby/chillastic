@@ -170,6 +170,7 @@ const Worker = function (redisClient) {
         if (_.isFunction(updateCallback)) {
           updateCallback(taskId, subtask, progress);
         }
+        return Promise.resolve();
       });
   };
 
@@ -184,8 +185,9 @@ const Worker = function (redisClient) {
     return subtasks.complete(taskId, subtask)
       .then(() => {
         if (_.isFunction(completedCallback)) {
-          return completedCallback(taskId, subtask);
+          completedCallback(taskId, subtask);
         }
+        return Promise.resolve();
       });
   };
 

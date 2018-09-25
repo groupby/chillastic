@@ -50,6 +50,17 @@ describe('worker', function () {
       .finally(() => done());
   });
 
+  after((done) => {
+    redis.quit().finally(() => done());
+  });
+
+  afterEach((done) => {
+    utils.deleteAllTemplates(source)
+      .finally(() => utils.deleteAllIndices(source))
+      .finally(() => redis.flushdb())
+      .finally(() => done());
+  });
+
   it('should perform transfers queued by manager', (done) => {
     const taskParams = {
       source:      TestConfig.elasticsearch.source,

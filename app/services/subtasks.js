@@ -258,7 +258,7 @@ const Subtasks = function (redisClient) {
         .then((response) => {
           const buckets = _.get(response, 'aggregations.sizes.buckets', []);
           const shards  = _.get(response, '_shards.total', 1);
-          if (response.hits.total > buckets.reduce((result, count) => result + count.doc_count, 0)) {
+          if (response.hits.total === 0 || response.hits.total > buckets.reduce((result, count) => result + count.doc_count, 0)) {
             return null;
           } else {
             return _.reduce(buckets, (result, bucket) => {

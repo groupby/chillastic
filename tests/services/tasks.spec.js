@@ -41,6 +41,10 @@ describe('tasks service', function () {
       .finally(() => done());
   });
 
+  after((done) => {
+    redis.quit().finally(() => done());
+  });
+
   afterEach((done) => {
     utils.deleteAllTemplates(source)
       .finally(() => utils.deleteAllIndices(source))
