@@ -1,7 +1,7 @@
 const _         = require('lodash');
 const inspector = require('./inspector');
 
-const ISO_86001_REGEX = /(\d{4})-(0[1-9]|1[0-2]|[1-9])-(\3([12]\d|0[1-9]|3[01])|[1-9])[tT\s]([01]\d|2[0-3])\:(([0-5]\d)|\d)\:(([0-5]\d)|\d)([\.,]\d+)?([zZ]|([\+-])([01]\d|2[0-3]|\d):(([0-5]\d)|\d))$/;
+const ISO_8601_REGEX = /(\d{4})-(0[1-9]|1[0-2]|[1-9])-(\3([12]\d|0[1-9]|3[01])|[1-9])[tT\s]([01]\d|2[0-3]):(([0-5]\d)|\d):(([0-5]\d)|\d)([.,]\d+)?([zZ]|([+-])([01]\d|2[0-3]|\d):(([0-5]\d)|\d))$/;
 
 const SCHEMA = {
   type:       'object',
@@ -25,8 +25,8 @@ const SCHEMA = {
     lastModified: {
       type:     'string',
       optional: true,
-      pattern:  ISO_86001_REGEX,
-      error:    'if provided, must be an ISO 86001 date'
+      pattern:  ISO_8601_REGEX,
+      error:    'if provided, must be an ISO 8601 date'
     }
   }
 };

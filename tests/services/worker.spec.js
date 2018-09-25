@@ -43,11 +43,11 @@ describe('worker', function () {
     worker = new Worker(redis);
 
     utils.deleteAllTemplates(source)
-    .finally(() => utils.deleteAllTemplates(dest))
-    .finally(() => utils.deleteAllIndices(source))
-    .finally(() => utils.deleteAllIndices(dest))
-    .finally(() => redis.flushdb())
-    .finally(() => done());
+      .finally(() => utils.deleteAllTemplates(dest))
+      .finally(() => utils.deleteAllIndices(source))
+      .finally(() => utils.deleteAllIndices(dest))
+      .finally(() => redis.flushdb())
+      .finally(() => done());
   });
 
   it('should perform transfers queued by manager', (done) => {
@@ -97,37 +97,37 @@ describe('worker', function () {
     worker.setCompletedCallback(completeCallback);
 
     source.indices.create({index: 'first'})
-    .then(() => source.indices.create({index: 'second'}))
-    .then(() => source.bulk({body: data}))
-    .then((results) => {
-      if (results.errors) {
-        log.error('errors', JSON.stringify(results, null, 2));
-        done('fail');
-        return Promise.reject(`errors: ${results.errors}`);
-      } else {
-        return source.indices.refresh();
-      }
-    })
-    .then(() => utils.deleteAllIndices(dest))
-    .then(() => dest.search())
-    .then((results) => expect(results.hits.total).to.be.equals(0))
-    .then(() => dest.indices.create({index: 'first'}))
-    .then(() => dest.indices.create({index: 'second'}))
-    .then(() => tasks.add(TASK1_NAME, taskParams))
-    .then(() => subtasks.getBacklog(TASK1_NAME))
-    .then((backlogJobs) => {
-      expect(backlogJobs.length).to.be.equals(2);
+      .then(() => source.indices.create({index: 'second'}))
+      .then(() => source.bulk({body: data}))
+      .then((results) => {
+        if (results.errors) {
+          log.error('errors', JSON.stringify(results, null, 2));
+          done('fail');
+          return Promise.reject(`errors: ${results.errors}`);
+        } else {
+          return source.indices.refresh();
+        }
+      })
+      .then(() => utils.deleteAllIndices(dest))
+      .then(() => dest.search())
+      .then((results) => expect(results.hits.total).to.be.equals(0))
+      .then(() => dest.indices.create({index: 'first'}))
+      .then(() => dest.indices.create({index: 'second'}))
+      .then(() => tasks.add(TASK1_NAME, taskParams))
+      .then(() => subtasks.getBacklog(TASK1_NAME))
+      .then((backlogJobs) => {
+        expect(backlogJobs.length).to.be.equals(2);
 
-      let target = _.find(backlogJobs, {
-        transfer: {documents: {index: 'first', type: 'type1'}}
-      });
-      expect(target.count).to.be.equals(10);
+        let target = _.find(backlogJobs, {
+          transfer: {documents: {index: 'first', type: 'type1'}}
+        });
+        expect(target.count).to.be.equals(10);
 
-      target = _.find(backlogJobs, {
-        transfer: {documents: {index: 'second', type: 'mytype1'}}
-      });
-      expect(target.count).to.be.equals(5);
-    })
-    .then(() => manager.setRunning(true));
+        target = _.find(backlogJobs, {
+          transfer: {documents: {index: 'second', type: 'mytype1'}}
+        });
+        expect(target.count).to.be.equals(5);
+      })
+      .then(() => manager.setRunning(true));
   });
 });

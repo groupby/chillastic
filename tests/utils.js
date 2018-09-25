@@ -9,11 +9,11 @@ const Utils = function () {
 
   self.createIndices = (clients, src, dst) => {
     return clients.source.indices.create({index: src})
-    .then(() => clients.dest.indices.create({index: dst}));
+      .then(() => clients.dest.indices.create({index: dst}));
   };
 
   self.addData = (client) =>
-      client.indices.create({index: 'myindex1'})
+    client.indices.create({index: 'myindex1'})
       .then(() => client.indices.create({index: 'myindex2'}))
       .then(() => client.indices.create({index: 'myindex3'}))
       .then(() => client.bulk({
@@ -35,11 +35,11 @@ const Utils = function () {
       }));
 
   self.deleteAllTemplates = (client) =>
-      client.indices.getTemplate()
+    client.indices.getTemplate()
       .then((templateNames) => Promise.all(_.keys(templateNames).map((t) => client.indices.deleteTemplate({name: t}))));
 
   self.deleteAllIndices = (client) =>
-      client.indices.get({index: '_all'})
+    client.indices.get({index: '_all'})
       .then((indexNames) => Promise.all(_.keys(indexNames).map((i) => client.indices.delete({index: i}))));
 };
 

@@ -49,8 +49,8 @@ const setWorkerName = (getName) => {
   const name = getName();
 
   return purgeOldWorkerData()
-  .then(() => redis.zadd(WORKER_NAME_KEY, 'NX', moment().valueOf(), name))
-  .then((result) => result ? redis.hset(WORKER_STATUS_KEY, name, 'new').return(name) : setWorkerName(getName));
+    .then(() => redis.zadd(WORKER_NAME_KEY, 'NX', moment().valueOf(), name))
+    .then((result) => result ? redis.hset(WORKER_STATUS_KEY, name, 'new').return(name) : setWorkerName(getName));
 };
 
 /**
@@ -59,7 +59,7 @@ const setWorkerName = (getName) => {
  * @returns {*|{arity, flags, keyStart, keyStop, step}
  */
 const getWorkersStatus = () =>
-    purgeOldWorkerData()
+  purgeOldWorkerData()
     .then(() => redis.hgetall(WORKER_STATUS_KEY))
     .then((workersStatus) => _.reduce(workersStatus, (result, status, workerName) => _.assign(result, {[workerName]: JSON.parse(status)}), {}));
 
@@ -71,7 +71,7 @@ const getWorkersStatus = () =>
  * @returns {Promise.<TResult>}
  */
 const workerHeartbeat = (name, status) =>
-    redis.zadd(WORKER_NAME_KEY, moment().valueOf(), name)
+  redis.zadd(WORKER_NAME_KEY, moment().valueOf(), name)
     .then(() => redis.hset(WORKER_STATUS_KEY, name, JSON.stringify(status)))
     .then(purgeOldWorkerData);
 
@@ -81,22 +81,22 @@ const workerHeartbeat = (name, status) =>
  * @returns {Promise.<TResult>}
  */
 const purgeOldWorkerData = () =>
-    redis.zremrangebyscore(WORKER_NAME_KEY, '-inf', moment().subtract(NAME_TIMEOUT_SEC, 'seconds').valueOf())
+  redis.zremrangebyscore(WORKER_NAME_KEY, '-inf', moment().subtract(NAME_TIMEOUT_SEC, 'seconds').valueOf())
     .then(() => redis.zrangebyscore(WORKER_NAME_KEY, '-inf', '+inf'))
     .then((activeWorkerNames) => {
       log.debug(`Active workers: ${activeWorkerNames}`);
 
       return redis.hkeys(WORKER_STATUS_KEY)
-      .then((allWorkerNames) => {
-        log.debug(`All workers: ${allWorkerNames}`);
-        return _.difference(allWorkerNames, activeWorkerNames);
-      })
-      .then((oldWorkerNames) => {
-        if (oldWorkerNames.length > 0) {
-          log.info(`Expiring status of workers: ${oldWorkerNames}`);
-        }
-        return Promise.each(oldWorkerNames, (oldName) => redis.hdel(WORKER_STATUS_KEY, oldName));
-      });
+        .then((allWorkerNames) => {
+          log.debug(`All workers: ${allWorkerNames}`);
+          return _.difference(allWorkerNames, activeWorkerNames);
+        })
+        .then((oldWorkerNames) => {
+          if (oldWorkerNames.length > 0) {
+            log.info(`Expiring status of workers: ${oldWorkerNames}`);
+          }
+          return Promise.each(oldWorkerNames, (oldName) => redis.hdel(WORKER_STATUS_KEY, oldName));
+        });
     });
 
 /**

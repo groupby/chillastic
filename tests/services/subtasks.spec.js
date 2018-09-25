@@ -108,16 +108,16 @@ describe('subtasks service', function () {
     utils = new Utils();
 
     utils.deleteAllTemplates(source)
-    .finally(() => utils.deleteAllIndices(source))
-    .finally(() => redis.flushdb())
-    .finally(() => done());
+      .finally(() => utils.deleteAllIndices(source))
+      .finally(() => redis.flushdb())
+      .finally(() => done());
   });
 
   afterEach((done) => {
     utils.deleteAllTemplates(source)
-    .finally(() => utils.deleteAllIndices(source))
-    .finally(() => redis.flushdb())
-    .finally(() => done());
+      .finally(() => utils.deleteAllIndices(source))
+      .finally(() => redis.flushdb())
+      .finally(() => done());
   });
 
   it('should get subtasks in the same order they were added', (done) => {
@@ -158,30 +158,30 @@ describe('subtasks service', function () {
     ];
 
     subtasks.queue(TASK_NAME, expected)
-    .then(() => subtasks.getTotal(TASK_NAME))
-    .then((total) => expect(total).to.be.equals(31))
-    .then(() => subtasks.fetch(TASK_NAME))
-    .then((subtask) => {
-      expect(subtask.transfer.documents.index).to.be.equals(expected[0].transfer.documents.index);
-      expect(subtask.transfer.documents.type).to.be.equals(expected[0].transfer.documents.type);
-      expect(subtask.count).to.be.equals(expected[0].count);
-    })
-    .then(() => subtasks.fetch(TASK_NAME))
-    .then((subtask) => {
-      expect(subtask.transfer.documents.index).to.be.equals(expected[1].transfer.documents.index);
-      expect(subtask.transfer.documents.type).to.be.equals(expected[1].transfer.documents.type);
-      expect(subtask.count).to.be.equals(expected[1].count);
-    })
-    .then(() => subtasks.fetch(TASK_NAME))
-    .then((subtask) => {
-      expect(subtask.transfer.documents.index).to.be.equals(expected[2].transfer.documents.index);
-      expect(subtask.transfer.documents.type).to.be.equals(expected[2].transfer.documents.type);
-      expect(subtask.count).to.be.equals(expected[2].count);
-    })
-    .then(() => subtasks.fetch(TASK_NAME))
-    .then((subtask) => expect(subtask).to.be.null)
-    .then(() => done())
-    .catch(done);
+      .then(() => subtasks.getTotal(TASK_NAME))
+      .then((total) => expect(total).to.be.equals(31))
+      .then(() => subtasks.fetch(TASK_NAME))
+      .then((subtask) => {
+        expect(subtask.transfer.documents.index).to.be.equals(expected[0].transfer.documents.index);
+        expect(subtask.transfer.documents.type).to.be.equals(expected[0].transfer.documents.type);
+        expect(subtask.count).to.be.equals(expected[0].count);
+      })
+      .then(() => subtasks.fetch(TASK_NAME))
+      .then((subtask) => {
+        expect(subtask.transfer.documents.index).to.be.equals(expected[1].transfer.documents.index);
+        expect(subtask.transfer.documents.type).to.be.equals(expected[1].transfer.documents.type);
+        expect(subtask.count).to.be.equals(expected[1].count);
+      })
+      .then(() => subtasks.fetch(TASK_NAME))
+      .then((subtask) => {
+        expect(subtask.transfer.documents.index).to.be.equals(expected[2].transfer.documents.index);
+        expect(subtask.transfer.documents.type).to.be.equals(expected[2].transfer.documents.type);
+        expect(subtask.count).to.be.equals(expected[2].count);
+      })
+      .then(() => subtasks.fetch(TASK_NAME))
+      .then((subtask) => expect(subtask).to.be.null)
+      .then(() => done())
+      .catch(done);
   });
 
   it('should not add the same subtask twice', (done) => {
@@ -211,18 +211,18 @@ describe('subtasks service', function () {
     ];
 
     subtasks.queue(TASK_NAME, expected)
-    .then(() => subtasks.getTotal(TASK_NAME))
-    .then((total) => expect(total).to.be.equals(22))
-    .then(() => subtasks.fetch(TASK_NAME))
-    .then((subtask) => {
-      expect(subtask.transfer.documents.index).to.be.equals(expected[0].transfer.documents.index);
-      expect(subtask.transfer.documents.type).to.be.equals(expected[0].transfer.documents.type);
-      expect(subtask.count).to.be.equals(expected[0].count);
-    })
-    .then(() => subtasks.fetch(TASK_NAME))
-    .then((subtask) => expect(subtask).to.be.null)
-    .then(() => done())
-    .catch(done);
+      .then(() => subtasks.getTotal(TASK_NAME))
+      .then((total) => expect(total).to.be.equals(22))
+      .then(() => subtasks.fetch(TASK_NAME))
+      .then((subtask) => {
+        expect(subtask.transfer.documents.index).to.be.equals(expected[0].transfer.documents.index);
+        expect(subtask.transfer.documents.type).to.be.equals(expected[0].transfer.documents.type);
+        expect(subtask.count).to.be.equals(expected[0].count);
+      })
+      .then(() => subtasks.fetch(TASK_NAME))
+      .then((subtask) => expect(subtask).to.be.null)
+      .then(() => done())
+      .catch(done);
   });
 
   it('should get all completed subtasks', (done) => {
@@ -263,25 +263,25 @@ describe('subtasks service', function () {
     ];
 
     Promise.each(expected, (subtask) => subtasks.complete(TASK_NAME, subtask))
-    .then(() => subtasks.getCompleted(TASK_NAME))
-    .then((completedSubtasks) => {
-      let target = _.find(completedSubtasks, {count: expected[0].count});
-      expect(target.transfer.documents.index).to.be.equals(expected[0].transfer.documents.index);
-      expect(target.transfer.documents.type).to.be.equals(expected[0].transfer.documents.type);
-      expect(target.count).to.be.equals(expected[0].count);
+      .then(() => subtasks.getCompleted(TASK_NAME))
+      .then((completedSubtasks) => {
+        let target = _.find(completedSubtasks, {count: expected[0].count});
+        expect(target.transfer.documents.index).to.be.equals(expected[0].transfer.documents.index);
+        expect(target.transfer.documents.type).to.be.equals(expected[0].transfer.documents.type);
+        expect(target.count).to.be.equals(expected[0].count);
 
-      target = _.find(completedSubtasks, {count: expected[1].count});
-      expect(target.transfer.documents.index).to.be.equals(expected[1].transfer.documents.index);
-      expect(target.transfer.documents.type).to.be.equals(expected[1].transfer.documents.type);
-      expect(target.count).to.be.equals(expected[1].count);
+        target = _.find(completedSubtasks, {count: expected[1].count});
+        expect(target.transfer.documents.index).to.be.equals(expected[1].transfer.documents.index);
+        expect(target.transfer.documents.type).to.be.equals(expected[1].transfer.documents.type);
+        expect(target.count).to.be.equals(expected[1].count);
 
-      target = _.find(completedSubtasks, {count: expected[2].count});
-      expect(target.transfer.documents.index).to.be.equals(expected[2].transfer.documents.index);
-      expect(target.transfer.documents.type).to.be.equals(expected[2].transfer.documents.type);
-      expect(target.count).to.be.equals(expected[2].count);
-    })
-    .then(() => done())
-    .catch(done);
+        target = _.find(completedSubtasks, {count: expected[2].count});
+        expect(target.transfer.documents.index).to.be.equals(expected[2].transfer.documents.index);
+        expect(target.transfer.documents.type).to.be.equals(expected[2].transfer.documents.type);
+        expect(target.count).to.be.equals(expected[2].count);
+      })
+      .then(() => done())
+      .catch(done);
   });
 
   it('should get completed subtask count', (done) => {
@@ -322,10 +322,10 @@ describe('subtasks service', function () {
     ];
 
     Promise.each(expected, (subtask) => subtasks.complete(TASK_NAME, subtask))
-    .then(() => subtasks.countCompleted(TASK_NAME))
-    .then((completedCount) => expect(completedCount).to.be.equals(31))
-    .then(() => done())
-    .catch(done);
+      .then(() => subtasks.countCompleted(TASK_NAME))
+      .then((completedCount) => expect(completedCount).to.be.equals(31))
+      .then(() => done())
+      .catch(done);
   });
 
   it('should clear completed subtasks', (done) => {
@@ -366,25 +366,25 @@ describe('subtasks service', function () {
     ];
 
     Promise.each(expected, (subtask) => subtasks.complete(TASK_NAME, subtask))
-    .then(() => subtasks.clearCompleted(TASK_NAME))
-    .then(() => subtasks.countCompleted(TASK_NAME))
-    .then((completedCount) => expect(completedCount).to.be.equals(0))
-    .then(() => done())
-    .catch(done);
+      .then(() => subtasks.clearCompleted(TASK_NAME))
+      .then(() => subtasks.countCompleted(TASK_NAME))
+      .then((completedCount) => expect(completedCount).to.be.equals(0))
+      .then(() => done())
+      .catch(done);
   });
 
   it('should return an empty array when there are no completed subtasks', (done) => {
     subtasks.getCompleted(TASK_NAME)
-    .then((completedSubtasks) => expect(completedSubtasks).to.be.empty)
-    .then(() => done())
-    .catch(done);
+      .then((completedSubtasks) => expect(completedSubtasks).to.be.empty)
+      .then(() => done())
+      .catch(done);
   });
 
   it('should return an empty array when there are no backlog subtasks', (done) => {
     subtasks.getBacklog(TASK_NAME)
-    .then((backlogSubtasks) => expect(backlogSubtasks).to.be.empty)
-    .then(() => done())
-    .catch(done);
+      .then((backlogSubtasks) => expect(backlogSubtasks).to.be.empty)
+      .then(() => done())
+      .catch(done);
   });
 
   it('should return all backlog subtasks', (done) => {
@@ -425,27 +425,27 @@ describe('subtasks service', function () {
     ];
 
     subtasks.queue(TASK_NAME, expected)
-    .then(() => subtasks.getTotal(TASK_NAME))
-    .then((total) => expect(total).to.be.equals(31))
-    .then(() => subtasks.getBacklog(TASK_NAME))
-    .then((backlogSubtasks) => {
-      let target = _.find(backlogSubtasks, {count: expected[0].count});
-      expect(target.transfer.documents.index).to.be.equals(expected[0].transfer.documents.index);
-      expect(target.transfer.documents.type).to.be.equals(expected[0].transfer.documents.type);
-      expect(target.count).to.be.equals(expected[0].count);
+      .then(() => subtasks.getTotal(TASK_NAME))
+      .then((total) => expect(total).to.be.equals(31))
+      .then(() => subtasks.getBacklog(TASK_NAME))
+      .then((backlogSubtasks) => {
+        let target = _.find(backlogSubtasks, {count: expected[0].count});
+        expect(target.transfer.documents.index).to.be.equals(expected[0].transfer.documents.index);
+        expect(target.transfer.documents.type).to.be.equals(expected[0].transfer.documents.type);
+        expect(target.count).to.be.equals(expected[0].count);
 
-      target = _.find(backlogSubtasks, {count: expected[1].count});
-      expect(target.transfer.documents.index).to.be.equals(expected[1].transfer.documents.index);
-      expect(target.transfer.documents.type).to.be.equals(expected[1].transfer.documents.type);
-      expect(target.count).to.be.equals(expected[1].count);
+        target = _.find(backlogSubtasks, {count: expected[1].count});
+        expect(target.transfer.documents.index).to.be.equals(expected[1].transfer.documents.index);
+        expect(target.transfer.documents.type).to.be.equals(expected[1].transfer.documents.type);
+        expect(target.count).to.be.equals(expected[1].count);
 
-      target = _.find(backlogSubtasks, {count: expected[2].count});
-      expect(target.transfer.documents.index).to.be.equals(expected[2].transfer.documents.index);
-      expect(target.transfer.documents.type).to.be.equals(expected[2].transfer.documents.type);
-      expect(target.count).to.be.equals(expected[2].count);
-    })
-    .then(() => done())
-    .catch(done);
+        target = _.find(backlogSubtasks, {count: expected[2].count});
+        expect(target.transfer.documents.index).to.be.equals(expected[2].transfer.documents.index);
+        expect(target.transfer.documents.type).to.be.equals(expected[2].transfer.documents.type);
+        expect(target.count).to.be.equals(expected[2].count);
+      })
+      .then(() => done())
+      .catch(done);
   });
 
   it('should clear all backlog subtasks', (done) => {
@@ -486,27 +486,27 @@ describe('subtasks service', function () {
     ];
 
     subtasks.queue(TASK_NAME, expected)
-    .then(() => subtasks.getTotal(TASK_NAME))
-    .then((total) => expect(total).to.be.equals(31))
-    .then(() => subtasks.clearBacklog(TASK_NAME))
-    .then(() => subtasks.getBacklog(TASK_NAME))
-    .then((backlogSubtasks) => expect(backlogSubtasks).to.be.empty)
-    .then(() => done())
-    .catch(done);
+      .then(() => subtasks.getTotal(TASK_NAME))
+      .then((total) => expect(total).to.be.equals(31))
+      .then(() => subtasks.clearBacklog(TASK_NAME))
+      .then(() => subtasks.getBacklog(TASK_NAME))
+      .then((backlogSubtasks) => expect(backlogSubtasks).to.be.empty)
+      .then(() => done())
+      .catch(done);
   });
 
   it('should return count of zero for empty completed', (done) => {
     subtasks.countCompleted(TASK_NAME)
-    .then((count) => expect(count).to.be.equals(0))
-    .then(() => done())
-    .catch(done);
+      .then((count) => expect(count).to.be.equals(0))
+      .then(() => done())
+      .catch(done);
   });
 
   it('should return count of zero for empty backlog', (done) => {
     subtasks.countBacklog(TASK_NAME)
-    .then((count) => expect(count).to.be.equals(0))
-    .then(() => done())
-    .catch(done);
+      .then((count) => expect(count).to.be.equals(0))
+      .then(() => done())
+      .catch(done);
   });
 
   it('should return total count of subtasks in backlog', (done) => {
@@ -547,12 +547,12 @@ describe('subtasks service', function () {
     ];
 
     subtasks.queue(TASK_NAME, expected)
-    .then(() => subtasks.getTotal(TASK_NAME))
-    .then((total) => expect(total).to.be.equals(31))
-    .then(() => subtasks.countBacklog(TASK_NAME))
-    .then((backlogTotal) => expect(backlogTotal).to.be.equals(expected.reduce((total, subtask) => total + subtask.count, 0)))
-    .then(() => done())
-    .catch(done);
+      .then(() => subtasks.getTotal(TASK_NAME))
+      .then((total) => expect(total).to.be.equals(31))
+      .then(() => subtasks.countBacklog(TASK_NAME))
+      .then((backlogTotal) => expect(backlogTotal).to.be.equals(expected.reduce((total, subtask) => total + subtask.count, 0)))
+      .then(() => done())
+      .catch(done);
   });
 
   it('should get counts for provided jobs', (done) => {
@@ -580,20 +580,20 @@ describe('subtasks service', function () {
     ];
 
     utils.addData(source)
-    .then(() => Promise.map(expected, (subtask) => subtasks.addCount(source, subtask)))
-    .then((subtasksWithCount) => {
-      expect(subtasksWithCount.length).to.be.equals(2);
+      .then(() => Promise.map(expected, (subtask) => subtasks.addCount(source, subtask)))
+      .then((subtasksWithCount) => {
+        expect(subtasksWithCount.length).to.be.equals(2);
 
-      let filter = {transfer: {documents: {index: 'myindex1'}}};
-      let target = _.find(subtasksWithCount, filter);
-      expect(target.count).to.be.equals(2);
+        let filter = {transfer: {documents: {index: 'myindex1'}}};
+        let target = _.find(subtasksWithCount, filter);
+        expect(target.count).to.be.equals(2);
 
-      filter = {transfer: {documents: {index: 'myindex3'}}};
-      target = _.find(subtasksWithCount, filter);
-      expect(target.count).to.be.equals(3);
-    })
-    .then(() => done())
-    .catch(done);
+        filter = {transfer: {documents: {index: 'myindex3'}}};
+        target = _.find(subtasksWithCount, filter);
+        expect(target.count).to.be.equals(3);
+      })
+      .then(() => done())
+      .catch(done);
   });
 
   it('should filter out documents by index regex', (done) => {
@@ -612,40 +612,40 @@ describe('subtasks service', function () {
     };
 
     subtasks.filterDocumentSubtasks(fakeTask, MOCK_ALL_INDICES, filterFunctions)
-    .then((actual) => {
-      expect(actual.length).to.be.equals(3);
-      expect(actual[0].source).to.be.equals(fakeTask.source);
-      expect(actual[0].destination).to.be.equals(fakeTask.destination);
-      expect(actual[0].mutators).to.be.equals(fakeTask.mutators);
-      expect(actual[0].transfer.documents.index).to.be.equals('index_number_1');
-      expect(actual[0].transfer.documents.type).to.be.oneOf([
-        'newtype',
-        'oldtype',
-        'newtype_2'
-      ]);
+      .then((actual) => {
+        expect(actual.length).to.be.equals(3);
+        expect(actual[0].source).to.be.equals(fakeTask.source);
+        expect(actual[0].destination).to.be.equals(fakeTask.destination);
+        expect(actual[0].mutators).to.be.equals(fakeTask.mutators);
+        expect(actual[0].transfer.documents.index).to.be.equals('index_number_1');
+        expect(actual[0].transfer.documents.type).to.be.oneOf([
+          'newtype',
+          'oldtype',
+          'newtype_2'
+        ]);
 
-      expect(actual[1].source).to.be.equals(fakeTask.source);
-      expect(actual[1].destination).to.be.equals(fakeTask.destination);
-      expect(actual[1].mutators).to.be.equals(fakeTask.mutators);
-      expect(actual[1].transfer.documents.index).to.be.equals('index_number_1');
-      expect(actual[1].transfer.documents.type).to.be.oneOf([
-        'newtype',
-        'oldtype',
-        'newtype_2'
-      ]);
+        expect(actual[1].source).to.be.equals(fakeTask.source);
+        expect(actual[1].destination).to.be.equals(fakeTask.destination);
+        expect(actual[1].mutators).to.be.equals(fakeTask.mutators);
+        expect(actual[1].transfer.documents.index).to.be.equals('index_number_1');
+        expect(actual[1].transfer.documents.type).to.be.oneOf([
+          'newtype',
+          'oldtype',
+          'newtype_2'
+        ]);
 
-      expect(actual[2].source).to.be.equals(fakeTask.source);
-      expect(actual[2].destination).to.be.equals(fakeTask.destination);
-      expect(actual[2].mutators).to.be.equals(fakeTask.mutators);
-      expect(actual[2].transfer.documents.index).to.be.equals('index_number_1');
-      expect(actual[2].transfer.documents.type).to.be.oneOf([
-        'newtype',
-        'oldtype',
-        'newtype_2'
-      ]);
-    })
-    .then(() => done())
-    .catch(done);
+        expect(actual[2].source).to.be.equals(fakeTask.source);
+        expect(actual[2].destination).to.be.equals(fakeTask.destination);
+        expect(actual[2].mutators).to.be.equals(fakeTask.mutators);
+        expect(actual[2].transfer.documents.index).to.be.equals('index_number_1');
+        expect(actual[2].transfer.documents.type).to.be.oneOf([
+          'newtype',
+          'oldtype',
+          'newtype_2'
+        ]);
+      })
+      .then(() => done())
+      .catch(done);
   });
 
   it('should filter out documents by type regex', (done) => {
@@ -664,28 +664,28 @@ describe('subtasks service', function () {
     };
 
     subtasks.filterDocumentSubtasks(fakeTask, MOCK_ALL_INDICES, filterFunctions)
-    .then((actual) => {
-      expect(actual.length).to.be.equals(2);
-      expect(actual[0].source).to.be.equals(fakeTask.source);
-      expect(actual[0].destination).to.be.equals(fakeTask.destination);
-      expect(actual[0].mutators).to.be.equals(fakeTask.mutators);
-      expect(actual[0].transfer.documents.index).to.be.oneOf([
-        'index_number_1',
-        'index_number_2'
-      ]);
-      expect(actual[0].transfer.documents.type).to.be.equals('newtype');
+      .then((actual) => {
+        expect(actual.length).to.be.equals(2);
+        expect(actual[0].source).to.be.equals(fakeTask.source);
+        expect(actual[0].destination).to.be.equals(fakeTask.destination);
+        expect(actual[0].mutators).to.be.equals(fakeTask.mutators);
+        expect(actual[0].transfer.documents.index).to.be.oneOf([
+          'index_number_1',
+          'index_number_2'
+        ]);
+        expect(actual[0].transfer.documents.type).to.be.equals('newtype');
 
-      expect(actual[1].source).to.be.equals(fakeTask.source);
-      expect(actual[1].destination).to.be.equals(fakeTask.destination);
-      expect(actual[1].mutators).to.be.equals(fakeTask.mutators);
-      expect(actual[1].transfer.documents.index).to.be.oneOf([
-        'index_number_1',
-        'index_number_2'
-      ]);
-      expect(actual[1].transfer.documents.type).to.be.equals('newtype');
-    })
-    .then(() => done())
-    .catch(done);
+        expect(actual[1].source).to.be.equals(fakeTask.source);
+        expect(actual[1].destination).to.be.equals(fakeTask.destination);
+        expect(actual[1].mutators).to.be.equals(fakeTask.mutators);
+        expect(actual[1].transfer.documents.index).to.be.oneOf([
+          'index_number_1',
+          'index_number_2'
+        ]);
+        expect(actual[1].transfer.documents.type).to.be.equals('newtype');
+      })
+      .then(() => done())
+      .catch(done);
   });
 
   it('should prep subtasks backlog considering completed jobs', (done) => {
@@ -712,31 +712,31 @@ describe('subtasks service', function () {
     };
 
     source.indices.create({index: 'myindex1'})
-    .then(() => source.bulk({
-      refresh: true,
-      body:    [
-        {
-          index: {
-            _index: 'myindex1',
-            _type:  'mytype1'
-          }
-        },
-        {someField1: 'somedata1'},
-        {
-          index: {
-            _index: 'myindex1',
-            _type:  'mytype1'
-          }
-        },
-        {someField1: 'somedata3'}
-      ]
-    }))
-    .then(() => subtasks.complete(TASK_NAME, completedSubtask))
-    .then(() => subtasks.buildBacklog(TASK_NAME, taskParams))
-    .then(() => subtasks.fetch(TASK_NAME))
-    .then((subtask) => expect(subtask).to.be.null)
-    .then(() => done())
-    .catch(done);
+      .then(() => source.bulk({
+        refresh: true,
+        body:    [
+          {
+            index: {
+              _index: 'myindex1',
+              _type:  'mytype1'
+            }
+          },
+          {someField1: 'somedata1'},
+          {
+            index: {
+              _index: 'myindex1',
+              _type:  'mytype1'
+            }
+          },
+          {someField1: 'somedata3'}
+        ]
+      }))
+      .then(() => subtasks.complete(TASK_NAME, completedSubtask))
+      .then(() => subtasks.buildBacklog(TASK_NAME, taskParams))
+      .then(() => subtasks.fetch(TASK_NAME))
+      .then((subtask) => expect(subtask).to.be.null)
+      .then(() => done())
+      .catch(done);
   });
 
   it('should prep job backlog with no completed jobs', (done) => {
@@ -751,37 +751,37 @@ describe('subtasks service', function () {
     };
 
     source.indices.create({index: 'myindex1'})
-    .then(() => source.bulk({
-      refresh: true,
-      body:    [
-        {
-          index: {
-            _index: 'myindex1',
-            _type:  'mytype1'
-          }
-        },
-        {someField1: 'somedata1'},
-        {
-          index: {
-            _index: 'myindex1',
-            _type:  'mytype1'
-          }
-        },
-        {someField1: 'somedata3'}
-      ]
-    }))
-    .then(() => subtasks.buildBacklog(TASK_NAME, taskParams))
-    .then(() => subtasks.fetch(TASK_NAME))
-    .then((subtask) => {
-      expect(subtask.transfer.documents.index).to.be.equals('myindex1');
-      expect(subtask.transfer.documents.type).to.be.equals('mytype1');
-    })
-    .then(() => subtasks.getTotal(TASK_NAME))
-    .then((total) => expect(total).to.equal(2))
-    .then(() => subtasks.fetch(TASK_NAME))
-    .then((subtask) => expect(subtask).to.be.null)
-    .then(() => done())
-    .catch(done);
+      .then(() => source.bulk({
+        refresh: true,
+        body:    [
+          {
+            index: {
+              _index: 'myindex1',
+              _type:  'mytype1'
+            }
+          },
+          {someField1: 'somedata1'},
+          {
+            index: {
+              _index: 'myindex1',
+              _type:  'mytype1'
+            }
+          },
+          {someField1: 'somedata3'}
+        ]
+      }))
+      .then(() => subtasks.buildBacklog(TASK_NAME, taskParams))
+      .then(() => subtasks.fetch(TASK_NAME))
+      .then((subtask) => {
+        expect(subtask.transfer.documents.index).to.be.equals('myindex1');
+        expect(subtask.transfer.documents.type).to.be.equals('mytype1');
+      })
+      .then(() => subtasks.getTotal(TASK_NAME))
+      .then((total) => expect(total).to.equal(2))
+      .then(() => subtasks.fetch(TASK_NAME))
+      .then((subtask) => expect(subtask).to.be.null)
+      .then(() => done())
+      .catch(done);
   });
 
   it('should keep track of progress for a single task', (done) => {
@@ -804,26 +804,26 @@ describe('subtasks service', function () {
     };
 
     subtasks.updateProgress(TASK_NAME, subtask, progressUpdate)
-    .then(() => subtasks.getProgress(TASK_NAME, subtask))
-    .then((progress) => {
-      expect(progress.tick).to.be.equals(10);
-      expect(progress.total).to.be.equals(20);
-      expect(progress.transferred).to.be.equals(10);
-      expect(progress.lastModified).to.not.be.undefined;
+      .then(() => subtasks.getProgress(TASK_NAME, subtask))
+      .then((progress) => {
+        expect(progress.tick).to.be.equals(10);
+        expect(progress.total).to.be.equals(20);
+        expect(progress.transferred).to.be.equals(10);
+        expect(progress.lastModified).to.not.be.undefined;
 
-      progressUpdate.tick = 5;
-      progressUpdate.transferred = 15;
-    })
-    .then(() => subtasks.updateProgress(TASK_NAME, subtask, progressUpdate))
-    .then(() => subtasks.getProgress(TASK_NAME, subtask))
-    .then((progress) => {
-      expect(progress.tick).to.be.equals(5);
-      expect(progress.total).to.be.equals(20);
-      expect(progress.transferred).to.be.equals(15);
-      expect(progress.lastModified).to.not.be.undefined;
-    })
-    .then(() => done())
-    .catch(done);
+        progressUpdate.tick = 5;
+        progressUpdate.transferred = 15;
+      })
+      .then(() => subtasks.updateProgress(TASK_NAME, subtask, progressUpdate))
+      .then(() => subtasks.getProgress(TASK_NAME, subtask))
+      .then((progress) => {
+        expect(progress.tick).to.be.equals(5);
+        expect(progress.total).to.be.equals(20);
+        expect(progress.transferred).to.be.equals(15);
+        expect(progress.lastModified).to.not.be.undefined;
+      })
+      .then(() => done())
+      .catch(done);
   });
 
   it('should keep track of progress for multiple tasks', (done) => {
@@ -858,47 +858,47 @@ describe('subtasks service', function () {
     };
 
     subtasks.updateProgress(TASK_NAME, subtask1, progressUpdate)
-    .then(() => subtasks.getProgress(TASK_NAME, subtask1))
-    .then((progress) => {
-      expect(progress.tick).to.be.equals(10);
-      expect(progress.total).to.be.equals(20);
-      expect(progress.transferred).to.be.equals(10);
-      expect(progress.lastModified).to.not.be.undefined;
+      .then(() => subtasks.getProgress(TASK_NAME, subtask1))
+      .then((progress) => {
+        expect(progress.tick).to.be.equals(10);
+        expect(progress.total).to.be.equals(20);
+        expect(progress.transferred).to.be.equals(10);
+        expect(progress.lastModified).to.not.be.undefined;
 
-      progressUpdate.tick = 5;
-      progressUpdate.transferred = 15;
-    })
-    .then(() => subtasks.updateProgress(TASK_NAME, subtask2, progressUpdate))
-    .then(() => subtasks.getProgress(TASK_NAME, subtask2))
-    .then((progress) => {
-      expect(progress.tick).to.be.equals(5);
-      expect(progress.total).to.be.equals(20);
-      expect(progress.transferred).to.be.equals(15);
-      expect(progress.lastModified).to.not.be.undefined;
-    })
-    .then(() => tasks.getProgress(TASK_NAME))
-    .then((overallProgress) => {
-      expect(overallProgress.length).to.be.equals(2);
+        progressUpdate.tick = 5;
+        progressUpdate.transferred = 15;
+      })
+      .then(() => subtasks.updateProgress(TASK_NAME, subtask2, progressUpdate))
+      .then(() => subtasks.getProgress(TASK_NAME, subtask2))
+      .then((progress) => {
+        expect(progress.tick).to.be.equals(5);
+        expect(progress.total).to.be.equals(20);
+        expect(progress.transferred).to.be.equals(15);
+        expect(progress.lastModified).to.not.be.undefined;
+      })
+      .then(() => tasks.getProgress(TASK_NAME))
+      .then((overallProgress) => {
+        expect(overallProgress.length).to.be.equals(2);
 
-      const predicate = {
-        subtask: {
-          transfer: {
-            documents: {
-              index: 'myindex1'
+        const predicate = {
+          subtask: {
+            transfer: {
+              documents: {
+                index: 'myindex1'
+              }
             }
           }
-        }
-      };
-      let target      = _.find(overallProgress, predicate);
-      expect(target.progress.tick).to.be.equals(10);
+        };
+        let target      = _.find(overallProgress, predicate);
+        expect(target.progress.tick).to.be.equals(10);
 
-      predicate.subtask.transfer.documents.index = 'myindex3';
+        predicate.subtask.transfer.documents.index = 'myindex3';
 
-      target = _.find(overallProgress, predicate);
-      expect(target.progress.tick).to.be.equals(5);
-    })
-    .then(() => done())
-    .catch(done);
+        target = _.find(overallProgress, predicate);
+        expect(target.progress.tick).to.be.equals(5);
+      })
+      .then(() => done())
+      .catch(done);
   });
 
   it('should keep track of progress for multiple bucketed tasks', (done) => {
@@ -937,58 +937,58 @@ describe('subtasks service', function () {
     };
 
     subtasks.updateProgress(TASK_NAME, subtask1, progressUpdate)
-    .then(() => subtasks.getProgress(TASK_NAME, subtask1))
-    .then((progress) => {
-      expect(progress.tick).to.be.equals(10);
-      expect(progress.total).to.be.equals(20);
-      expect(progress.transferred).to.be.equals(10);
-      expect(progress.lastModified).to.not.be.undefined;
+      .then(() => subtasks.getProgress(TASK_NAME, subtask1))
+      .then((progress) => {
+        expect(progress.tick).to.be.equals(10);
+        expect(progress.total).to.be.equals(20);
+        expect(progress.transferred).to.be.equals(10);
+        expect(progress.lastModified).to.not.be.undefined;
 
-      progressUpdate.tick = 5;
-      progressUpdate.transferred = 15;
-    })
-    .then(() => subtasks.updateProgress(TASK_NAME, subtask2, progressUpdate))
-    .then(() => subtasks.getProgress(TASK_NAME, subtask2))
-    .then((progress) => {
-      expect(progress.tick).to.be.equals(5);
-      expect(progress.total).to.be.equals(20);
-      expect(progress.transferred).to.be.equals(15);
-      expect(progress.lastModified).to.not.be.undefined;
-    })
-    .then(() => tasks.getProgress(TASK_NAME))
-    .then((overallProgress) => {
-      expect(overallProgress.length).to.be.equals(2);
+        progressUpdate.tick = 5;
+        progressUpdate.transferred = 15;
+      })
+      .then(() => subtasks.updateProgress(TASK_NAME, subtask2, progressUpdate))
+      .then(() => subtasks.getProgress(TASK_NAME, subtask2))
+      .then((progress) => {
+        expect(progress.tick).to.be.equals(5);
+        expect(progress.total).to.be.equals(20);
+        expect(progress.transferred).to.be.equals(15);
+        expect(progress.lastModified).to.not.be.undefined;
+      })
+      .then(() => tasks.getProgress(TASK_NAME))
+      .then((overallProgress) => {
+        expect(overallProgress.length).to.be.equals(2);
 
-      let target = _.find(overallProgress, {
-        subtask: {
-          transfer: {
-            documents: {
-              index:   'myindex1',
-              type:    'mytype1',
-              minSize: 0,
-              maxSize: 200,
+        let target = _.find(overallProgress, {
+          subtask: {
+            transfer: {
+              documents: {
+                index:   'myindex1',
+                type:    'mytype1',
+                minSize: 0,
+                maxSize: 200,
+              }
             }
           }
-        }
-      });
-      expect(target.progress.tick).to.be.equals(10);
+        });
+        expect(target.progress.tick).to.be.equals(10);
 
-      target = _.find(overallProgress, {
-        subtask: {
-          transfer: {
-            documents: {
-              index:   'myindex1',
-              type:    'mytype1',
-              minSize: 200,
-              maxSize: 1000000,
+        target = _.find(overallProgress, {
+          subtask: {
+            transfer: {
+              documents: {
+                index:   'myindex1',
+                type:    'mytype1',
+                minSize: 200,
+                maxSize: 1000000,
+              }
             }
           }
-        }
-      });
-      expect(target.progress.tick).to.be.equals(5);
-    })
-    .then(() => done())
-    .catch(done);
+        });
+        expect(target.progress.tick).to.be.equals(5);
+      })
+      .then(() => done())
+      .catch(done);
   });
 
   it('should delete progress of specific subtask', (done) => {
@@ -1023,23 +1023,23 @@ describe('subtasks service', function () {
     };
 
     subtasks.updateProgress(TASK_NAME, subtask1, progressUpdate)
-    .then(() => subtasks.getProgress(TASK_NAME, subtask1))
-    .then(() => {
-      progressUpdate.tick = 5;
-      progressUpdate.transferred = 15;
-    })
-    .then(() => subtasks.updateProgress(TASK_NAME, subtask2, progressUpdate))
-    .then(() => subtasks.getProgress(TASK_NAME, subtask2))
-    .then(() => tasks.getProgress(TASK_NAME))
-    .then((overallProgress) => expect(overallProgress.length).to.be.equals(2))
-    .then(() => subtasks.removeProgress(TASK_NAME, subtask1))
-    .then(() => tasks.getProgress(TASK_NAME))
-    .then((overallProgress) => {
-      expect(overallProgress.length).to.be.equals(1);
-      expect(overallProgress[0].subtask.transfer.documents.index).to.be.equals('myindex3');
-      expect(overallProgress[0].progress.tick).to.be.equals(5);
-    })
-    .then(() => done())
-    .catch(done);
+      .then(() => subtasks.getProgress(TASK_NAME, subtask1))
+      .then(() => {
+        progressUpdate.tick = 5;
+        progressUpdate.transferred = 15;
+      })
+      .then(() => subtasks.updateProgress(TASK_NAME, subtask2, progressUpdate))
+      .then(() => subtasks.getProgress(TASK_NAME, subtask2))
+      .then(() => tasks.getProgress(TASK_NAME))
+      .then((overallProgress) => expect(overallProgress.length).to.be.equals(2))
+      .then(() => subtasks.removeProgress(TASK_NAME, subtask1))
+      .then(() => tasks.getProgress(TASK_NAME))
+      .then((overallProgress) => {
+        expect(overallProgress.length).to.be.equals(1);
+        expect(overallProgress[0].subtask.transfer.documents.index).to.be.equals('myindex3');
+        expect(overallProgress[0].progress.tick).to.be.equals(5);
+      })
+      .then(() => done())
+      .catch(done);
   });
 });

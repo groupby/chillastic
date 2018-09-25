@@ -50,7 +50,7 @@ const Mutators = function (redisClient) {
    * @returns {*|Promise.<TResult>}
    */
   self.add = (objectId, mutatorSrc) =>
-      ObjectId.coerce(objectId).validate()
+    ObjectId.coerce(objectId).validate()
       .then(() => validate(mutatorSrc))
       .then(() => self.exists(objectId))
       .then((exists) => {
@@ -66,7 +66,7 @@ const Mutators = function (redisClient) {
    * @returns {Promise.<TResult>}
    */
   self.remove = (objectId) =>
-      ObjectId.coerce(objectId).validate()
+    ObjectId.coerce(objectId).validate()
       .then(() => redis.hdel(getNamespacedKey(objectId.namespace), objectId.id));
 
   /**
@@ -75,7 +75,7 @@ const Mutators = function (redisClient) {
    * @returns {Promise.<TResult>}
    */
   self.removeAllNamespacedBy = (objectId) =>
-      ObjectId.coerce(objectId).validate()
+    ObjectId.coerce(objectId).validate()
       .then(() => self.getIds(objectId.namespace))
       .then((ids) => _.map(ids, (id) => redis.hdel(getNamespacedKey(objectId.namespace), id)));
 
@@ -85,7 +85,7 @@ const Mutators = function (redisClient) {
    * @returns {*|{arity, flags, keyStart, keyStop, step}}
    */
   self.exists = (objectId) =>
-      ObjectId.coerce(objectId).validate()
+    ObjectId.coerce(objectId).validate()
       .then((id) => redis.hexists(getNamespacedKey(id.namespace), id.id));
 
   /**
@@ -95,31 +95,31 @@ const Mutators = function (redisClient) {
    * @returns {*|{arity, flags, keyStart, keyStop, step}}
    */
   self.load = (taskName, mutators) =>
-      !_.isObject(mutators) || !_.isArray(mutators.actions) ? Promise.resolve({}) :
-          Promise.map(mutators.actions, (action) => {
-            const id     = new ObjectId({namespace: _.isString(action.namespace) ? action.namespace : taskName, id: action.id});
-            id.arguments = action.arguments || mutators.arguments;
-            return id.validate()
-            .then(() => redis.hget(getNamespacedKey(id.namespace), id.id))
-            .then((src) => _.assign(compiler.compile(src), id));
-          })
-          .then((modules) => Promise.reduce(modules, (loadedModules, module) => {
-            if (!_.isArray(loadedModules[module.type])) {
-              loadedModules[module.type] = [];
-            }
-            log.info(`adding mutator [${module.namespace}:${module.id}] [type ${module.type}]`);
-            loadedModules[module.type].push(module);
-            return loadedModules;
-          }, {}));
+    !_.isObject(mutators) || !_.isArray(mutators.actions) ? Promise.resolve({}) :
+      Promise.map(mutators.actions, (action) => {
+        const id     = new ObjectId({namespace: _.isString(action.namespace) ? action.namespace : taskName, id: action.id});
+        id.arguments = action.arguments || mutators.arguments;
+        return id.validate()
+          .then(() => redis.hget(getNamespacedKey(id.namespace), id.id))
+          .then((src) => _.assign(compiler.compile(src), id));
+      })
+        .then((modules) => Promise.reduce(modules, (loadedModules, module) => {
+          if (!_.isArray(loadedModules[module.type])) {
+            loadedModules[module.type] = [];
+          }
+          log.info(`adding mutator [${module.namespace}:${module.id}] [type ${module.type}]`);
+          loadedModules[module.type].push(module);
+          return loadedModules;
+        }, {}));
 
   self.ensureMutatorsExist = (taskName, mutators) =>
-      !_.isObject(mutators) || !_.isArray(mutators.actions) ? Promise.resolve() :
-          Promise.map(mutators.actions, (action) => {
-            const id     = new ObjectId({namespace: _.isString(action.namespace) ? action.namespace : taskName, id: action.id});
-            id.arguments = action.arguments || mutators.arguments;
-            return self.exists(id)
-            .then((exists) => exists ? Promise.resolve() : Promise.reject(new Error(`Src for mutator id ${id.id} not found`)));
-          });
+    !_.isObject(mutators) || !_.isArray(mutators.actions) ? Promise.resolve() :
+      Promise.map(mutators.actions, (action) => {
+        const id     = new ObjectId({namespace: _.isString(action.namespace) ? action.namespace : taskName, id: action.id});
+        id.arguments = action.arguments || mutators.arguments;
+        return self.exists(id)
+          .then((exists) => exists ? Promise.resolve() : Promise.reject(new Error(`Src for mutator id ${id.id} not found`)));
+      });
 
 };
 

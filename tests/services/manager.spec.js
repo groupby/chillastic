@@ -30,16 +30,16 @@ describe('job manager', function () {
     utils = new Utils();
 
     utils.deleteAllTemplates(source)
-    .finally(() => utils.deleteAllIndices(source))
-    .finally(() => redis.flushdb())
-    .finally(() => done());
+      .finally(() => utils.deleteAllIndices(source))
+      .finally(() => redis.flushdb())
+      .finally(() => done());
   });
 
   afterEach((done) => {
     utils.deleteAllTemplates(source)
-    .finally(() => utils.deleteAllIndices(source))
-    .finally(() => redis.flushdb())
-    .finally(() => done());
+      .finally(() => utils.deleteAllIndices(source))
+      .finally(() => redis.flushdb())
+      .finally(() => done());
   });
 
   it('should not accept the same name twice', (done) => {

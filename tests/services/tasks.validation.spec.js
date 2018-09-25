@@ -33,7 +33,7 @@ describe('tasks service', function () {
 
     const tasksService = new TasksService(redisClient);
     expect(tasksService.add('testid', task)).to.be.rejectedWith('Src for mutator id doesNotExist not found')
-    .then(() => done());
+      .then(() => done());
   });
 
   it('does not add a task if a filter cannot be found in redis', (done) => {
@@ -60,7 +60,7 @@ describe('tasks service', function () {
 
     const tasksService = new TasksService(redisClient);
     expect(tasksService.add('testid', task)).to.be.rejectedWith('Src for filter id doesNotExist not found')
-    .then(() => done());
+      .then(() => done());
   });
 
 });

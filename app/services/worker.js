@@ -41,14 +41,14 @@ const Worker = function (redisClient) {
    */
   const taskIds     = [];
   const getTaskName = () => taskIds.length !== 0 ? Promise.resolve(taskIds.pop()) : tasks.getAll()
-  .then((allTasks) => {
-    if (allTasks.length === 0) {
-      return null;
-    } else {
-      allTasks.forEach((task) => taskIds.push(task));
-      return taskIds.pop();
-    }
-  });
+    .then((allTasks) => {
+      if (allTasks.length === 0) {
+        return null;
+      } else {
+        allTasks.forEach((task) => taskIds.push(task));
+        return taskIds.pop();
+      }
+    });
 
   const timeoutPromise = (timeout) => new Promise((resolve) => setTimeout(resolve, timeout));
 
@@ -59,68 +59,68 @@ const Worker = function (redisClient) {
    * @returns {Promise.<TResult>}
    */
   const doSubtask = () => manager.isRunning()
-  .then((running) => {
-    if (!running) {
-      if (killNow) {
-        throw new Error('Worker killed');
-      }
+    .then((running) => {
+      if (!running) {
+        if (killNow) {
+          throw new Error('Worker killed');
+        }
 
-      log.info('Currently stopped. Waiting for run...');
-      manager.workerHeartbeat(name, {status: 'stopped'});  // Not waiting for promise
-      return timeoutPromise(RUN_CHECK_INTERVAL_MS);
-    }
-
-    return getTaskName()
-    .then((taskId) => {
-      if (taskId === null) {
-        log.trace('No tasks found, waiting...');
-        manager.workerHeartbeat(name, {status: 'waiting for task...'});  // Not waiting for promise
+        log.info('Currently stopped. Waiting for run...');
+        manager.workerHeartbeat(name, {status: 'stopped'}); // Not waiting for promise
         return timeoutPromise(RUN_CHECK_INTERVAL_MS);
       }
 
-      return subtasks.countBacklog(taskId).then((backlogCount) => {
-        if (backlogCount === 0) {
-          log.trace('No tasks found, waiting...');
-          manager.workerHeartbeat(name, {status: 'waiting for task...'});  // Not waiting for promise
-          return timeoutPromise(RUN_CHECK_INTERVAL_MS);
-        }
-
-        log.info(`got task: ${taskId}`);
-
-        return subtasks.fetch(taskId)
-        .then((subtask) => {
-          if (!subtask) {
-            log.trace('No subtask to execute, waiting...');
-            manager.workerHeartbeat(name, {status: 'waiting for subtask...'});  // Not waiting for promise
+      return getTaskName()
+        .then((taskId) => {
+          if (taskId === null) {
+            log.trace('No tasks found, waiting...');
+            manager.workerHeartbeat(name, {status: 'waiting for task...'}); // Not waiting for promise
             return timeoutPromise(RUN_CHECK_INTERVAL_MS);
           }
 
-          manager.workerHeartbeat(name, {
-            status: 'starting..',
-            task:   taskId,
-            subtask
-          });  // Not waiting for promise
+          return subtasks.countBacklog(taskId).then((backlogCount) => {
+            if (backlogCount === 0) {
+              log.trace('No tasks found, waiting...');
+              manager.workerHeartbeat(name, {status: 'waiting for task...'}); // Not waiting for promise
+              return timeoutPromise(RUN_CHECK_INTERVAL_MS);
+            }
 
-          log.info(`got subtask: ${subtask}`);
+            log.info(`got task: ${taskId}`);
 
-          return doTransfer(taskId, subtask)
-          .then(() => completeSubtask(taskId, subtask))
-          .catch((error) => {
-            tasks.logError(taskId, subtask, `Error: ${JSON.stringify(error)}`);
-            return Promise.resolve();
+            return subtasks.fetch(taskId)
+              .then((subtask) => {
+                if (!subtask) {
+                  log.trace('No subtask to execute, waiting...');
+                  manager.workerHeartbeat(name, {status: 'waiting for subtask...'}); // Not waiting for promise
+                  return timeoutPromise(RUN_CHECK_INTERVAL_MS);
+                }
+
+                manager.workerHeartbeat(name, {
+                  status: 'starting..',
+                  task:   taskId,
+                  subtask
+                }); // Not waiting for promise
+
+                log.info(`got subtask: ${subtask}`);
+
+                return doTransfer(taskId, subtask)
+                  .then(() => completeSubtask(taskId, subtask))
+                  .catch((error) => {
+                    tasks.logError(taskId, subtask, `Error: ${JSON.stringify(error)}`);
+                    return Promise.resolve();
+                  });
+              });
           });
         });
-      });
+    })
+    .then(doSubtask)
+    .catch((error) => {
+      if (error.message === 'Worker killed') {
+        log.warn('Worker killed');
+      } else {
+        throw error;
+      }
     });
-  })
-  .then(doSubtask)
-  .catch((error) => {
-    if (error.message === 'Worker killed') {
-      log.warn('Worker killed');
-    } else {
-      throw error;
-    }
-  });
 
   const doTransfer = (taskId, subtask) => {
     const source = createEsClient(subtask.source);
@@ -163,14 +163,14 @@ const Worker = function (redisClient) {
       task:     taskId,
       subtask,
       progress: progress
-    });  // Not waiting for promise
+    }); // Not waiting for promise
 
     return subtasks.updateProgress(taskId, subtask, progress)
-    .then(() => {
-      if (_.isFunction(updateCallback)) {
-        updateCallback(taskId, subtask, progress);
-      }
-    });
+      .then(() => {
+        if (_.isFunction(updateCallback)) {
+          updateCallback(taskId, subtask, progress);
+        }
+      });
   };
 
   /**
@@ -182,11 +182,11 @@ const Worker = function (redisClient) {
   const completeSubtask = (taskId, subtask) => {
     log.info(`completed task: '${taskId}' subtask: ${subtask}`);
     return subtasks.complete(taskId, subtask)
-    .then(() => {
-      if (_.isFunction(completedCallback)) {
-        return completedCallback(taskId, subtask);
-      }
-    });
+      .then(() => {
+        if (_.isFunction(completedCallback)) {
+          return completedCallback(taskId, subtask);
+        }
+      });
   };
 
   manager.getWorkerName().then((workerName) => {

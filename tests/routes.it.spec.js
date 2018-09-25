@@ -27,15 +27,15 @@ describe('chillastic full routes', () => {
     const app   = require('../index')(TestConfig.redis.host, TestConfig.redis.port, 7001);
     const agent = request(app);
     agent.post('/tasks/doesNotExist')
-    .send(task)
-    .expect(HTTPStatus.BAD_REQUEST)
-    .then((res) => {
-      expect(res.body.error).to.equal('Src for mutator id doesNotExist not found');
-      app.services.manager.setRunning(false);
-      app.services.worker.killStopped();
-      done();
-    })
-    .catch((err) => done(err));
+      .send(task)
+      .expect(HTTPStatus.BAD_REQUEST)
+      .then((res) => {
+        expect(res.body.error).to.equal('Src for mutator id doesNotExist not found');
+        app.services.manager.setRunning(false);
+        app.services.worker.killStopped();
+        done();
+      })
+      .catch((err) => done(err));
   });
 
   it('returns 400 response code when filter src not found', (done) => {
@@ -55,15 +55,15 @@ describe('chillastic full routes', () => {
     const app   = require('../index')(TestConfig.redis.host, TestConfig.redis.port, 7001);
     const agent = request(app);
     agent.post('/tasks/doesNotExist')
-    .send(task)
-    .expect(HTTPStatus.BAD_REQUEST)
-    .then((res) => {
-      expect(res.body.error).to.equal('Src for filter id doesNotExist not found');
-      app.services.manager.setRunning(false);
-      app.services.worker.killStopped();
-      done();
-    })
-    .catch((err) => done(err));
+      .send(task)
+      .expect(HTTPStatus.BAD_REQUEST)
+      .then((res) => {
+        expect(res.body.error).to.equal('Src for filter id doesNotExist not found');
+        app.services.manager.setRunning(false);
+        app.services.worker.killStopped();
+        done();
+      })
+      .catch((err) => done(err));
   });
 
 });

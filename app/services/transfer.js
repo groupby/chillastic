@@ -51,36 +51,36 @@ const Transfer = function (sourceEs, destEs) {
       queueSummary.tick = 0;
 
       return self.dest.bulk({refresh: true, body: bulkBody, requestTimeout: BULK_REQUEST_TIMEOUT_MS})
-      .then((results) => {
-        log.trace('response: %s', JSON.stringify(results, null, config.jsonIndent));
+        .then((results) => {
+          log.trace('response: %s', JSON.stringify(results, null, config.jsonIndent));
 
-        if (results.errors && results.errors > 0) {
-          return self.handleBulkErrors(results, bulkBody);
-        } else {
-          queueSummary.transferred += results.items.length;
-          queueSummary.tick = results.items.length;
+          if (results.errors && results.errors > 0) {
+            return self.handleBulkErrors(results, bulkBody);
+          } else {
+            queueSummary.transferred += results.items.length;
+            queueSummary.tick = results.items.length;
 
-          if (_.isFunction(updateCallback)) {
-            updateCallback(queueSummary);
+            if (_.isFunction(updateCallback)) {
+              updateCallback(queueSummary);
+            }
+
+            log.debug('flush complete: ', queueSummary);
+            return Promise.resolve();
           }
-
-          log.debug('flush complete: ', queueSummary);
-          return Promise.resolve();
-        }
-      });
+        });
     } else {
       return Promise.resolve();
     }
   };
 
   self.scroll = (response, retries = 0) =>
-      self.source.scroll({
-        scroll_id: response._scroll_id,
-        scroll:    '1h'
-      }).catch(() => retries > 3 ? Promise.reject(new Error(`can't scroll: ${response._scroll_id}`)) : self.scroll(response, retries + 1));
+    self.source.scroll({
+      scroll_id: response._scroll_id,
+      scroll:    '1h'
+    }).catch(() => retries > 3 ? Promise.reject(new Error(`can't scroll: ${response._scroll_id}`)) : self.scroll(response, retries + 1));
 
   self.search = (request, retries = 0) =>
-      self.source.search(request)
+    self.source.search(request)
       .catch(() => retries > 3 ? Promise.reject(new Error(`can't search: ${JSON.stringify(request)}`)) : self.search(request, retries + 1));
 
   /**
@@ -121,29 +121,29 @@ const Transfer = function (sourceEs, destEs) {
       });
 
       return putData(self.mutate(documents, 'data'), flushSize)
-      .then(() => {
-        if (response.hits.total !== queueSummary.scrolled) {
-          return self.scroll(response)
-          .then((inner_response) => {
-            log.debug('scrolling: ', queueSummary);
-            return scrollAndGetData(inner_response);
-          });
-        } else {
-          return flushQueue()
-          .then(() => {
-            log.debug('transfer complete: ', queueSummary);
-            return queueSummary.transferred;
-          });
-        }
-      });
+        .then(() => {
+          if (response.hits.total !== queueSummary.scrolled) {
+            return self.scroll(response)
+              .then((inner_response) => {
+                log.debug('scrolling: ', queueSummary);
+                return scrollAndGetData(inner_response);
+              });
+          } else {
+            return flushQueue()
+              .then(() => {
+                log.debug('transfer complete: ', queueSummary);
+                return queueSummary.transferred;
+              });
+          }
+        });
     };
 
     return self.search(Subtask.createQuery(targetIndex, targetType, flushSize, minSize, maxSize))
-    .then(scrollAndGetData)
-    .catch((error) => {
-      log.error('Error during search: ', error);
-      return Promise.reject(error);
-    });
+      .then(scrollAndGetData)
+      .catch((error) => {
+        log.error('Error during search: ', error);
+        return Promise.reject(error);
+      });
   };
 
   /**
@@ -204,10 +204,10 @@ const Transfer = function (sourceEs, destEs) {
         name: name,
         body: template
       })
-      .catch((e) => {
-        log.error('Error during put templates: %s', JSON.stringify(e));
-        return Promise.reject(e);
-      });
+        .catch((e) => {
+          log.error('Error during put templates: %s', JSON.stringify(e));
+          return Promise.reject(e);
+        });
     });
   };
 
@@ -284,11 +284,11 @@ const Transfer = function (sourceEs, destEs) {
   };
 
   self.transferIndices = (indicesNames) =>
-      Transfer.getIndices(self.source, indicesNames)
+    Transfer.getIndices(self.source, indicesNames)
       .then((indices) => self.putIndices(self.mutate(indices, 'index')));
 
   self.transferTemplates = (templateNames) =>
-      Transfer.getTemplates(self.source, templateNames)
+    Transfer.getTemplates(self.source, templateNames)
       .then((templates) => self.putTemplates(self.mutate(templates, 'template')));
 
   /**
@@ -358,14 +358,14 @@ const Transfer = function (sourceEs, destEs) {
  * @returns {Promise.<TResult>}
  */
 Transfer.getIndices = (client, targetIndices) =>
-    !_.isString(targetIndices) || targetIndices.length === 0 ?
-        Promise.reject(new Error('targetIndices must be string with length')) :
-        client.indices.get({index: targetIndices, allowNoIndices: true})
-        .then((response) => _.reduce(response, (result, index, name) => result.concat(_.assign(index, {name})), []))
-        .catch((e) => {
-          log.error('Error during index get: %s', JSON.stringify(e));
-          return Promise.reject(e);
-        });
+  !_.isString(targetIndices) || targetIndices.length === 0 ?
+    Promise.reject(new Error('targetIndices must be string with length')) :
+    client.indices.get({index: targetIndices, allowNoIndices: true})
+      .then((response) => _.reduce(response, (result, index, name) => result.concat(_.assign(index, {name})), []))
+      .catch((e) => {
+        log.error('Error during index get: %s', JSON.stringify(e));
+        return Promise.reject(e);
+      });
 
 /**
  * Returns an array of the templates found using the elasticsearch multi-index definition.
@@ -377,29 +377,29 @@ Transfer.getIndices = (client, targetIndices) =>
  * @returns {Promise.<T>}
  */
 Transfer.getTemplates = (client, targetTemplates) =>
-    !_.isString(targetTemplates) || targetTemplates.length === 0 ?
-        Promise.reject(new Error('targetTemplates must be string with length')) :
-        client.indices.getTemplate({name: targetTemplates})
-        .then((templates) =>
-            _.reduce(templates, (result, template, name) =>
-                    _.size(template.index_patterns.filter((p) => p.startsWith('.'))) === 0 ? result.concat(_.assign(template, {name})) : result,
-                []))
-        .then((templates) => {
-          if (_.size(templates) === 0) {
-            log.warn('Templates asked to be copied, but none found');
-            return Promise.reject('Templates asked to be copied, but none found');
-          } else {
-            return templates;
-          }
-        })
-        .catch((error) => {
-          if (error.status === HttpStatus.NOT_FOUND) {
-            log.warn('Templates asked to be copied, but none found');
-            return Promise.reject('Templates asked to be copied, but none found');
-          } else {
-            return Promise.reject(error);
-          }
-        });
+  !_.isString(targetTemplates) || targetTemplates.length === 0 ?
+    Promise.reject(new Error('targetTemplates must be string with length')) :
+    client.indices.getTemplate({name: targetTemplates})
+      .then((templates) =>
+        _.reduce(templates, (result, template, name) =>
+          _.size(template.index_patterns.filter((p) => p.startsWith('.'))) === 0 ? result.concat(_.assign(template, {name})) : result,
+        []))
+      .then((templates) => {
+        if (_.size(templates) === 0) {
+          log.warn('Templates asked to be copied, but none found');
+          return Promise.reject('Templates asked to be copied, but none found');
+        } else {
+          return templates;
+        }
+      })
+      .catch((error) => {
+        if (error.status === HttpStatus.NOT_FOUND) {
+          log.warn('Templates asked to be copied, but none found');
+          return Promise.reject('Templates asked to be copied, but none found');
+        } else {
+          return Promise.reject(error);
+        }
+      });
 
 module.exports = Transfer;
 
