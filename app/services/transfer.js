@@ -114,6 +114,7 @@ const Transfer = function (sourceEs, destEs) {
     flushRetryCount = 0;
 
     const scrollAndGetData = (response) => {
+      log.debug(`got ${response.hits.total} documents`);
       const documents = [];
       response.hits.hits.forEach((hit) => {
         documents.push(hit);
