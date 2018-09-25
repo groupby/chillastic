@@ -55,7 +55,7 @@ Subtask.createQuery = (index, type, flushSize, minSize, maxSize) => {
     size:   flushSize,
   };
 
-  const finalMinSize = minSize || -1;
+  const finalMinSize = minSize || 0;
   const finalMaxSize = maxSize || -1;
   if (finalMinSize >= 0 && finalMaxSize >= 0) {
     request.body = {
