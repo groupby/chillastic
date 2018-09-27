@@ -134,13 +134,13 @@ describe('subtasks service', function () {
       .then((allIndices) => subtasks.filterDocumentSubtasks(fakeTask, allIndices, loadedFilters, 'size'))
       .then((actual) => {
         expect(actual.length).to.be.equals(1);
-        assertSubtask(actual[0], 524288, -1, -1);
+        assertSubtask(actual[0], 10000, -1, -1);
       })
       .then(() => done())
       .catch(done);
   });
 
-  it('pick bounds - nothing above 1KB', (done) => {
+  it('pick bounds - nothing above 1KB, flush size maxed out', (done) => {
     createIndex(1)
       .then(() => upload(10, 2000, to_bytes(1, 'B'), to_bytes(1, 'KB')))
       .then(() => uploadExact(1, to_bytes(1, 'KB')))
@@ -148,9 +148,9 @@ describe('subtasks service', function () {
       .then((allIndices) => subtasks.filterDocumentSubtasks(fakeTask, allIndices, loadedFilters, 'size'))
       .then((actual) => {
         expect(actual.length).to.be.equals(3);
-        assertSubtask(actual[0], 85667, to_bytes(0, 'B'), to_bytes(613, 'B'));
-        assertSubtask(actual[1], 57111, to_bytes(613, 'B'), to_bytes(919, 'B'));
-        assertSubtask(actual[2], 51200, to_bytes(919, 'B'), to_bytes(1, 'KB') + 1);
+        assertSubtask(actual[0], 10000, to_bytes(0, 'B'), to_bytes(613, 'B'));
+        assertSubtask(actual[1], 10000, to_bytes(613, 'B'), to_bytes(919, 'B'));
+        assertSubtask(actual[2], 10000, to_bytes(919, 'B'), to_bytes(1, 'KB') + 1);
       })
       .then(() => done())
       .catch(done);

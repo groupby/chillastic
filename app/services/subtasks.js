@@ -11,7 +11,8 @@ const createEsClient = require('../../config/elasticsearch');
 const config         = require('../../config/index');
 const to_bytes       = require('../../config/utils').to_bytes;
 
-const log = config.log;
+const log            = config.log;
+const MAX_FLUSH_SIZE = 10000;
 
 const Subtasks = function (redisClient) {
   const self    = this;
@@ -263,7 +264,7 @@ const Subtasks = function (redisClient) {
           } else {
             return _.reduce(buckets, (result, bucket) => {
               const count        = bucket.doc_count;
-              const flushSize    = Math.max(1, decrease(to_bytes(50, 'MB'), (bucket.to - 1) * shards));
+              const flushSize    = Math.max(1, Math.min(MAX_FLUSH_SIZE, decrease(to_bytes(50, 'MB'), (bucket.to - 1) * shards)));
               result[bucket.key] = {
                 count, flushSize,
                 chunks:  Math.ceil(count / flushSize),
