@@ -34,7 +34,7 @@ const Transfer = function (sourceEs, destEs) {
   };
 
   self.source = sourceEs;
-  self.dest = destEs;
+  self.dest   = destEs;
 
   /**
    * Flushes any queued bulk inserts
@@ -142,7 +142,7 @@ const Transfer = function (sourceEs, destEs) {
         });
     };
 
-    return self.search(Subtask.createQuery(targetIndex, targetType, flushSize, minSize, maxSize))
+    return self.search(Subtask.createQuery(targetIndex, targetType, Math.max(1, flushSize), minSize, maxSize))
       .then(scrollAndGetData)
       .catch((error) => {
         log.error('Error during search: ', error);
@@ -205,9 +205,9 @@ const Transfer = function (sourceEs, destEs) {
 
       log.info('putting template: ', name);
       return self.dest.indices.putTemplate({
-        name: name,
-        body: template
-      })
+          name: name,
+          body: template
+        })
         .catch((e) => {
           log.error('Error during put templates: %s', JSON.stringify(e));
           return Promise.reject(e);
@@ -386,8 +386,8 @@ Transfer.getTemplates = (client, targetTemplates) =>
     client.indices.getTemplate({name: targetTemplates})
       .then((templates) =>
         _.reduce(templates, (result, template, name) =>
-          _.size(template.index_patterns.filter((p) => p.startsWith('.'))) === 0 ? result.concat(_.assign(template, {name})) : result,
-        []))
+            _.size(template.index_patterns.filter((p) => p.startsWith('.'))) === 0 ? result.concat(_.assign(template, {name})) : result,
+          []))
       .then((templates) => {
         if (_.size(templates) === 0) {
           log.warn('Templates asked to be copied, but none found');
