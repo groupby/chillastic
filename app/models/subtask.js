@@ -49,11 +49,14 @@ Subtask.createFromID = (id, count) => {
 
 Subtask.createQuery = (index, type, flushSize, minSize, maxSize) => {
   const request = {
-    index:  index,
-    type:   type,
-    scroll: '30m',
-    size:   flushSize,
+    index: index,
+    type:  type,
+    size:  flushSize,
   };
+
+  if (flushSize > 0) {
+    request.scroll = '30m';
+  }
 
   const finalMinSize = minSize || 0;
   const finalMaxSize = maxSize || -1;
