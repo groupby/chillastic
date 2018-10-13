@@ -27,7 +27,7 @@ const Subtask              = function (params) {
   return self;
 };
 Subtask.coerce = (subtask) => subtask instanceof Subtask ? subtask : new Subtask(subtask);
-Subtask.DEFAULT_FLUSH_SIZE = 500;
+Subtask.DEFAULT_FLUSH_SIZE = 100;
 
 /**
  * Static factory for creating subtasks directly from the ID and count
